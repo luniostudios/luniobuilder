@@ -29,7 +29,7 @@ const Header = async () => {
                     <ul className='flex gap-6 items-center justify-center'>
                         <li><Link href="/features" className='text-gray-400 hover:text-gray-300 transition-colors'>Community</Link></li>
                         <li><Link href="/pricing" className='text-gray-400 hover:text-gray-300 transition-colors'>Pricing</Link></li>
-                        <li><Link href="/docs" className='text-gray-400 hover:text-gray-300 transition-colors'>Documentation</Link></li>
+                        <li><Link href="/documentation" className='text-gray-400 hover:text-gray-300 transition-colors'>Documentation</Link></li>
                         {!session && (
                             <li><SignIn /></li>
                         )}
@@ -53,7 +53,7 @@ const Header = async () => {
                             <ul className='flex flex-col gap-3 mt-4'>
                                 <li><Link href="/features" className='text-gray-400 hover:text-gray-300 transition-colors'>Community</Link></li>
                                 <li><Link href="/pricing" className='text-gray-400 hover:text-gray-300 transition-colors'>Pricing</Link></li>
-                                <li><Link href="/docs" className='text-gray-400 hover:text-gray-300 transition-colors'>Documentation</Link></li>
+                                <li><Link href="/documentation" className='text-gray-400 hover:text-gray-300 transition-colors'>Documentation</Link></li>
                                 {!session && (
                                     <li><SignIn /></li>
                                 )}
