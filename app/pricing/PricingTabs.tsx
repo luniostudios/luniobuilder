@@ -142,13 +142,12 @@ const PricingTabs: React.FC<PricingTabsProps> = ({ hasSession }) => {
                             Go to Dashboard
                         </Link>
                     ) : (
-                        <button
-                            type='button'
-                            onClick={() => signIn('google')}
-                            className='w-full text-xl bg-blue-500/20 mb-4 text-blue-500 border-2 border-blue-500/40 py-2 px-4 rounded'
+                        <Link
+                            href='/auth/signin'
+                            className='w-full text-xl bg-blue-500/20 mb-4 text-blue-500 border-2 border-blue-500/40 py-2 px-4 rounded flex items-center justify-center'
                         >
                             Sign In
-                        </button>
+                        </Link>
                     )}
                     <hr />
                     <h6 className='text-sm font-bold mb-4 mt-4'>What's Included:</h6>
