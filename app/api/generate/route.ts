@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '../../auth/auth';
+import { supabaseServer } from '../../lib/supabaseServer';
 import { GoogleGenAI } from "@google/genai";
 
 const ai = new GoogleGenAI({});
-
+const MAX_FREE_DAILY_AI = 5;
 
 interface GenerateRequest {
     prompt: string;
@@ -50,6 +51,34 @@ export async function POST(req: NextRequest): Promise<NextResponse<GenerateRespo
             );
         }
 
+        const today = new Date().toISOString().slice(0, 10);
+        const { data: user, error: userError } = await supabaseServer
+            .schema('next_auth')
+            .from('users')
+            .select('role, raw_user_meta_data')
+            .eq('id', session.user.id || session.user.email)
+            .single();
+
+        if (userError) {
+            console.error('Error fetching user data:', userError);
+            return NextResponse.json(
+                { html: '', success: false, error: 'Unable to fetch user data' },
+                { status: 500 }
+            );
+        }
+
+        const role = typeof user?.role === 'string' ? user.role.toLowerCase() : 'free';
+        const meta = typeof user?.raw_user_meta_data === 'object' && user.raw_user_meta_data !== null ? user.raw_user_meta_data : {};
+        const existingUsage = typeof meta.ai_usage === 'object' && meta.ai_usage !== null ? meta.ai_usage : { date: today, count: 0 };
+        const currentCount = existingUsage.date === today ? Number(existingUsage.count || 0) : 0;
+
+        if (role === 'free' && currentCount >= MAX_FREE_DAILY_AI) {
+            return NextResponse.json(
+                { html: '', success: false, error: `Free users are limited to ${MAX_FREE_DAILY_AI} AI-generated elements per day.` },
+                { status: 403 }
+            );
+        }
+
         // Build the system prompt for Gemini
         const systemPrompt = `You are a professional web designer and developer. Generate clean, modern, responsive HTML for website components.
 
@@ -91,6 +120,30 @@ Generate HTML for: ${prompt}`;
             .replace(/```css\n?/g, '')
             .replace(/```\n?/g, '')
             .trim();
+
+        if (role === 'free') {
+            const updatedUsage = {
+                ...meta,
+                ai_usage: {
+                    date: existingUsage.date === today ? today : today,
+                    count: currentCount + 1,
+                },
+            };
+
+            const { error: updateError } = await supabaseServer
+                .schema('next_auth')
+                .from('users')
+                .update({ raw_user_meta_data: updatedUsage })
+                .eq('id', session.user.id || session.user.email);
+
+            if (updateError) {
+                console.error('Error updating AI usage count:', updateError);
+                return NextResponse.json(
+                    { html: '', success: false, error: 'Unable to update usage count' },
+                    { status: 500 }
+                );
+            }
+        }
 
         return NextResponse.json({
             html: cleanedContent,

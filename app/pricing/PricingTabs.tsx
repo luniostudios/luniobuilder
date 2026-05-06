@@ -93,7 +93,7 @@ const PricingTabs: React.FC<PricingTabsProps> = ({ hasSession }) => {
     return (
         <div className='flex flex-col justify-between min-h-screen mb-20'>
             <div className='flex flex-col md:flex-row px-[15%] max-lg:px-0 justify-center items-center gap-8 mt-20'>
-                <div className='flex flex-col items-center justify-center gap-6'>
+                <div className='flex flex-col items-center justify-center gap-10'>
                     <div className='rounded-3xl p-5 text-center'>
                         <h1 className='text-4xl max-md:text-3xl font-bold'>The Affordable Plans</h1>
                         <div>
@@ -158,9 +158,13 @@ const PricingTabs: React.FC<PricingTabsProps> = ({ hasSession }) => {
                         <li className='mb-2'><span className='text-slate-600'>✽</span> No Code Export</li>
                         <li className='mb-2'><span className='text-slate-600'>✽</span> 24/7 Support</li>
                     </ul>
+                    <div className='mt-6 p-5 bg-red-500/10 rounded-lg gap-1 flex flex-col items-start'>
+                        <h1 className='font-bold'>AI Usage Limit</h1>
+                        <p className='text-sm text-gray-600'>Limited to 5 AI-generated elements per day.</p>
+                    </div>
                 </div>
 
-                <div className='bg-white p-6 md:w-1/3 border-3 border-slate-500/5'>
+                <div className='bg-white p-6 md:w-1/3 border-3 border-slate-500/20'>
                     <div className='flex flex-row items-center gap-2 mb-2'>
                         <h2 className='flex text-4xl font-bold mb-4'>Pro</h2>
                         <span className='flex text-sm text-green-500 font-semibold mb-2 border border-green-500/40 py-1 px-2 rounded-2xl'>Limited Time</span>
@@ -187,6 +191,10 @@ const PricingTabs: React.FC<PricingTabsProps> = ({ hasSession }) => {
                         <li className='mb-2'><span className='text-slate-600'>✽</span> Code Export</li>
                         <li className='mb-2'><span className='text-slate-600'>✽</span> 24/7 Priority Support</li>
                     </ul>
+                    <div className='mt-6 p-5 bg-red-500/10 rounded-lg gap-1 flex flex-col items-start'>
+                        <h1 className='font-bold'>AI Usage Limit</h1>
+                        <p className='text-sm text-gray-600'>Unlimited AI-generated elements per day.</p>
+                    </div>
                 </div>
             </div>
         </div>
