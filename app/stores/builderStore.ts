@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { BuilderState, BuilderElement, Page, ElementType, StyleProperties, Breakpoint, ElementProps } from '../types/builder';
 import { generateId, createDefaultElement, deepClone } from '../utils/builderUtils';
 import { createStarterPage } from '../utils/starterTemplate';
+import { htmlToBuilderElements } from '../utils/htmlToBuilder';
 
 interface BuilderStore extends BuilderState {
   // Auth/project tracking
@@ -49,6 +50,9 @@ interface BuilderStore extends BuilderState {
   undo: () => void;
   redo: () => void;
   pushHistory: () => void;
+
+  // AI Generation
+  addGeneratedElements: (html: string, parentId: string | null) => void;
 
   // Helpers
   getCurrentPage: () => Page;
@@ -502,5 +506,43 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
       const newIndex = state.historyIndex + 1;
       return { pages: deepClone(state.history[newIndex]), historyIndex: newIndex };
     });
+  },
+
+  addGeneratedElements: (html, parentId) => {
+    try {
+      // Convert HTML to builder elements
+      const generatedElements = htmlToBuilderElements(html, parentId);
+
+      set(state => {
+        const pages = deepClone(state.pages);
+        const page = pages.find(p => p.id === state.currentPageId)!;
+
+        if (parentId === null) {
+          // Add to root level
+          page.elements.push(...generatedElements);
+        } else {
+          // Add inside parent
+          const addInside = (elements: BuilderElement[]): boolean => {
+            for (const el of elements) {
+              if (el.id === parentId) {
+                el.children.push(...generatedElements);
+                return true;
+              }
+              if (addInside(el.children)) return true;
+            }
+            return false;
+          };
+          addInside(page.elements);
+        }
+
+        // Select the first generated element
+        const firstId = generatedElements[0]?.id || null;
+        return { pages, selectedElementId: firstId };
+      });
+
+      get().pushHistory();
+    } catch (error) {
+      console.error('Error adding generated elements:', error);
+    }
   },
 }));

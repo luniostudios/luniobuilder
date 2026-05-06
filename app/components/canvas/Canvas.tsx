@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useBuilderStore } from '../../stores/builderStore';
 import { ElementRenderer } from './ElementRenderer';
+import { AIGeneratorModal } from './AIGeneratorModal';
 import { ElementType } from '../../types/builder';
+import { Bot } from 'lucide-react';
 
 export const Canvas: React.FC = () => {
   const {
@@ -18,8 +20,10 @@ export const Canvas: React.FC = () => {
     setDraggedElementType,
     dropTargetId,
     moveElement,
+    addGeneratedElements,
   } = useBuilderStore();
 
+  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
   const page = getCurrentPage();
 
@@ -134,6 +138,15 @@ export const Canvas: React.FC = () => {
               <p className="text-sm text-gray-400 mt-1">Double click components from the left panel</p>
             </div>
           )}
+
+          {/* AI Generation Button */}
+          <button
+            onClick={() => setIsAIModalOpen(true)}
+            className="fixed bottom-0 right-8 bg-green-500 text-black rounded-full shadow-lg p-4 transition-all z-40"
+            title="Generate with AI"
+          >
+            <Bot size={20} />
+          </button>
         </div>
       </div>
 
@@ -145,6 +158,15 @@ export const Canvas: React.FC = () => {
         <span className="text-gray-500">•</span>
         <span className="text-gray-400">{page.elements.length} elements</span>
       </div>
+
+      {/* AI Generator Modal */}
+      <AIGeneratorModal
+        isOpen={isAIModalOpen}
+        onClose={() => setIsAIModalOpen(false)}
+        onGenerate={(html) => {
+          addGeneratedElements(html, null);
+        }}
+      />
     </div>
   );
 };
