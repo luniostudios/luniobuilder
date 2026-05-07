@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight, Redo2 } from 'lucide-react';
 import ColorPicker from 'react-best-gradient-color-picker';
 import { useBuilderStore } from '../../stores/builderStore';
@@ -199,6 +199,70 @@ const GradientInput: React.FC<GradientInputProps> = ({ label, value, onChange, p
   );
 };
 
+const isCssGradient = (val: string) => /(linear-gradient|radial-gradient|conic-gradient)\(/i.test(val.trim());
+
+const BackgroundFillInput: React.FC<{
+  label: string;
+  colorValue: string;
+  gradientValue: string;
+  onChangeColor: (val: string) => void;
+  onChangeGradient: (val: string) => void;
+}> = ({ label, colorValue, gradientValue, onChangeColor, onChangeGradient }) => {
+  const [open, setOpen] = useState(false);
+
+  const currentValue = gradientValue || colorValue || '#000000';
+  const isGradient = isCssGradient(currentValue);
+
+  const handleChange = (next: string) => {
+    if (isCssGradient(next)) {
+      onChangeGradient(next);
+      onChangeColor('');
+    } else {
+      onChangeColor(next);
+      onChangeGradient('');
+    }
+  };
+
+  const handleReset = () => {
+    onChangeColor('');
+    onChangeGradient('');
+  };
+
+  return (
+    <div className="mb-3">
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <span className="text-xs text-gray-500">{label}</span>
+        <Redo2 size={14} className="text-gray-600 hover:text-gray-400 cursor-pointer" onClick={handleReset} />
+      </div>
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          value={isCssGradient(currentValue) ? currentValue : (colorValue || '')}
+          onChange={(e) => handleChange(e.target.value)}
+          placeholder="Color (#fff) or gradient (linear-gradient...)"
+          className="flex-1 bg-gray-800 text-gray-200 text-xs rounded-md px-2 py-1.5 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 min-w-0"
+        />
+        <div
+          className="h-9 min-w-18 rounded-md border border-gray-700"
+          style={{
+            // Avoid mixing `background` shorthand with background* longhands.
+            backgroundColor: isGradient ? undefined : currentValue,
+            backgroundImage: isGradient ? currentValue : undefined,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+          onClick={() => setOpen((prev) => !prev)}
+        />
+      </div>
+      {open && (
+        <div className="absolute z-10 bottom-2 right-65 mt-3 rounded-xl border border-gray-700 overflow-hidden">
+          <ColorPicker value={currentValue} onChange={handleChange} hidePresets={true} />
+        </div>
+      )}
+    </div>
+  );
+};
+
 interface SpacingInputProps {
   label: string;
   values: { top: string; right: string; bottom: string; left: string };
@@ -257,9 +321,28 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
   const { updateElementStyles } = useBuilderStore();
   const styles = getEffectiveStyles(element, breakpoint as 'widescreen' | 'desktop' | 'tablet' | 'mobile');
   const isTextElement = ['heading', 'paragraph', 'button', 'link', 'listItem'].includes(element.type);
+  const [backgroundImageTab, setBackgroundImageTab] = useState<'value' | 'unsplash'>('value');
+  const [textClipImageTab, setTextClipImageTab] = useState<'value' | 'unsplash'>('value');
 
   const update = (key: keyof StyleProperties, value: string) => {
     updateElementStyles(element.id, { [key]: value });
+  };
+
+  const extractUrlFromCssBackgroundImage = (val: string | undefined) => {
+    if (!val) return '';
+    const trimmed = String(val).trim();
+    const match = trimmed.match(/^url\(\s*(['"]?)(.*?)\1\s*\)\s*$/i);
+    if (match) return match[2] || '';
+    return trimmed;
+  };
+
+  const toCssBackgroundImageValue = (raw: string) => {
+    const trimmed = String(raw || '').trim();
+    if (!trimmed) return '';
+    // If user pasted an existing css value, keep it as-is.
+    if (/^url\(/i.test(trimmed)) return trimmed;
+    // Otherwise treat as plain link and wrap.
+    return `url("${trimmed.replace(/"/g, '\\"')}")`;
   };
 
   const parsePx = (val: string | undefined) => {
@@ -431,13 +514,61 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
           options={['left', 'center', 'right', 'justify']}
         />
         {isTextElement && (
-          <GradientInput
-            label="Text gradient"
-            value={styles.textGradient || ''}
-            onChange={v => update('textGradient', v)}
-            placeholder="linear-gradient(90deg, #ff0080, #7928ca)"
-            defaultValue="linear-gradient(90deg, rgba(255,56,129,1) 0%, rgba(125,59,230,1) 100%)"
+          <BackgroundFillInput
+            label="Text fill"
+            colorValue={styles.color || ''}
+            gradientValue={styles.textGradient || ''}
+            onChangeColor={(v) => {
+              update('color', v);
+              if (v) update('textGradient', '');
+            }}
+            onChangeGradient={(v) => {
+              update('textGradient', v);
+              if (v) update('color', '');
+            }}
           />
+        )}
+
+        {isTextElement && (
+          <>
+            <InputRow
+              label="Text image"
+              value={extractUrlFromCssBackgroundImage(styles.textClipImage)}
+              onChange={v => update('textClipImage', toCssBackgroundImageValue(v))}
+              placeholder="https://..."
+            />
+
+            <div className="flex gap-2 mb-2">
+              <button
+                type="button"
+                onClick={() => setTextClipImageTab('value')}
+                className={`flex-1 text-xs px-3 py-2 rounded-lg border transition-colors ${textClipImageTab === 'value'
+                  ? 'bg-blue-300/10 text-blue-200 border-blue-300/40'
+                  : 'bg-gray-900 text-gray-400 border-gray-800 hover:text-gray-200'
+                  }`}
+              >
+                URL
+              </button>
+              <button
+                type="button"
+                onClick={() => setTextClipImageTab('unsplash')}
+                className={`flex-1 text-xs px-3 py-2 rounded-lg border transition-colors ${textClipImageTab === 'unsplash'
+                  ? 'bg-blue-300/10 text-blue-200 border-blue-300/40'
+                  : 'bg-gray-900 text-gray-400 border-gray-800 hover:text-gray-200'
+                  }`}
+              >
+                Unsplash
+              </button>
+            </div>
+
+            {textClipImageTab === 'unsplash' && (
+              <UnsplashPicker
+                onPick={(photo) => {
+                  update('textClipImage', toCssBackgroundImageValue(photo.urls.regular));
+                }}
+              />
+            )}
+          </>
         )}
         <InputRow
           label="Transform"
@@ -451,20 +582,55 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
           onChange={v => update('textDecoration', v)}
           options={['none', 'underline', 'line-through', 'overline']}
         />
-        <ColorInput label="Color" value={styles.color || ''} onChange={v => update('color', v)} />
+        {!isTextElement && <ColorInput label="Color" value={styles.color || ''} onChange={v => update('color', v)} />}
       </Section>
 
       {/* Background */}
       <Section title="Background">
-        <GradientInput
-          label="Gradient"
-          value={styles.backgroundGradient || ''}
-          onChange={v => update('backgroundGradient', v)}
-          placeholder="linear-gradient(135deg, #f97316, #ec4899)"
-          defaultValue="linear-gradient(135deg, rgba(249,115,22,1) 0%, rgba(236,72,153,1) 100%)"
+        <BackgroundFillInput
+          label="Fill"
+          colorValue={styles.backgroundColor || ''}
+          gradientValue={styles.backgroundGradient || ''}
+          onChangeColor={(v) => update('backgroundColor', v)}
+          onChangeGradient={(v) => update('backgroundGradient', v)}
         />
-        <ColorInput label="Color" value={styles.backgroundColor || ''} onChange={v => update('backgroundColor', v)} />
-        <InputRow label="Image" value={styles.backgroundImage || ''} onChange={v => update('backgroundImage', v)} placeholder="url(...)" />
+        <InputRow
+          label="Image"
+          value={extractUrlFromCssBackgroundImage(styles.backgroundImage)}
+          onChange={v => update('backgroundImage', toCssBackgroundImageValue(v))}
+          placeholder="https://..."
+        />
+
+        <div className="flex gap-2 mb-2">
+          <button
+            type="button"
+            onClick={() => setBackgroundImageTab('value')}
+            className={`flex-1 text-xs px-3 py-2 rounded-lg border transition-colors ${backgroundImageTab === 'value'
+              ? 'bg-blue-300/10 text-blue-200 border-blue-300/40'
+              : 'bg-gray-900 text-gray-400 border-gray-800 hover:text-gray-200'
+              }`}
+          >
+            URL
+          </button>
+          <button
+            type="button"
+            onClick={() => setBackgroundImageTab('unsplash')}
+            className={`flex-1 text-xs px-3 py-2 rounded-lg border transition-colors ${backgroundImageTab === 'unsplash'
+              ? 'bg-blue-300/10 text-blue-200 border-blue-300/40'
+              : 'bg-gray-900 text-gray-400 border-gray-800 hover:text-gray-200'
+              }`}
+          >
+            Unsplash
+          </button>
+        </div>
+
+        {backgroundImageTab === 'unsplash' && (
+          <UnsplashPicker
+            onPick={(photo) => {
+              update('backgroundImage', toCssBackgroundImageValue(photo.urls.regular));
+            }}
+          />
+        )}
         <InputRow
           label="Size"
           value={styles.backgroundSize || ''}
@@ -663,12 +829,179 @@ interface ContentEditorProps {
   element: BuilderElement;
 }
 
+type UnsplashPhoto = {
+  id: string;
+  width: number;
+  height: number;
+  alt_description: string | null;
+  description: string | null;
+  urls: {
+    raw: string;
+    full: string;
+    regular: string;
+    small: string;
+    thumb: string;
+  };
+  user: { name: string; username: string };
+  links: { html: string };
+};
+
+const UnsplashPicker: React.FC<{
+  onPick: (photo: UnsplashPhoto) => void;
+}> = ({ onPick }) => {
+  const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [results, setResults] = useState<UnsplashPhoto[]>([]);
+  const [totalPages, setTotalPages] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const debouncedQuery = useDebouncedValue(query.trim(), 350);
+
+  const canSearch = debouncedQuery.length >= 2;
+
+  useEffect(() => {
+    if (!canSearch) {
+      setResults([]);
+      setTotalPages(0);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const run = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const res = await fetch(`/api/unsplash/search?q=${encodeURIComponent(debouncedQuery)}&page=${page}&perPage=12`);
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body?.error || `Request failed (${res.status})`);
+        }
+        const data = (await res.json()) as { results: UnsplashPhoto[]; total_pages: number };
+        if (cancelled) return;
+        setResults(Array.isArray(data.results) ? data.results : []);
+        setTotalPages(Number(data.total_pages || 0));
+      } catch (e) {
+        if (cancelled) return;
+        setError(e instanceof Error ? e.message : 'Failed to search Unsplash');
+        setResults([]);
+        setTotalPages(0);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [canSearch, debouncedQuery, page]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedQuery]);
+
+  return (
+    <div className="mt-3">
+      <label className="text-xs text-gray-500 block mb-1">Unsplash</label>
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search photos (e.g. mountains, coffee, abstract)…"
+        className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+      />
+
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <div className="text-[11px] text-gray-600">
+          {loading ? 'Searching…' : error ? error : canSearch ? `${results.length} results` : 'Type 2+ characters to search.'}
+        </div>
+        {canSearch && (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1 || loading}
+              className="text-[11px] px-2 py-1 rounded bg-gray-800 text-gray-300 border border-gray-700 hover:bg-gray-700 disabled:opacity-50 disabled:hover:bg-gray-800"
+            >
+              Prev
+            </button>
+            <div className="text-[11px] text-gray-500">
+              {page}/{Math.max(1, totalPages || 1)}
+            </div>
+            <button
+              type="button"
+              onClick={() => setPage((p) => (totalPages ? Math.min(totalPages, p + 1) : p + 1))}
+              disabled={loading || (totalPages ? page >= totalPages : false)}
+              className="text-[11px] px-2 py-1 rounded bg-gray-800 text-gray-300 border border-gray-700 hover:bg-gray-700 disabled:opacity-50 disabled:hover:bg-gray-800"
+            >
+              Next
+            </button>
+          </div>
+        )}
+      </div>
+
+      {canSearch && results.length > 0 && (
+        <div className="mt-2 grid grid-cols-3 gap-2">
+          {results.map((photo) => (
+            <button
+              key={photo.id}
+              type="button"
+              onClick={() => onPick(photo)}
+              className="group relative overflow-hidden rounded-md border border-gray-800 bg-gray-900 hover:border-blue-400/60 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              title={`Photo by ${photo.user?.name || 'Unsplash'}`}
+            >
+              <img
+                src={photo.urls.small}
+                alt={photo.alt_description || photo.description || 'Unsplash photo'}
+                className="w-full h-16 object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                loading="lazy"
+              />
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-2 text-[11px] mb-2 text-gray-600">
+        Photos from{' '}
+        <a
+          href="https://unsplash.com"
+          target="_blank"
+          rel="noreferrer"
+          className="text-blue-300 hover:text-blue-200 underline underline-offset-2"
+        >
+          Unsplash
+        </a>
+        .
+      </div>
+    </div>
+  );
+};
+
+function useDebouncedValue<T>(value: T, delayMs: number) {
+  const [debounced, setDebounced] = useState(value);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delayMs);
+    return () => clearTimeout(t);
+  }, [value, delayMs]);
+
+  return debounced;
+}
+
 const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
   const { updateElementProps, updateElementName } = useBuilderStore();
 
   const update = (key: string, value: unknown) => {
     updateElementProps(element.id, { [key]: value });
   };
+
+  const isImage = element.type === 'image';
+  const [imageSourceTab, setImageSourceTab] = useState<'url' | 'unsplash'>('url');
+  const effectiveImageTab = useMemo(() => (isImage ? imageSourceTab : 'url'), [isImage, imageSourceTab]);
 
   return (
     <div className="p-4 space-y-3">
@@ -734,6 +1067,40 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
               className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
+
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setImageSourceTab('url')}
+              className={`flex-1 text-xs px-3 py-2 rounded-lg border transition-colors ${effectiveImageTab === 'url'
+                ? 'bg-blue-300/10 text-blue-200 border-blue-300/40'
+                : 'bg-gray-900 text-gray-400 border-gray-800 hover:text-gray-200'
+                }`}
+            >
+              URL
+            </button>
+            <button
+              type="button"
+              onClick={() => setImageSourceTab('unsplash')}
+              className={`flex-1 text-xs px-3 py-2 rounded-lg border transition-colors ${effectiveImageTab === 'unsplash'
+                ? 'bg-blue-300/10 text-blue-200 border-blue-300/40'
+                : 'bg-gray-900 text-gray-400 border-gray-800 hover:text-gray-200'
+                }`}
+            >
+              Unsplash
+            </button>
+          </div>
+
+          {effectiveImageTab === 'unsplash' && (
+            <UnsplashPicker
+              onPick={(photo) => {
+                update('src', photo.urls.regular);
+                if (!element.props.alt) {
+                  update('alt', photo.alt_description || photo.description || 'Unsplash photo');
+                }
+              }}
+            />
+          )}
           <div>
             <label className="text-xs text-gray-500 block mb-1">Alt Text</label>
             <input

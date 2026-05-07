@@ -75,6 +75,8 @@ export interface StyleProperties {
 
   // Text gradient
   textGradient?: string;
+  // Clip image to text (uses background-clip: text)
+  textClipImage?: string;
   backgroundClip?: string;
   WebkitBackgroundClip?: string;
   WebkitTextFillColor?: string;

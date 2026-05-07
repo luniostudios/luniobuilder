@@ -441,6 +441,19 @@ const buildComputedStyleObject = (styles: StyleProperties): StyleProperties => {
     computed.backgroundImage = styles.backgroundGradient;
   }
 
+  if (styles.textClipImage) {
+    computed.backgroundImage = styles.textClipImage;
+    computed.backgroundClip = 'text';
+    computed.WebkitBackgroundClip = 'text';
+    computed.WebkitTextFillColor = 'transparent';
+    computed.backgroundSize = computed.backgroundSize || 'cover';
+    computed.backgroundPosition = computed.backgroundPosition || 'center';
+    computed.backgroundRepeat = computed.backgroundRepeat || 'no-repeat';
+    if (!computed.color) {
+      computed.color = 'transparent';
+    }
+  }
+
   if (styles.textGradient) {
     computed.backgroundImage = styles.textGradient;
     computed.backgroundClip = 'text';
