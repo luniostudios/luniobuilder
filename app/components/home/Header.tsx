@@ -21,7 +21,7 @@ const Header = async () => {
         <div className='bg-[#111114] w-full mt-0 flex flex-row justify-between items-center gap-2 py-4 z-10 px-[15%] max-lg:px-10'>
             <div className='flex'>
                 <Link href="/">
-                    <img src="/logobuilder.png" alt="LUNIO Builder Logo" className='h-10 w-full max-lg:h-6' />
+                    <img src="/logobuilder.png" alt="LUNIO Builder Logo" title='LUNIO Builder Logo' className='h-10 w-full max-lg:h-6' />
                 </Link>
             </div>
             <div className='flex items-center gap-6 justify-center max-md:hidden'>
