@@ -2,7 +2,9 @@
 
 import { FormEvent, useMemo, useState } from 'react'
 import SignInButton from '../../components/auth/googleSignIn'
+import GitHub from '../../components/auth/githubSignIn'
 import { signIn } from '../auth'
+
 
 interface SignInFormData {
   email: string
@@ -101,6 +103,7 @@ const page = () => {
 
           <div className="flex flex-col gap-4">
             <SignInButton />
+            <GitHub/>
           </div>
 
           <p className="mt-6 text-sm text-gray-400">
