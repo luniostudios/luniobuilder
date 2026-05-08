@@ -9,8 +9,8 @@ export const deepClone = <T>(obj: T): T => {
 };
 
 const emptyStyles = (): ResponsiveStyles => ({
-  widescreen: {},
   desktop: {},
+  widescreen: {},
   tablet: {},
   mobile: {},
 });
@@ -431,7 +431,8 @@ export const getEffectiveStyles = (
   if (breakpoint === 'desktop') return desktop;
   if (breakpoint === 'widescreen') return { ...desktop, ...widescreen };
   if (breakpoint === 'tablet') return { ...desktop, ...tablet };
-  return { ...desktop, ...widescreen, ...tablet, ...mobile };
+  if (breakpoint === 'mobile') return {...desktop, ...mobile}
+  return { ...desktop, ...tablet, ...mobile };
 };
 
 const buildComputedStyleObject = (styles: StyleProperties): StyleProperties => {

@@ -37,7 +37,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: getMetadataBase(),
   title: {
-    default: `${SITE_NAME} — Drag-and-drop no-code website builder`,
+    default: `${SITE_NAME} — Drag-and-Drop No-Code Website Builder`,
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
