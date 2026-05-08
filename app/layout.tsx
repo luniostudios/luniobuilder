@@ -88,7 +88,7 @@ export const metadata: Metadata = {
 };
 
 const organizationSchema = {
-  "@context": "https://schema.org",
+  "@context": "https://www.luniobuilder.com/",
   "@type": "Organization",
   name: SITE_NAME,
   url: siteUrl,
@@ -97,7 +97,7 @@ const organizationSchema = {
 };
 
 const webSiteSchema = {
-  "@context": "https://schema.org",
+  "@context": "https://www.luniobuilder.com/",
   "@type": "WebSite",
   name: SITE_NAME,
   url: siteUrl,
