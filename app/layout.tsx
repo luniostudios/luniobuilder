@@ -1,30 +1,108 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Roboto } from "next/font/google";
 import "./globals.css";
-import { Analytics } from "@vercel/analytics/next"
+import { Analytics } from "@vercel/analytics/next";
+import { JsonLd } from "./components/seo/JsonLd";
+import {
+  DEFAULT_KEYWORDS,
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  getMetadataBase,
+  getSiteUrl,
+} from "./lib/site-config";
 
 const geistSans = Roboto({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Roboto({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "LUNIO Builder - Drag-and-Drop No-Code Website Builder",
-  description: "LUNIO Builder is a no-code website builder that allows you to create stunning websites with ease. With its intuitive drag-and-drop interface, you can design and publish your website in minutes, without any coding knowledge.",
-  keywords: [
-    "LUNIO Builder",
-    "no-code website builder",
-    "drag-and-drop website builder",
-    "create websites without coding",
-    "easy website design",
-    "publish websites quickly",
-    "website builder for everyone",
+const siteUrl = getSiteUrl();
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#111114" },
   ],
+};
+
+export const metadata: Metadata = {
+  metadataBase: getMetadataBase(),
+  title: {
+    default: `${SITE_NAME} — Drag-and-drop no-code website builder`,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  keywords: DEFAULT_KEYWORDS,
+  authors: [{ name: "LUNIO Studios", url: siteUrl }],
+  creator: "LUNIO Studios",
+  publisher: "LUNIO Studios",
+  formatDetection: { email: false, address: false, telephone: false },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "/",
+    siteName: SITE_NAME,
+    title: `${SITE_NAME} — Drag-and-drop no-code website builder`,
+    description: SITE_DESCRIPTION,
+    images: [
+      {
+        url: "/socials/og.png",
+        width: 1200,
+        height: 630,
+        alt: SITE_NAME,
+        type: "image/png",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${SITE_NAME} — Drag-and-drop no-code website builder`,
+    description: SITE_DESCRIPTION,
+    images: {
+      url: "/socials/og.png",
+      alt: SITE_NAME,
+    },
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
+  },
+  ...(process.env.GOOGLE_SITE_VERIFICATION
+    ? {
+        verification: {
+          google: process.env.GOOGLE_SITE_VERIFICATION,
+        },
+      }
+    : {}),
+};
+
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: SITE_NAME,
+  url: siteUrl,
+  description: SITE_DESCRIPTION,
+  logo: `${siteUrl}/socials/og.png`,
+};
+
+const webSiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: SITE_NAME,
+  url: siteUrl,
+  description: SITE_DESCRIPTION,
+  publisher: { "@type": "Organization", name: "LUNIO Studios", url: siteUrl },
 };
 
 export default function RootLayout({
@@ -37,21 +115,9 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <meta property="og:image" content="/socials/og.png" />
-      <meta property="og:image:alt" content="LUNIO Builder" />
-      <meta property="og:title" content="LUNIO Builder - Drag-and-Drop No-Code Website Builder" />
-      <meta property="og:description" content="LUNIO Builder is a no-code website builder that allows you to create stunning websites with ease. With its intuitive drag-and-drop interface, you can design and publish your website in minutes, without any coding knowledge." />
-      <meta property="og:image:type" content="image/png" />
-      <meta property="og:image:width" content="1200" />
-      <meta property="og:image:height" content="630" />
-      <meta property="twitter:image" content="/socials/og.png" />
-      <meta property="twitter:image:alt" content="LUNIO Builder" />
-      <meta property="twitter:title" content="LUNIO Builder - Drag-and-Drop No-Code Website Builder" />
-      <meta property="twitter:description" content="LUNIO Builder is a no-code website builder that allows you to create stunning websites with ease. With its intuitive drag-and-drop interface, you can design and publish your website in minutes, without any coding knowledge." />
-      <meta property="twitter:image:type" content="image/png" />
-      <meta property="twitter:image:width" content="1200" />
-      <meta property="twitter:image:height" content="630" />
       <body className="min-h-full flex flex-col">
+        <JsonLd schema={organizationSchema} />
+        <JsonLd schema={webSiteSchema} />
         <Analytics />
         {children}
         {/*Start of Tawk.to Script*/}

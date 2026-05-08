@@ -431,7 +431,7 @@ export const getEffectiveStyles = (
   if (breakpoint === 'desktop') return desktop;
   if (breakpoint === 'widescreen') return { ...desktop, ...widescreen };
   if (breakpoint === 'tablet') return { ...desktop, ...tablet };
-  return { ...desktop, ...tablet, ...mobile };
+  return { ...desktop, ...widescreen, ...tablet, ...mobile };
 };
 
 const buildComputedStyleObject = (styles: StyleProperties): StyleProperties => {
