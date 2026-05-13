@@ -52,7 +52,7 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "/",
     siteName: SITE_NAME,
-    title: `${SITE_NAME} — Drag-and-drop no-code website builder`,
+    title: `${SITE_NAME} — Drag-and-Drop No-Code Website Builder`,
     description: SITE_DESCRIPTION,
     images: [
       {
@@ -66,7 +66,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE_NAME} — Drag-and-drop no-code website builder`,
+    title: `${SITE_NAME} — Drag-and-Drop No-Code Website Builder`,
     description: SITE_DESCRIPTION,
     images: {
       url: "/socials/og.png",
