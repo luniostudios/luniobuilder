@@ -3,13 +3,7 @@
 import { FormEvent, useMemo, useState } from 'react'
 import SignInButton from '../../components/auth/googleSignIn'
 import GitHub from '../../components/auth/githubSignIn'
-import { signIn } from '../auth'
-
-
-interface SignInFormData {
-  email: string
-  password: string
-}
+import Discord from '../../components/auth/discordSignIn'
 
 const page = () => {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
@@ -36,7 +30,7 @@ const page = () => {
     <div className="min-h-screen bg-[#070909] text-white flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-5xl grid lg:grid-cols-[1.2fr_1fr] gap-10">
         <section className="rounded-[32px] border border-white/10 bg-white/5 p-10 shadow-[0_40px_120px_rgba(0,0,0,0.25)] backdrop-blur-xl">
-          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-gray-300 w-fit mb-8">
+          <div className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-gray-300 w-fit mb-8">
             <button
               className={`rounded-full px-4 py-2 ${mode === 'login' ? 'bg-white text-black' : 'hover:bg-white/10'}`}
               onClick={() => setMode('login')}
@@ -58,7 +52,7 @@ const page = () => {
             <p className="text-gray-400">{header.subtitle}</p>
           </div>
 
-          <form className="space-y-6">
+          <form className="space-y-6 hidden">
             <div className="space-y-3">
               <label className="text-sm text-gray-300 block" htmlFor="email">
                 Email address
@@ -97,13 +91,14 @@ const page = () => {
 
           <div className="my-6 flex items-center gap-3 text-sm text-gray-500">
             <span className="h-px flex-1 bg-white/10" />
-            Or continue with
+            Continue with
             <span className="h-px flex-1 bg-white/10" />
           </div>
 
           <div className="flex flex-col gap-4">
             <SignInButton />
             <GitHub/>
+            <Discord/>
           </div>
 
           <p className="mt-6 text-sm text-gray-400">
@@ -114,13 +109,13 @@ const page = () => {
         <aside className="rounded-[32px] border border-white/10 bg-[#0b1016] p-10">
           <div className="space-y-6">
             <div className="rounded-3xl bg-white/5 p-6">
-              <p className="text-sm uppercase tracking-[0.24em] text-[#8ce6b6]">Why choose LUNIO Builder</p>
-              <h2 className="mt-3 text-2xl font-bold">Fast onboarding, polished experience</h2>
-              <p className="mt-3 text-gray-400">Sign in once and access your projects, site editor, and dashboard immediately. LUNIO keeps your website builder workflow focused and modern.</p>
+              <p className="text-sm uppercase tracking-[0.24em] text-[#8ce6b6]">Why choose LUNIO Builder?</p>
+              <h2 className="mt-3 text-2xl font-bold">Visual editor drag and drop experience.</h2>
+              <p className="mt-3 text-gray-400">Sign in once and access your projects, website editor, and dashboard immediately. LUNIO Builder keeps your website builder workflow focused and modern.</p>
             </div>
 
             <div className="grid gap-4">
-              {['No-code editor', 'Instant previews', 'Project management', 'Google single sign-on'].map((item) => (
+              {['No-code editor', 'Instant previews', 'Project management', 'drag & drop experience'].map((item) => (
                 <div key={item} className="rounded-3xl border border-white/10 bg-white/5 p-4 text-gray-300">
                   {item}
                 </div>

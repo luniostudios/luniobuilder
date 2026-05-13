@@ -2,6 +2,7 @@ import NextAuth, { NextAuthConfig } from "next-auth"
 import Google from "next-auth/providers/google"
 import Credentials from "next-auth/providers/credentials"
 import GitHub from "next-auth/providers/github";
+import Discord from "next-auth/providers/discord"
 import supabase from "./db"
 
 const authOptions = {
@@ -15,6 +16,7 @@ const authOptions = {
             clientId: process.env.AUTH_GITHUB_ID as string,
             clientSecret: process.env.AUTH_GITHUB_SECRET as string,
         }),
+        Discord,
         Credentials({
             name: "Credentials",
             credentials: {
