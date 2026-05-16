@@ -6,9 +6,6 @@ export function getSiteUrl(): string {
   const explicit = process.env.NEXT_PUBLIC_SITE_URL?.trim();
   if (explicit) return explicit.replace(/\/$/, "");
 
-  const vercel = process.env.VERCEL_URL?.trim();
-  if (vercel) return `https://${vercel.replace(/^https?:\/\//, "")}`;
-
   return "http://localhost:3000";
 }
 
@@ -22,7 +19,7 @@ export const SITE_DESCRIPTION =
   "LUNIO Builder is a no-code website builder that allows you to create stunning websites with ease. With its intuitive drag-and-drop interface, you can design and publish your website in minutes, without any coding knowledge.";
 
 export const SITE_TAGLINE =
-  "LUNIO Builder — drag-and-drop no-code website builder to design and publish fast.";
+  "LUNIO Builder — Drag-and-Drop No-Code Website Builder to Design and Publish Fast.";
 
 export const DEFAULT_KEYWORDS = [
   "LUNIO Builder",
