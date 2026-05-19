@@ -1,8 +1,7 @@
 import type { MetadataRoute } from "next";
-import { getSiteUrl } from "./lib/site-config";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = getSiteUrl();
+  const base = "https://www.luniobuilder.com";
   const now = new Date();
 
   const routes: MetadataRoute.Sitemap = [
