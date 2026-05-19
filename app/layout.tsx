@@ -36,6 +36,9 @@ export const metadata: Metadata = {
     "create websites without coding",
     "visual editor",
   ],
+  alternates: {
+    canonical: "https://www.luniobuilder.com",
+  },
 };
 
 export default function RootLayout({
