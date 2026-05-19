@@ -3,8 +3,6 @@ import { auth } from './auth/auth'
 import Header from './components/home/Header'
 import Footer from './components/home/Footer'
 
-
-
 const page = async () => {
   const session = await auth();
 
