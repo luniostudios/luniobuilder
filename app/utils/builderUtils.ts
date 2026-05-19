@@ -273,7 +273,6 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
           display: 'flex',
           flexDirection: 'column',
           gap: '16px',
-          width: '100%',
           maxWidth: '480px',
           paddingTop: '32px',
           paddingBottom: '32px',
@@ -395,7 +394,6 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
         name: 'Link',
         props: { text: 'Click here', href: '#' },
         styles: {
-          color: '#2563eb',
           fontSize: '16px',
           textDecoration: 'underline',
           cursor: 'pointer',

@@ -82,7 +82,7 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
   dropTargetId: null,
   dropPosition: null,
   breakpoint: 'desktop',
-  canvasScale: 0.65,
+  canvasScale: 0.80,
   leftPanelTab: 'components',
   rightPanelTab: 'style',
   history: [[defaultPage]],
