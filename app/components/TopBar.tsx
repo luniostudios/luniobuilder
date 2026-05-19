@@ -15,6 +15,7 @@ import {
 import { useBuilderStore } from '../stores/builderStore';
 import {
   renderElementToHtml,
+  generateCssForPage,
   generateReactProjectFiles,
 } from '../utils/builderUtils';
 import Link from 'next/link';
@@ -404,8 +405,9 @@ export const TopBar: React.FC = () => {
   const exportHTML = () => {
     const page = getCurrentPage();
     const bodyContent = page.elements.length
-      ? page.elements.map(renderElementToHtml).join('')
+      ? page.elements.map(element => renderElementToHtml(element)).join('')
       : '<div style="padding:32px;font-family:system-ui,sans-serif;color:#4b5563;">No content to export.</div>';
+    const pageStyles = generateCssForPage(page);
 
     const html = `<!DOCTYPE html>
 <html lang="en">
@@ -414,6 +416,7 @@ export const TopBar: React.FC = () => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${page.seo.title}</title>
   <meta name="description" content="${page.seo.description}">
+  <style>${pageStyles}</style>
 </head>
 <body style="width:100%;height:100%;margin:0;padding:0;font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
   ${bodyContent}
@@ -430,7 +433,7 @@ export const TopBar: React.FC = () => {
 
   const exportReact = async () => {
     const projectName = page.name || 'LUNIOProject';
-    const files = generateReactProjectFiles(pages, projectName);
+    const files = generateReactProjectFiles(pages, projectName, breakpoint);
     const content = createZipBlob(files);
     const url = URL.createObjectURL(content);
     const link = document.createElement('a');
@@ -444,7 +447,7 @@ export const TopBar: React.FC = () => {
 
   const openCodeModal = () => {
     const projectName = page.name || 'LUNIOProject';
-    const files = generateReactProjectFiles(pages, projectName);
+    const files = generateReactProjectFiles(pages, projectName, breakpoint);
     setCodeFiles(files);
     setSelectedCodePath(files[0]?.path || '');
     setIsCodeModalOpen(true);

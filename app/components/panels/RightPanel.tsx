@@ -317,10 +317,45 @@ interface StyleEditorProps {
   breakpoint: string;
 }
 
+const parseBoxShadow = (shadow?: string) => {
+  const normalized = String(shadow || '').trim();
+  if (!normalized || normalized === 'none') {
+    return { inset: '', x: '', y: '', blur: '', spread: '', color: '' };
+  }
+
+  const inset = normalized.includes('inset') ? 'inset' : '';
+  const withoutInset = normalized.replace(/\binset\b/, '').trim();
+  const colorMatch = withoutInset.match(/(rgba?\([^)]*\)|hsla?\([^)]*\)|#[0-9a-fA-F]{3,8}|\b[a-zA-Z]+\b)$/);
+  const color = colorMatch ? colorMatch[1] : '';
+  const numericPart = withoutInset.replace(colorMatch?.[0] || '', '').trim();
+  const values = numericPart.split(/\s+/).filter(Boolean);
+
+  return {
+    inset,
+    x: values[0] || '',
+    y: values[1] || '',
+    blur: values[2] || '',
+    spread: values[3] || '',
+    color,
+  };
+};
+
+const buildBoxShadow = ({ inset, x, y, blur, spread, color }: Record<string, string>) => {
+  if (!x && !y && !blur && !spread && !color) return '';
+  const values = [] as string[];
+  if (inset) values.push('inset');
+  values.push(x || '0px', y || '0px');
+  if (blur) values.push(blur);
+  if (spread) values.push(spread);
+  if (color) values.push(color);
+  return values.join(' ').trim();
+};
+
 const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
   const { updateElementStyles } = useBuilderStore();
   const styles = getEffectiveStyles(element, breakpoint as 'widescreen' | 'desktop' | 'tablet' | 'mobile');
   const isTextElement = ['heading', 'paragraph', 'button', 'link', 'listItem'].includes(element.type);
+  const isImageElement = element.type === 'image';
   const [backgroundImageTab, setBackgroundImageTab] = useState<'value' | 'unsplash'>('value');
   const [textClipImageTab, setTextClipImageTab] = useState<'value' | 'unsplash'>('value');
 
@@ -474,6 +509,14 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
           onChange={v => update('overflow', v)}
           options={['visible', 'hidden', 'scroll', 'auto']}
         />
+        {isImageElement && (
+          <InputRow
+            label="Object fit"
+            value={styles.objectFit || ''}
+            onChange={v => update('objectFit', v)}
+            options={['fill', 'contain', 'cover', 'none', 'scale-down']}
+          />
+        )}
       </Section>
 
       {/* Spacing */}
@@ -660,7 +703,55 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
 
       {/* Effects */}
       <Section title="Effects" defaultOpen={false}>
-        <InputRow label="Shadow" value={styles.boxShadow || ''} onChange={v => update('boxShadow', v)} placeholder="0 4px 6px ..." />
+        <div className="mb-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">Shadow</span>
+            <div className="flex flex-wrap gap-1">
+              {[
+                { label: 'None', value: 'none' },
+                { label: 'Soft', value: '0px 4px 12px rgba(0,0,0,0.12)' },
+                { label: 'Medium', value: '0px 8px 20px rgba(0,0,0,0.16)' },
+                { label: 'Strong', value: '0px 12px 28px rgba(0,0,0,0.2)' },
+              ].map(preset => (
+                <button
+                  key={preset.label}
+                  type="button"
+                  onClick={() => update('boxShadow', preset.value)}
+                  className="text-[11px] px-2 py-1 rounded border border-gray-700 bg-gray-900 text-gray-300 hover:bg-gray-800"
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 mb-2">
+            {['X offset', 'Y offset', 'Blur', 'Spread'].map((label, index) => {
+              const shadowValues = parseBoxShadow(styles.boxShadow);
+              const keys = ['x', 'y', 'blur', 'spread'] as const;
+              const key = keys[index];
+              return (
+                <div key={label} className="flex flex-col gap-1">
+                  <label className="text-[11px] text-gray-500">{label}</label>
+                  <input
+                    type="text"
+                    value={shadowValues[key] || ''}
+                    onChange={e => update('boxShadow', buildBoxShadow({ ...shadowValues, [key]: e.target.value }))}
+                    placeholder={index < 2 ? '0px' : '4px'}
+                    className="w-full bg-gray-800 text-gray-200 text-xs rounded px-2 py-1 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+              );
+            })}
+          </div>
+          <ColorInput
+            label="Color"
+            value={parseBoxShadow(styles.boxShadow).color || 'rgba(0,0,0,0.2)'}
+            onChange={(value) => {
+              const shadowValues = parseBoxShadow(styles.boxShadow);
+              update('boxShadow', buildBoxShadow({ ...shadowValues, color: value }));
+            }}
+          />
+        </div>
         <InputRow label="Opacity" value={styles.opacity || ''} onChange={v => update('opacity', v)} placeholder="1" />
         <InputRow label="z-index" value={styles.zIndex || ''} onChange={v => update('zIndex', v)} placeholder="auto" />
         <InputRow label="Transition" value={styles.transition || ''} onChange={v => update('transition', v)} placeholder="all 0.2s ease" />

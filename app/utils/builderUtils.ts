@@ -484,6 +484,67 @@ export const styleObjectToCssString = (styles: StyleProperties): string => {
     .join('; ');
 };
 
+const getElementClassName = (element: BuilderElement): string => `lunio-${element.id}`;
+
+const breakpointQueries: Record<Breakpoint, string | null> = {
+  widescreen: '(min-width: 1200px)',
+  desktop: null,
+  tablet: '(max-width: 1023px)',
+  mobile: '(max-width: 767px)',
+};
+
+const buildResponsiveCssForElement = (element: BuilderElement): string => {
+  const selector = `.${getElementClassName(element)}`;
+  const baseStyle = styleObjectToCssString(getElementExportStyle(element, 'desktop'));
+  const rules: string[] = [];
+
+  if (baseStyle) {
+    rules.push(`${selector}{${baseStyle}}`);
+  }
+
+  (['widescreen', 'tablet', 'mobile'] as Breakpoint[]).forEach(breakpoint => {
+    const style = styleObjectToCssString(getElementExportStyle(element, breakpoint));
+    if (!style || style === baseStyle) return;
+    const mediaQuery = breakpointQueries[breakpoint];
+    if (!mediaQuery) return;
+    rules.push(`@media ${mediaQuery}{${selector}{${style}}}`);
+  });
+
+  element.children.forEach(child => {
+    const childRules = buildResponsiveCssForElement(child);
+    if (childRules) rules.push(childRules);
+  });
+
+  return rules.join('\n');
+};
+
+export const generateCssForPage = (page: Page): string => {
+  return page.elements.map(buildResponsiveCssForElement).filter(Boolean).join('\n');
+};
+
+const getElementExportStyle = (element: BuilderElement, breakpoint: Breakpoint): StyleProperties => {
+  const computed = getEffectiveStyles(element, breakpoint);
+  const exportStyle = { ...computed } as StyleProperties & Record<string, string>;
+  exportStyle.boxSizing = exportStyle.boxSizing || 'border-box';
+
+  if (element.type === 'image' || element.type === 'video') {
+    exportStyle.maxWidth = exportStyle.maxWidth || '100%';
+    exportStyle.height = exportStyle.height || 'auto';
+  }
+
+  if (element.type === 'iframe') {
+    exportStyle.width = exportStyle.width || '100%';
+    exportStyle.height = exportStyle.height || '100%';
+  }
+
+  if (['heading', 'paragraph', 'button', 'link', 'listItem'].includes(element.type)) {
+    exportStyle.overflowWrap = exportStyle.overflowWrap || 'break-word';
+    exportStyle.wordBreak = exportStyle.wordBreak || 'break-word';
+  }
+
+  return exportStyle;
+};
+
 const escapeHtml = (text?: string): string => {
   return String(text || '')
     .replace(/&/g, '&amp;')
@@ -509,11 +570,10 @@ const styleObjectToJsxString = (styles: StyleProperties): string => {
   return entries.join(', ');
 };
 
-const renderElementToReact = (element: BuilderElement, indent = 2): string => {
+const renderElementToReact = (element: BuilderElement, indent = 2, breakpoint: Breakpoint = 'desktop'): string => {
   const indentation = ' '.repeat(indent);
-  const style = element.styles.desktop || {};
-  const styleString = styleObjectToJsxString(style);
-  const attrs = styleString ? ` style={{${styleString}}}` : '';
+  const className = getElementClassName(element);
+  const attrs = ` className="${className}"`;
   const text = escapeJsxString(element.props.text as string || '');
   const placeholder = escapeJsxString(element.props.placeholder as string || '');
   const href = escapeJsxString(element.props.href as string || '#');
@@ -523,7 +583,7 @@ const renderElementToReact = (element: BuilderElement, indent = 2): string => {
   const inputType = escapeJsxString(element.props.type as string || 'text');
 
   const renderChildren = (): string => {
-    const childStrings = element.children.map(child => renderElementToReact(child, indent + 2));
+    const childStrings = element.children.map(child => renderElementToReact(child, indent + 2, breakpoint));
     return childStrings.length ? `\n${childStrings.join('\n')}\n${indentation}` : '';
   };
 
@@ -578,13 +638,13 @@ const renderElementToReact = (element: BuilderElement, indent = 2): string => {
   }
 };
 
-export const renderElementToReactString = (element: BuilderElement): string => {
-  return renderElementToReact(element, 2);
+export const renderElementToReactString = (element: BuilderElement, breakpoint: Breakpoint = 'desktop'): string => {
+  return renderElementToReact(element, 2, breakpoint);
 };
 
-export const renderElementToHtml = (element: BuilderElement): string => {
-  const style = styleObjectToCssString(element.styles.desktop || {});
-  const attrs = style ? ` style="${style}"` : '';
+export const renderElementToHtml = (element: BuilderElement, breakpoint: Breakpoint = 'desktop'): string => {
+  const className = getElementClassName(element);
+  const attrs = ` class="${className}"`;
   const text = escapeHtml(element.props.text as string || '');
   const placeholder = escapeHtml(element.props.placeholder as string || '');
   const href = escapeHtml(element.props.href as string || '#');
@@ -594,7 +654,7 @@ export const renderElementToHtml = (element: BuilderElement): string => {
   const inputType = escapeHtml(element.props.type as string || 'text');
 
   const renderChildren = (): string => {
-    return element.children.map(child => renderElementToHtml(child)).join('');
+    return element.children.map(child => renderElementToHtml(child, breakpoint)).join('');
   };
 
   switch (element.type) {
@@ -706,7 +766,8 @@ export const renderElementToReactWithComponents = (
   element: BuilderElement,
   componentMap: Map<string, string>,
   indent = 2,
-  skipComponentTag = false
+  skipComponentTag = false,
+  breakpoint: Breakpoint = 'desktop'
 ): string => {
   const indentation = ' '.repeat(indent);
 
@@ -714,9 +775,8 @@ export const renderElementToReactWithComponents = (
     return `${indentation}<${componentMap.get(element.id)} />`;
   }
 
-  const style = element.styles.desktop || {};
-  const styleString = styleObjectToJsxString(style);
-  const attrs = styleString ? ` style={{${styleString}}}` : '';
+  const className = getElementClassName(element);
+  const attrs = ` className="${className}"`;
   const text = escapeJsxString(element.props.text as string || '');
   const placeholder = escapeJsxString(element.props.placeholder as string || '');
   const href = escapeJsxString(element.props.href as string || '#');
@@ -726,7 +786,7 @@ export const renderElementToReactWithComponents = (
   const inputType = escapeJsxString(element.props.type as string || 'text');
 
   const renderChildren = (): string => {
-    const childStrings = element.children.map(child => renderElementToReactWithComponents(child, componentMap, indent + 2));
+    const childStrings = element.children.map(child => renderElementToReactWithComponents(child, componentMap, indent + 2, false, breakpoint));
     return childStrings.length ? `\n${childStrings.join('\n')}\n${indentation}` : '';
   };
 
@@ -832,7 +892,7 @@ export const getPageFileName = (page: Page, usedFiles: Set<string>) => {
   return nextName;
 };
 
-export const generateReactProjectFiles = (pages: Page[], projectName: string) => {
+export const generateReactProjectFiles = (pages: Page[], projectName: string, breakpoint: Breakpoint = 'desktop') => {
   const toPascalCaseName = (value: string) => {
     const words = value
       .replace(/[^a-zA-Z0-9]+/g, ' ')
@@ -906,10 +966,12 @@ export const generateReactProjectFiles = (pages: Page[], projectName: string) =>
   const appImports = pageMetadata.map(meta => `import ${meta.componentName} from './pages/${meta.fileName}';`).join('\n');
   const pageEntries = pageMetadata.map(meta => `  { title: '${meta.page.name.replace(/'/g, "\\'")}', Component: ${meta.componentName} }`).join(',\n');
 
-  const appSource = `import React, { useState } from 'react';\n${appImports}\nimport './App.css';\n\nconst pages = [\n${pageEntries}\n];\n\nconst App = () => {\n  const [currentIndex, setCurrentIndex] = useState(0);\n  const ActivePage = pages[currentIndex].Component;\n\n  return (\n    <div className="app-shell">\n      ${pageMetadata.length > 1 ? `\n      <div className="page-selector">\n${pageMetadata.map((meta, index) => `        <button type="button" className={currentIndex === ${index} ? 'active' : ''} onClick={() => setCurrentIndex(${index})}>${meta.page.name.replace(/'/g, "\\'")}</button>`).join('\n')}\n      </div>\n      ` : ''}\n      <main className="page-view">\n        <ActivePage />\n      </main>\n    </div>\n  );\n};\n\nexport default App;`;
+  const appSource = `import React, { useState } from 'react';\n${appImports}\nimport './App.css';
+import './builder.css';\n\nconst pages = [\n${pageEntries}\n];\n\nconst App = () => {\n  const [currentIndex, setCurrentIndex] = useState(0);\n  const ActivePage = pages[currentIndex].Component;\n\n  return (\n    <div className="app-shell">\n      ${pageMetadata.length > 1 ? `\n      <div className="page-selector">\n${pageMetadata.map((meta, index) => `        <button type="button" className={currentIndex === ${index} ? 'active' : ''} onClick={() => setCurrentIndex(${index})}>${meta.page.name.replace(/'/g, "\\'")}</button>`).join('\n')}\n      </div>\n      ` : ''}\n      <main className="page-view">\n        <ActivePage />\n      </main>\n    </div>\n  );\n};\n\nexport default App;`;
 
   files.push({ path: 'src/App.jsx', content: appSource });
   files.push({ path: 'src/App.css', content: `body { margin: 0; font-family: system-ui, sans-serif; background: #ffffff; color: #111827; }\n.app-shell { min-height: 100vh; background: #ffffff; }\n.page-selector { display: flex; flex-wrap: wrap; gap: 8px; padding: 16px; background: transparent; }\n.page-selector button { border: none; padding: 10px 14px; background: #e5e7eb; color: #111827; border-radius: 9999px; cursor: pointer; }\n.page-selector button.active { background: #2563eb; color: #ffffff; }\n.page-view { padding: 0; }` });
+  files.push({ path: 'src/builder.css', content: `${pages.map(page => generateCssForPage(page)).filter(Boolean).join('\n\n')}` });
   files.push({ path: 'src/index.css', content: `* { box-sizing: border-box; }\nbody { margin: 0; background: #f8fafc; color: #111827; }\nimg { max-width: 100%; display: block; }` });
   files.push({ path: 'src/reportWebVitals.js', content: `const reportWebVitals = onPerfEntry => {\n  if (onPerfEntry && onPerfEntry instanceof Function) {\n    import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {\n      getCLS(onPerfEntry);\n      getFID(onPerfEntry);\n      getFCP(onPerfEntry);\n      getLCP(onPerfEntry);\n      getTTFB(onPerfEntry);\n    });\n  }\n};\nexport default reportWebVitals;` });
   files.push({ path: 'src/setupTests.js', content: `// jest-dom adds custom jest matchers for asserting on DOM nodes.\n// allows you to do things like:\n// expect(element).toHaveTextContent(/react/i)\n// learn more: https://github.com/testing-library/jest-dom\nimport '@testing-library/jest-dom';` });
@@ -919,7 +981,7 @@ export const generateReactProjectFiles = (pages: Page[], projectName: string) =>
     const componentName = componentNameMap.get(component.id)!;
     const componentDependencies = Array.from(collectReactDependenciesForComponent(component, componentNameMap));
     const componentImports = componentDependencies.map(dep => `import ${dep} from './${dep}';`).join('\n');
-    const componentBody = renderElementToReactWithComponents(component, componentNameMap, 2, true);
+    const componentBody = renderElementToReactWithComponents(component, componentNameMap, 2, true, breakpoint);
     const componentSource = `${componentImports ? `${componentImports}\n\n` : ''}import React from 'react';\n\nconst ${componentName} = () => (\n${componentBody}\n);\n\nexport default ${componentName};`;
     const componentPath = `src/components/${componentName}.jsx`;
     if (!componentFolderFiles.has(componentPath)) {
@@ -932,7 +994,7 @@ export const generateReactProjectFiles = (pages: Page[], projectName: string) =>
     const pageDependencies = Array.from(collectReactDependenciesForPage(meta.page, componentNameMap));
     const pageImports = pageDependencies.map(dep => `import ${dep} from '../components/${dep}';`).join('\n');
     const pageBody = meta.page.elements.length
-      ? meta.page.elements.map(element => renderElementToReactWithComponents(element, componentNameMap, 2)).join('\n')
+      ? meta.page.elements.map(element => renderElementToReactWithComponents(element, componentNameMap, 2, false, breakpoint)).join('\n')
       : `  <div style={{ padding: 32, fontFamily: 'system-ui, sans-serif', color: '#4b5563' }}>No content to export.</div>`;
     const pageSource = `${pageImports ? `${pageImports}\n\n` : ''}import React from 'react';\n\nconst ${meta.componentName} = () => (\n  <>\n${pageBody}\n  </>\n);\n\nexport default ${meta.componentName};`;
     files.push({ path: `src/pages/${meta.fileName}.jsx`, content: pageSource });

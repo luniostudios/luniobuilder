@@ -72,12 +72,15 @@ export interface StyleProperties {
   backgroundSize?: string;
   backgroundPosition?: string;
   backgroundRepeat?: string;
+  objectFit?: string;
 
   // Text gradient
   textGradient?: string;
   // Clip image to text (uses background-clip: text)
   textClipImage?: string;
   backgroundClip?: string;
+  borderGradient?: string;
+  borderImage?: string;
   WebkitBackgroundClip?: string;
   WebkitTextFillColor?: string;
 
@@ -105,6 +108,9 @@ export interface StyleProperties {
   resize?: string;
   outline?: string;
   listStyle?: string;
+  boxSizing?: string;
+  overflowWrap?: string;
+  wordBreak?: string;
 
   // Cursor
   cursor?: string;
