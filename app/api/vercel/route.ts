@@ -25,6 +25,35 @@ export async function POST(request: Request) {
   }
 
   const files = generateReactProjectFiles(pages, projectName);
+  // Sanitize incoming extraCss to remove Next.js-specific font URLs that won't exist in CRA builds
+  const extraCss = body?.extraCss;
+  const sanitize = (css: any) => {
+    if (!css || typeof css !== 'string') return '';
+    // remove any @font-face blocks entirely
+    css = css.replace(/@font-face\s*[\s\S]*?}/gi, '');
+    // remove url(...) references to font files that would be resolved by webpack (woff/woff2/ttf/otf)
+    css = css.replace(/url\((['"]?)([^)'"]+\.(?:woff2?|ttf|otf))(?:#[^'"\)]*)?\1\)/gi, '');
+    return css;
+  };
+  const extraCssSanitized = sanitize(extraCss);
+  if (extraCssSanitized) {
+    let appended = false;
+    for (const f of files) {
+      if (f.path === 'src/builder.css') {
+        f.content = `${extraCssSanitized}\n\n${f.content}`;
+        appended = true;
+        break;
+      }
+    }
+    if (!appended) {
+      const idx = files.findIndex(f => f.path === 'src/index.css');
+      if (idx !== -1) {
+        files[idx].content = `${extraCssSanitized}\n\n${files[idx].content}`;
+      } else {
+        files.push({ path: 'src/builder.css', content: extraCssSanitized });
+      }
+    }
+  }
   const deploymentName = projectName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `luniobuilder-${Date.now()}`;
 
   const deploymentBody: Record<string, unknown> = {

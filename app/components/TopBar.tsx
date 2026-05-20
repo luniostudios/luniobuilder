@@ -66,6 +66,15 @@ const concatUint8Arrays = (arrays: Uint8Array[]) => {
   return result;
 };
 
+const sanitizeCss = (css: string) => {
+  if (!css) return css;
+  // Remove any @font-face blocks (fonts are handled separately) to avoid bundler resolving local font files
+  css = css.replace(/@font-face\s*{[\s\S]*?}/gi, '');
+  // Remove url(...) references to local/next-generated font files (woff/woff2/ttf/otf)
+  css = css.replace(/url\((['"]?)([^)'"]+\.(?:woff2?|ttf|otf))(?:#[^'"\)]*)?\1\)/gi, '');
+  return css;
+};
+
 const createZipBlob = (files: Array<{ path: string; content: string }>) => {
   const chunks: Uint8Array[] = [];
   const centralDirectory: Uint8Array[] = [];
@@ -284,6 +293,29 @@ export const TopBar: React.FC = () => {
     setIsPublishing(true);
 
     try {
+      // Gather page/global CSS to include in the exported React project so the deployed site matches preview
+      const collectedCssParts: string[] = [];
+      Array.from(document.querySelectorAll('style')).forEach(s => {
+        if (s.innerHTML && s.innerHTML.trim()) collectedCssParts.push(s.innerHTML);
+      });
+      const linkNodes = Array.from(document.querySelectorAll('link[rel="stylesheet"], link[rel="preload"][as="style"]')) as HTMLLinkElement[];
+      for (const link of linkNodes) {
+        const href = link.href;
+        if (!href) continue;
+        try {
+          const resp = await fetch(href, { credentials: 'include' });
+          if (resp.ok) {
+            const text = await resp.text();
+            collectedCssParts.push(`/* ${href} */\n${text}`);
+            continue;
+          }
+        } catch (e) {
+          // ignore fetch errors (CORS, network) and fall back to leaving links as-is in public/index.html
+        }
+      }
+
+      const extraCss = sanitizeCss(collectedCssParts.join('\n\n'));
+
       const response = await fetch('/api/vercel', {
         method: 'POST',
         headers: {
@@ -294,6 +326,7 @@ export const TopBar: React.FC = () => {
           teamId,
           projectName,
           pages,
+          extraCss,
         }),
       });
 
@@ -402,12 +435,40 @@ export const TopBar: React.FC = () => {
   const zoomIn = () => setCanvasScale(Math.min(canvasScale + 0.1, 2));
   const zoomOut = () => setCanvasScale(Math.max(canvasScale - 0.1, 0.25));
 
-  const exportHTML = () => {
+  const exportHTML = async () => {
     const page = getCurrentPage();
     const bodyContent = page.elements.length
       ? page.elements.map(element => renderElementToHtml(element)).join('')
       : '<div style="padding:32px;font-family:system-ui,sans-serif;color:#4b5563;">No content to export.</div>';
     const pageStyles = generateCssForPage(page);
+
+    // Collect in-document <style> contents and attempt to fetch linked stylesheets.
+    const collectedCssParts: string[] = [];
+    const headLinkTags: string[] = [];
+
+    Array.from(document.querySelectorAll('style')).forEach(s => {
+      if (s.innerHTML && s.innerHTML.trim()) collectedCssParts.push(s.innerHTML);
+    });
+
+    const linkNodes = Array.from(document.querySelectorAll('link[rel="stylesheet"], link[rel="preload"][as="style"]')) as HTMLLinkElement[];
+    for (const link of linkNodes) {
+      const href = link.href;
+      if (!href) continue;
+      try {
+        const resp = await fetch(href, { credentials: 'include' });
+        if (resp.ok) {
+          const text = await resp.text();
+          collectedCssParts.push(`/* ${href} */\n${text}`);
+          continue;
+        }
+      } catch (e) {
+        // fallthrough: couldn't fetch (CORS or network). We'll fall back to preserving the link tag.
+      }
+      // Keep the original link tag in the exported head when we couldn't inline it
+      headLinkTags.push(link.outerHTML);
+    }
+
+    const combinedStyles = sanitizeCss(`${collectedCssParts.join('\n\n')}\n\n/* Page-specific styles */\n${pageStyles}`);
 
     const html = `<!DOCTYPE html>
 <html lang="en">
@@ -416,12 +477,14 @@ export const TopBar: React.FC = () => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${page.seo.title}</title>
   <meta name="description" content="${page.seo.description}">
-  <style>${pageStyles}</style>
+  ${headLinkTags.join('\n  ')}
+  <style>${combinedStyles}</style>
 </head>
 <body style="width:100%;height:100%;margin:0;padding:0;font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
   ${bodyContent}
 </body>
 </html>`;
+
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -434,6 +497,43 @@ export const TopBar: React.FC = () => {
   const exportReact = async () => {
     const projectName = page.name || 'LUNIOProject';
     const files = generateReactProjectFiles(pages, projectName, breakpoint);
+
+    // Gather styles from the current preview to include in the generated project
+    const collectedCssParts: string[] = [];
+    Array.from(document.querySelectorAll('style')).forEach(s => {
+      if (s.innerHTML && s.innerHTML.trim()) collectedCssParts.push(s.innerHTML);
+    });
+    const linkNodes = Array.from(document.querySelectorAll('link[rel="stylesheet"], link[rel="preload"][as="style"]')) as HTMLLinkElement[];
+    for (const link of linkNodes) {
+      const href = link.href;
+      if (!href) continue;
+      try {
+        const resp = await fetch(href, { credentials: 'include' });
+        if (resp.ok) {
+          const text = await resp.text();
+          collectedCssParts.push(`/* ${href} */\n${text}`);
+          continue;
+        }
+      } catch (e) {
+        // ignore fetch errors and continue
+      }
+    }
+
+    const combinedCss = sanitizeCss(collectedCssParts.join('\n\n'));
+
+    // Inject combinedCss into the generated files (append to src/builder.css if present, otherwise to src/index.css)
+    const builderIndex = files.findIndex(f => f.path === 'src/builder.css');
+    if (builderIndex !== -1) {
+      files[builderIndex].content = `${combinedCss}\n\n${files[builderIndex].content}`;
+    } else {
+      const indexCss = files.findIndex(f => f.path === 'src/index.css');
+      if (indexCss !== -1) {
+        files[indexCss].content = `${combinedCss}\n\n${files[indexCss].content}`;
+      } else {
+        files.push({ path: 'src/builder.css', content: combinedCss });
+      }
+    }
+
     const content = createZipBlob(files);
     const url = URL.createObjectURL(content);
     const link = document.createElement('a');
