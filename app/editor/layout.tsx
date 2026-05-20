@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Editor",
+  title: "LUNIO Builder - Editor",
   robots: { index: false, follow: true, googleBot: { index: false, follow: true } },
 };
 

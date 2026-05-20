@@ -492,6 +492,37 @@ const breakpointQueries: Record<Breakpoint, string | null> = {
   mobile: '(max-width: 767px)',
 };
 
+const buildPseudoClassCssForElement = (element: BuilderElement): string => {
+  const selector = `.${getElementClassName(element)}`;
+  const pseudoClassStyles = element.pseudoClassStyles;
+  const rules: string[] = [];
+
+  if (!pseudoClassStyles) return '';
+
+  // Build CSS for hover, active, and focus pseudo-classes
+  (['hover', 'active', 'focus'] as const).forEach(pseudoClass => {
+    const pseudoStyles = pseudoClassStyles[pseudoClass];
+    if (!pseudoStyles) return;
+
+    // Desktop (no media query)
+    const desktopStyle = styleObjectToCssString(pseudoStyles.desktop);
+    if (desktopStyle) {
+      rules.push(`${selector}:${pseudoClass}{${desktopStyle}}`);
+    }
+
+    // Responsive breakpoints
+    (['widescreen', 'tablet', 'mobile'] as Breakpoint[]).forEach(breakpoint => {
+      const style = styleObjectToCssString(pseudoStyles[breakpoint]);
+      if (!style || style === desktopStyle) return;
+      const mediaQuery = breakpointQueries[breakpoint];
+      if (!mediaQuery) return;
+      rules.push(`@media ${mediaQuery}{${selector}:${pseudoClass}{${style}}}`);
+    });
+  });
+
+  return rules.join('\n');
+};
+
 const buildResponsiveCssForElement = (element: BuilderElement): string => {
   const selector = `.${getElementClassName(element)}`;
   const baseStyle = styleObjectToCssString(getElementExportStyle(element, 'desktop'));
@@ -508,6 +539,12 @@ const buildResponsiveCssForElement = (element: BuilderElement): string => {
     if (!mediaQuery) return;
     rules.push(`@media ${mediaQuery}{${selector}{${style}}}`);
   });
+
+  // Add pseudo-class styles
+  const pseudoClassRules = buildPseudoClassCssForElement(element);
+  if (pseudoClassRules) {
+    rules.push(pseudoClassRules);
+  }
 
   element.children.forEach(child => {
     const childRules = buildResponsiveCssForElement(child);

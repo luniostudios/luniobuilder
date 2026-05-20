@@ -352,15 +352,29 @@ const buildBoxShadow = ({ inset, x, y, blur, spread, color }: Record<string, str
 };
 
 const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
-  const { updateElementStyles } = useBuilderStore();
-  const styles = getEffectiveStyles(element, breakpoint as 'widescreen' | 'desktop' | 'tablet' | 'mobile');
+  const { updateElementStyles, updateElementPseudoClassStyles, pseudoClassState, setPseudoClassState } = useBuilderStore() as any;
+  
+  // Get styles based on current pseudo-class state
+  let styles: any;
+  if (pseudoClassState === 'base') {
+    styles = getEffectiveStyles(element, breakpoint as 'widescreen' | 'desktop' | 'tablet' | 'mobile');
+  } else {
+    // Get pseudo-class specific styles
+    const pseudoStyles = element.pseudoClassStyles?.[pseudoClassState as 'hover' | 'active' | 'focus'] as any;
+    styles = pseudoStyles?.[breakpoint as 'widescreen' | 'desktop' | 'tablet' | 'mobile'] || {};
+  }
+
   const isTextElement = ['heading', 'paragraph', 'button', 'link', 'listItem'].includes(element.type);
   const isImageElement = element.type === 'image';
   const [backgroundImageTab, setBackgroundImageTab] = useState<'value' | 'unsplash'>('value');
   const [textClipImageTab, setTextClipImageTab] = useState<'value' | 'unsplash'>('value');
 
   const update = (key: keyof StyleProperties, value: string) => {
-    updateElementStyles(element.id, { [key]: value });
+    if (pseudoClassState === 'base') {
+      updateElementStyles(element.id, { [key]: value });
+    } else {
+      updateElementPseudoClassStyles(element.id, pseudoClassState as 'hover' | 'active' | 'focus', breakpoint as 'widescreen' | 'desktop' | 'tablet' | 'mobile', { [key]: value });
+    }
   };
 
   const extractUrlFromCssBackgroundImage = (val: string | undefined) => {
@@ -399,6 +413,22 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
 
   return (
     <div className='flex flex-col'>
+      {/* Pseudo-class State Selector */}
+      <div className="px-4 py-3 border-b border-gray-800 flex gap-1">
+        {(['base', 'hover', 'active', 'focus'] as const).map(state => (
+          <button
+            key={state}
+            onClick={() => setPseudoClassState(state)}
+            className={`flex-1 text-xs py-1.5 px-2 rounded-md font-medium transition-colors ${
+              pseudoClassState === state
+                ? 'bg-blue-600/40 text-blue-200 border border-blue-400/50'
+                : 'bg-gray-900 text-gray-400 border border-gray-700 hover:text-gray-200'
+            }`}
+          >
+            {state === 'base' ? 'Default' : state.charAt(0).toUpperCase() + state.slice(1)}
+          </button>
+        ))}
+      </div>
       {/* Layout */}
       <Section title="Layout">
         <InputRow

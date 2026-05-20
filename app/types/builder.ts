@@ -145,12 +145,19 @@ export interface ResponsiveStyles {
   mobile: StyleProperties;
 }
 
+export interface PseudoClassStyles {
+  hover?: ResponsiveStyles;
+  active?: ResponsiveStyles;
+  focus?: ResponsiveStyles;
+}
+
 export interface BuilderElement {
   id: string;
   type: ElementType;
   name: string;
   props: ElementProps;
   styles: ResponsiveStyles;
+  pseudoClassStyles?: PseudoClassStyles;
   children: BuilderElement[];
   parentId: string | null;
   locked: boolean;
@@ -186,6 +193,7 @@ export interface BuilderState {
   canvasScale: number;
   leftPanelTab: 'components' | 'layers' | 'pages';
   rightPanelTab: 'style' | 'content' | 'css' | 'seo';
+  pseudoClassState: 'base' | 'hover' | 'active' | 'focus';
   history: Page[][];
   historyIndex: number;
   isPreviewMode: boolean;

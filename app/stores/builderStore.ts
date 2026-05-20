@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { BuilderState, BuilderElement, Page, ElementType, StyleProperties, Breakpoint, ElementProps } from '../types/builder';
+import { BuilderState, BuilderElement, Page, ElementType, StyleProperties, Breakpoint, ElementProps, PseudoClassStyles } from '../types/builder';
 import { generateId, createDefaultElement, deepClone } from '../utils/builderUtils';
 import { createStarterPage } from '../utils/starterTemplate';
 import { htmlToBuilderElements } from '../utils/htmlToBuilder';
@@ -27,6 +27,7 @@ interface BuilderStore extends BuilderState {
   duplicateElement: (id: string) => void;
   updateElementProps: (id: string, props: Partial<ElementProps>) => void;
   updateElementStyles: (id: string, styles: Partial<StyleProperties>) => void;
+  updateElementPseudoClassStyles: (id: string, pseudoClass: keyof PseudoClassStyles, breakpoint: Breakpoint, styles: Partial<StyleProperties>) => void;
   updateElementName: (id: string, name: string) => void;
   toggleElementLock: (id: string) => void;
   toggleElementVisibility: (id: string) => void;
@@ -45,6 +46,7 @@ interface BuilderStore extends BuilderState {
   setLeftPanelTab: (tab: BuilderState['leftPanelTab']) => void;
   setRightPanelTab: (tab: BuilderState['rightPanelTab']) => void;
   setPreviewMode: (isPreview: boolean) => void;
+  setPseudoClassState: (state: 'base' | 'hover' | 'active' | 'focus') => void;
 
   // History
   undo: () => void;
@@ -85,6 +87,7 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
   canvasScale: 0.80,
   leftPanelTab: 'components',
   rightPanelTab: 'style',
+  pseudoClassState: 'base',
   history: [[defaultPage]],
   historyIndex: 0,
   isPreviewMode: false,
@@ -101,7 +104,7 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
     isPreviewMode: false,
   }),
 
-  selectElement: (id) => set({ selectedElementId: id }),
+  selectElement: (id) => set({ selectedElementId: id, pseudoClassState: 'base' }),
   hoverElement: (id) => set({ hoveredElementId: id }),
 
   setDraggedElementType: (type) => set({ draggedElementType: type, draggedElementId: null }),
@@ -347,6 +350,41 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
     });
   },
 
+  updateElementPseudoClassStyles: (id, pseudoClass, breakpoint, styles) => {
+    set(state => {
+      const pages = deepClone(state.pages);
+      const page = pages.find(p => p.id === state.currentPageId)!;
+
+      const updateEl = (elements: BuilderElement[]): boolean => {
+        for (const el of elements) {
+          if (el.id === id) {
+            if (!el.pseudoClassStyles) {
+              el.pseudoClassStyles = {};
+            }
+            if (!el.pseudoClassStyles[pseudoClass]) {
+              el.pseudoClassStyles[pseudoClass] = {
+                widescreen: {},
+                desktop: {},
+                tablet: {},
+                mobile: {},
+              };
+            }
+            el.pseudoClassStyles[pseudoClass]![breakpoint] = {
+              ...el.pseudoClassStyles[pseudoClass]![breakpoint],
+              ...styles,
+            };
+            return true;
+          }
+          if (updateEl(el.children)) return true;
+        }
+        return false;
+      };
+
+      updateEl(page.elements);
+      return { pages };
+    });
+  },
+
   updateElementName: (id, name) => {
     set(state => {
       const pages = deepClone(state.pages);
@@ -454,7 +492,7 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
     get().pushHistory();
   },
 
-  setCurrentPage: (id) => set({ currentPageId: id, selectedElementId: null }),
+  setCurrentPage: (id) => set({ currentPageId: id, selectedElementId: null, pseudoClassState: 'base' }),
 
   updatePageSeo: (id, seo) => {
     set(state => {
@@ -478,7 +516,8 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
   setCanvasScale: (canvasScale) => set({ canvasScale }),
   setLeftPanelTab: (leftPanelTab) => set({ leftPanelTab }),
   setRightPanelTab: (rightPanelTab) => set({ rightPanelTab }),
-  setPreviewMode: (isPreviewMode) => set({ isPreviewMode, selectedElementId: null }),
+  setPreviewMode: (isPreviewMode) => set({ isPreviewMode, selectedElementId: null, pseudoClassState: 'base' }),
+  setPseudoClassState: (pseudoClassState) => set({ pseudoClassState }),
 
   pushHistory: () => {
     set(state => {
