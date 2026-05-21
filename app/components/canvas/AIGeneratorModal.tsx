@@ -94,7 +94,7 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full border-8 border-slate-500/20 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full border-6 border-slate-500/20 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className=" border-gray-200 p-6">
           <h2 className="text-2xl font-bold text-gray-900 text-center">Generate with AI</h2>

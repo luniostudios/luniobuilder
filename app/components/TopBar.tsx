@@ -12,6 +12,7 @@ import {
   Folder,
   X,
   ExternalLink,
+  Sparkles,
 } from 'lucide-react';
 import { useBuilderStore } from '../stores/builderStore';
 import {
@@ -23,6 +24,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Editor from '@monaco-editor/react';
 import { useSession } from 'next-auth/react';
+import { AIGeneratorModal } from './canvas/AIGeneratorModal';
 
 interface UserData {
   id: string;
@@ -230,6 +232,7 @@ export const TopBar: React.FC = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
 
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
@@ -588,6 +591,10 @@ export const TopBar: React.FC = () => {
     });
   };
 
+  function addGeneratedElements(html: string, arg1: null) {
+    throw new Error('Function not implemented.');
+  }
+
   return (
     <>
       <header className="h-12 bg-[#0d1117] border-b border-gray-800 flex justify-between items-center px-4 gap-3 z-50 shrink-0">
@@ -678,7 +685,24 @@ export const TopBar: React.FC = () => {
             {isPreviewMode ? <EyeOff size={13} /> : <Eye size={13} />}
             {isPreviewMode ? 'Editor' : 'Preview'}
           </button>
+          {/*Ask AI */}
+          {!isPreviewMode && (
+            <button
+              onClick={() => setIsAIModalOpen(true)}
+              className="flex ml-2 items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all bg-green-800 text-green-300 border border-green-700"
+            >
+              <Sparkles size={13} />
+            Ask AI
+          </button>)}
         </div>
+
+        <AIGeneratorModal
+          isOpen={isAIModalOpen}
+          onClose={() => setIsAIModalOpen(false)}
+          onGenerate={(html) => {
+            addGeneratedElements(html, null);
+          }}
+        />
 
         <div className='flex flex-row gap-3'>
           {/* Element actions */}

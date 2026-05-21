@@ -385,7 +385,7 @@ const PagesTab: React.FC = () => {
         {pages.map(page => (
           <div
             key={page.id}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
+            className={`group flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
               page.id === currentPageId
                 ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30'
                 : 'hover:bg-gray-800 text-gray-400 border border-transparent'
@@ -417,7 +417,8 @@ const PagesTab: React.FC = () => {
 
             {pages.length > 1 && (
               <button
-                onClick={e => { e.stopPropagation(); deletePage(page.id); }}
+                onClick={e => { e.stopPropagation(); if (confirm(`Delete page "${page.name}"? This cannot be undone.`)) { deletePage(page.id); } }}
+                aria-label={`Delete page ${page.name}`}
                 className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 transition-colors"
               >
                 <Trash2 size={10} />

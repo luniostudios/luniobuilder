@@ -141,15 +141,6 @@ export const Canvas: React.FC = () => {
 
         </div>
       </div>
-      {/* AI Generation Button */}
-      <button
-        onClick={() => setIsAIModalOpen(true)}
-        className="relative flex flex-row items-center gap-2 bottom-30 right-8 bg-green-600 text-white rounded-lg shadow-lg p-3 text-sm transition-all z-40"
-        title="Generate with AI"
-      >
-        <Bot size={15} />
-        <h1>Generate with AI</h1>
-      </button>
 
       {/* Canvas info bar */}
       <div className="mt-4 text-xs text-gray-500 flex items-center gap-4">
@@ -159,15 +150,6 @@ export const Canvas: React.FC = () => {
         <span className="text-gray-500">•</span>
         <span className="text-gray-400">{page.elements.length} elements</span>
       </div>
-
-      {/* AI Generator Modal */}
-      <AIGeneratorModal
-        isOpen={isAIModalOpen}
-        onClose={() => setIsAIModalOpen(false)}
-        onGenerate={(html) => {
-          addGeneratedElements(html, null);
-        }}
-      />
     </div>
   );
 };
