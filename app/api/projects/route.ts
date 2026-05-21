@@ -169,7 +169,7 @@ export async function PATCH(request: Request) {
     .update(updates)
     .eq('id', projectId)
     .eq('user_id', userId)
-    .select('id, title, slug, content, created_at, updated_at')
+    .select('id, title, slug, content, created_at, updated_at, vercel_token, vercelUrl')
     .single();
 
   if (error) {

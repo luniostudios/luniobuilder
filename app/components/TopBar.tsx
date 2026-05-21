@@ -543,7 +543,7 @@ export const TopBar: React.FC = () => {
     const url = URL.createObjectURL(content);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${projectName.replace(/\s+/g, '_') || 'lunio'}-react-export.zip`;
+    link.download = `${projectName.replace(/\s+/g, '_') || 'lunio'}-react.zip`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -692,8 +692,8 @@ export const TopBar: React.FC = () => {
               className="flex ml-2 items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all bg-green-800 text-green-300 border border-green-700"
             >
               <Sparkles size={13} />
-            Ask AI
-          </button>)}
+              Ask AI
+            </button>)}
         </div>
 
         <AIGeneratorModal

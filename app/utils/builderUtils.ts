@@ -161,9 +161,14 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
           {
             id: generateId(),
             type: 'heading',
-            name: 'Nav Link',
+            name: 'Nav Logo',
             props: { text: 'MyLogo', level: 1 },
-            styles: emptyStyles(),
+            styles: {
+              desktop: { fontSize: '24px', fontWeight: '700', margin: '0' },
+              tablet: {},
+              mobile: {},
+              widescreen: { fontSize: '24px', fontWeight: '700', margin: '0' },
+            },
             children: [],
             parentId: null,
             locked: false,
@@ -172,16 +177,21 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
           {
             id: generateId(),
             type: 'list',
-            name: 'Nav Link',
+            name: 'Nav Links',
             props: {},
-            styles: emptyStyles(),
+            styles: {
+              desktop: { display: 'flex', alignItems: 'center', gap: '16px', listStyle: 'none', margin: '0', padding: '0' },
+              tablet: { display: 'none' },
+              mobile: { display: 'none' },
+              widescreen: { display: 'flex', alignItems: 'center', gap: '16px', listStyle: 'none', margin: '0', padding: '0' },
+            },
             children: [
               {
                 id: generateId(),
                 type: 'listItem',
                 name: 'Nav Item',
                 props: { text: 'Home', href: '#' },
-                styles: emptyStyles(),
+                styles: { desktop: { margin: '0' }, tablet: {}, mobile: {}, widescreen: { margin: '0' } },
                 children: [],
                 parentId: null,
                 locked: false,
@@ -192,7 +202,7 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
                 type: 'listItem',
                 name: 'Nav Item',
                 props: { text: 'Services', href: '#' },
-                styles: emptyStyles(),
+                styles: { desktop: { margin: '0' }, tablet: {}, mobile: {}, widescreen: { margin: '0' } },
                 children: [],
                 parentId: null,
                 locked: false,
@@ -201,8 +211,25 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
             ],
             parentId: null,
             locked: false,
-            hidden: false, 
-          }],
+            hidden: false,
+          },
+          {
+            id: generateId(),
+            type: 'icon',
+            name: 'Hamburger',
+            props: { iconName: 'Menu' },
+            styles: {
+              desktop: { display: 'none', cursor: 'pointer', width: '40px', height: '40px', alignItems: 'center', justifyContent: 'center', color: '#111827' },
+              tablet: { display: 'flex' },
+              mobile: { display: 'flex' },
+              widescreen: { display: 'none' },
+            },
+            children: [],
+            parentId: null,
+            locked: false,
+            hidden: false,
+          },
+        ],
       };
     case 'hero':
       return {

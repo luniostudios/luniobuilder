@@ -9,6 +9,90 @@ import { getEffectiveStyles } from '../../utils/builderUtils';
 
 type BuilderElement = any;
 
+const GOOGLE_FONT_OPTIONS = [
+  'Arial',
+  'Helvetica',
+  'Roboto',
+  'Open Sans',
+  'Lato',
+  'Montserrat',
+  'Poppins',
+  'Inter',
+  'Oswald',
+  'Source Sans',
+  'Nunito',
+  'Raleway',
+  'Work Sans',
+  'Ubuntu',
+  'Fira Sans',
+  'Karla',
+  'DM Sans',
+  'Hind',
+  'Oxygen',
+  'Quicksand',
+  'Muli',
+  'Cabin',
+  'Josefin Sans',
+  'Space Grotesk',
+  'Nunito Sans',
+  'Sora',
+  'Manrope',
+  'Mukta',
+  'Bai Jamjuree',
+  'Lexend',
+  'Cairo',
+  'Tajawal',
+  'Heebo',
+  'Anton',
+  'Bebas Neue',
+  'Merriweather',
+  'Roboto Slab',
+  'Noto Serif',
+  'Spectral',
+  'PT Serif',
+  'Domine',
+  'Crimson Pro',
+  'Cardo',
+  'Pacifico',
+  'Dancing Script',
+  'Great Vibes',
+  'Satisfy',
+  'Amatic SC',
+  'Bangers',
+  'Yellowtail',
+  'Lobster',
+  'Roboto Mono',
+  'Fira Code',
+  'Source Code Pro',
+  'JetBrains Mono',
+  'Space Mono',
+  'Inconsolata',
+  'Courier Prime',
+];
+
+const loadedGoogleFonts = new Set<string>();
+
+const normalizeGoogleFontFamily = (fontFamily: string) => {
+  return String(fontFamily)
+    .split(',')[0]
+    .trim()
+    .replace(/^['"]+|['"]+$/g, '');
+};
+
+const loadGoogleFont = (fontFamily: string) => {
+  const fontName = normalizeGoogleFontFamily(fontFamily);
+  if (!fontName || loadedGoogleFonts.has(fontName)) return;
+  const match = GOOGLE_FONT_OPTIONS.find(option => option.startsWith(fontName));
+  if (!match) return;
+  const formattedName = encodeURIComponent(fontName).replace(/%20/g, '+');
+  const href = `https://fonts.googleapis.com/css2?family=${formattedName}:wght@300;400;500;600;700;800;900&display=swap`;
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = href;
+  document.head.appendChild(link);
+  loadedGoogleFonts.add(fontName);
+};
+
 export const RightPanel: React.FC = () => {
   const { selectedElementId, rightPanelTab, setRightPanelTab, getElementById, breakpoint, getCurrentPage } = useBuilderStore() as any;
   const element = selectedElementId ? getElementById(selectedElementId) : null;
@@ -312,6 +396,109 @@ const SpacingInput: React.FC<SpacingInputProps> = ({ label, values, onChange }) 
   );
 };
 
+interface BorderInputProps {
+  values: { top: string; right: string; bottom: string; left: string };
+  styles: { topStyle: string; rightStyle: string; bottomStyle: string; leftStyle: string; topColor: string; rightColor: string; bottomColor: string; leftColor: string };
+  onChangeWidth: (side: 'top' | 'right' | 'bottom' | 'left', val: string) => void;
+  onChangeStyle: (side: 'top' | 'right' | 'bottom' | 'left', val: string) => void;
+  onChangeColor: (side: 'top' | 'right' | 'bottom' | 'left', val: string) => void;
+}
+
+const BorderInput: React.FC<BorderInputProps> = ({ values, styles, onChangeWidth, onChangeStyle, onChangeColor }) => {
+  const [linked, setLinked] = useState(true);
+
+  const handleWidthChange = (side: 'top' | 'right' | 'bottom' | 'left', val: string) => {
+    if (linked) {
+      onChangeWidth('top', val);
+      onChangeWidth('right', val);
+      onChangeWidth('bottom', val);
+      onChangeWidth('left', val);
+    } else {
+      onChangeWidth(side, val);
+    }
+  };
+
+  const handleStyleChange = (side: 'top' | 'right' | 'bottom' | 'left', val: string) => {
+    if (linked) {
+      onChangeStyle('top', val);
+      onChangeStyle('right', val);
+      onChangeStyle('bottom', val);
+      onChangeStyle('left', val);
+    } else {
+      onChangeStyle(side, val);
+    }
+  };
+
+  const handleColorChange = (side: 'top' | 'right' | 'bottom' | 'left', val: string) => {
+    if (linked) {
+      onChangeColor('top', val);
+      onChangeColor('right', val);
+      onChangeColor('bottom', val);
+      onChangeColor('left', val);
+    } else {
+      onChangeColor(side, val);
+    }
+  };
+
+  return (
+    <div className="mb-3">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-xs text-gray-500">Border Sides</span>
+        <button
+          onClick={() => setLinked(!linked)}
+          className={`text-xs px-1.5 py-0.5 rounded ${linked ? 'bg-blue-600/30 text-blue-400' : 'text-gray-600 hover:text-gray-400'}`}
+        >
+          {linked ? '⛓️' : '⛓️'}
+        </button>
+      </div>
+      <div className="grid grid-cols-4 gap-2">
+        {(['top', 'right', 'bottom', 'left'] as const).map(side => {
+          const sideKey = side === 'top' ? 'topStyle' : side === 'right' ? 'rightStyle' : side === 'bottom' ? 'bottomStyle' : 'leftStyle';
+          const colorKey = side === 'top' ? 'topColor' : side === 'right' ? 'rightColor' : side === 'bottom' ? 'bottomColor' : 'leftColor';
+          return (
+            <div key={side} className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-0.5">
+                <label className="text-[11px] text-gray-600">{side[0].toUpperCase()}W</label>
+                <input
+                  type="text"
+                  value={values[side]}
+                  onChange={e => handleWidthChange(side, e.target.value)}
+                  placeholder="0"
+                  className="w-full bg-gray-800 text-gray-200 text-xs text-center rounded px-1 py-1 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <label className="text-[11px] text-gray-600">{side[0].toUpperCase()}S</label>
+                <select
+                  value={styles[sideKey as keyof typeof styles] || ''}
+                  onChange={e => handleStyleChange(side, e.target.value)}
+                  className="w-full bg-gray-800 text-gray-200 text-xs rounded px-1 py-1 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="">—</option>
+                  <option value="solid">Solid</option>
+                  <option value="dashed">Dashed</option>
+                  <option value="dotted">Dotted</option>
+                  <option value="double">Double</option>
+                  <option value="none">None</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <label className="text-[11px] text-gray-600">{side[0].toUpperCase()}C</label>
+                <input
+                  type="color"
+                  value={styles[colorKey as keyof typeof styles] || '#000000'}
+                  onChange={e => handleColorChange(side, e.target.value)}
+                  className="w-full h-6 bg-gray-800 border border-gray-700 rounded cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 interface StyleEditorProps {
   element: BuilderElement;
   breakpoint: string;
@@ -376,6 +563,12 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
       updateElementPseudoClassStyles(element.id, pseudoClassState as 'hover' | 'active' | 'focus', breakpoint as 'widescreen' | 'desktop' | 'tablet' | 'mobile', { [key]: value });
     }
   };
+
+  useEffect(() => {
+    if (styles?.fontFamily) {
+      loadGoogleFont(styles.fontFamily);
+    }
+  }, [styles?.fontFamily]);
 
   const extractUrlFromCssBackgroundImage = (val: string | undefined) => {
     if (!val) return '';
@@ -565,11 +758,11 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
 
       {/* Typography */}
       <Section title="Typography">
-        <InputRow
+          <InputRow
           label="Font"
           value={styles.fontFamily || ''}
           onChange={v => update('fontFamily', v)}
-          options={['inherit', 'Inter, sans-serif', 'Georgia, serif', 'monospace', 'cursive', 'Roboto, sans-serif']}
+          options={GOOGLE_FONT_OPTIONS}
         />
         <InputRow label="Size" value={styles.fontSize || ''} onChange={v => update('fontSize', v)} placeholder="16px" />
         <InputRow
@@ -720,14 +913,34 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
 
       {/* Border */}
       <Section title="Border">
-        <InputRow label="Width" value={styles.borderWidth || ''} onChange={v => update('borderWidth', v)} placeholder="1px" />
-        <InputRow
-          label="Style"
-          value={styles.borderStyle || ''}
-          onChange={v => update('borderStyle', v)}
-          options={['none', 'solid', 'dashed', 'dotted', 'double']}
+        <BorderInput
+          values={{
+            top: parsePx((styles as unknown as Record<string, string>)[`borderTopWidth`] || (styles as unknown as Record<string, string>)[`borderWidth`]),
+            right: parsePx((styles as unknown as Record<string, string>)[`borderRightWidth`] || (styles as unknown as Record<string, string>)[`borderWidth`]),
+            bottom: parsePx((styles as unknown as Record<string, string>)[`borderBottomWidth`] || (styles as unknown as Record<string, string>)[`borderWidth`]),
+            left: parsePx((styles as unknown as Record<string, string>)[`borderLeftWidth`] || (styles as unknown as Record<string, string>)[`borderWidth`]),
+          }}
+          styles={{
+            topStyle: (styles as unknown as Record<string, string>)[`borderTopStyle`] || styles.borderStyle || '',
+            rightStyle: (styles as unknown as Record<string, string>)[`borderRightStyle`] || styles.borderStyle || '',
+            bottomStyle: (styles as unknown as Record<string, string>)[`borderBottomStyle`] || styles.borderStyle || '',
+            leftStyle: (styles as unknown as Record<string, string>)[`borderLeftStyle`] || styles.borderStyle || '',
+            topColor: (styles as unknown as Record<string, string>)[`borderTopColor`] || styles.borderColor || '#000000',
+            rightColor: (styles as unknown as Record<string, string>)[`borderRightColor`] || styles.borderColor || '#000000',
+            bottomColor: (styles as unknown as Record<string, string>)[`borderBottomColor`] || styles.borderColor || '#000000',
+            leftColor: (styles as unknown as Record<string, string>)[`borderLeftColor`] || styles.borderColor || '#000000',
+          }}
+          onChangeWidth={(side, val) => {
+            const formatted = val && !isNaN(Number(val)) ? `${val}px` : val;
+            update(`border${side.charAt(0).toUpperCase() + side.slice(1)}Width` as keyof StyleProperties, formatted);
+          }}
+          onChangeStyle={(side, val) => {
+            update(`border${side.charAt(0).toUpperCase() + side.slice(1)}Style` as keyof StyleProperties, val);
+          }}
+          onChangeColor={(side, val) => {
+            update(`border${side.charAt(0).toUpperCase() + side.slice(1)}Color` as keyof StyleProperties, val);
+          }}
         />
-        <ColorInput label="Color" value={styles.borderColor || ''} onChange={v => update('borderColor', v)} />
         <InputRow label="Radius" value={styles.borderRadius || ''} onChange={v => update('borderRadius', v)} placeholder="8px" />
       </Section>
 
@@ -736,18 +949,19 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
         <div className="mb-3">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">Shadow</span>
-            <div className="flex flex-wrap gap-1">
+            <div className="ml-2 flex flex-wrap gap-1">
               {[
                 { label: 'None', value: 'none' },
                 { label: 'Soft', value: '0px 4px 12px rgba(0,0,0,0.12)' },
                 { label: 'Medium', value: '0px 8px 20px rgba(0,0,0,0.16)' },
                 { label: 'Strong', value: '0px 12px 28px rgba(0,0,0,0.2)' },
+                { label: 'Inset', value: 'inset 0px 4px 12px rgba(0,0,0,0.12)' },
               ].map(preset => (
                 <button
                   key={preset.label}
                   type="button"
                   onClick={() => update('boxShadow', preset.value)}
-                  className="text-[11px] px-2 py-1 rounded border border-gray-700 bg-gray-900 text-gray-300 hover:bg-gray-800"
+                  className="text-[12px] px-2 py-1 rounded border border-gray-700 bg-gray-900 text-gray-300 hover:bg-gray-800"
                 >
                   {preset.label}
                 </button>
