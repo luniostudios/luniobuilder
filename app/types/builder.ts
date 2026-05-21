@@ -29,6 +29,11 @@ export interface StyleProperties {
   justifyContent?: string;
   alignItems?: string;
   flexWrap?: string;
+  flexGrow?: string;
+  flexShrink?: string;
+  flexBasis?: string;
+  alignSelf?: string;
+  order?: string;
   gap?: string;
   gridTemplateColumns?: string;
   gridTemplateRows?: string;

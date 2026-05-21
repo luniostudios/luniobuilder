@@ -9,7 +9,8 @@ const MAX_FREE_DAILY_AI = 5;
 interface GenerateRequest {
     prompt: string;
     context?: string;
-    elementType?: string;
+    imageData?: string; // Base64 encoded image
+    imageMimeType?: string; // e.g., "image/png", "image/jpeg"
 }
 
 interface GenerateResponse {
@@ -20,7 +21,7 @@ interface GenerateResponse {
 }
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
 export async function POST(req: NextRequest): Promise<NextResponse<GenerateResponse>> {
     try {
@@ -42,11 +43,11 @@ export async function POST(req: NextRequest): Promise<NextResponse<GenerateRespo
         }
 
         const body: GenerateRequest = await req.json();
-        const { prompt, context = '', elementType = 'section' } = body;
+        const { prompt, context = '', imageData, imageMimeType } = body;
 
-        if (!prompt) {
+        if (!prompt && !imageData) {
             return NextResponse.json(
-                { html: '', success: false, error: 'Prompt is required' },
+                { html: '', success: false, error: 'Either prompt or image is required' },
                 { status: 400 }
             );
         }
@@ -80,7 +81,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<GenerateRespo
         }
 
         // Build the system prompt for Gemini
-        const systemPrompt = `You are a professional web designer and developer. Generate clean, modern, responsive HTML for website components.
+        const baseSystemPrompt = `You are a professional web designer and developer. Generate clean, modern, responsive HTML for website components.
 
 Your response MUST be valid HTML only, with inline styles directly on elements. Do not use CSS classes, external stylesheets, or markdown. Do not include code blocks or explanations.
 
@@ -91,16 +92,78 @@ Guidelines:
 - Use modern design practices
 - Include accessibility attributes
 - Keep it self-contained
-- For "${elementType}" element type, design accordingly
 
-Context: ${context}
+Context: ${context}`;
 
-Generate HTML for: ${prompt}`;
+        let systemPrompt = baseSystemPrompt;
+        let hasImage = false;
 
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: systemPrompt,
-        });
+        if (imageData && imageMimeType) {
+            hasImage = true;
+            systemPrompt += `
+
+IMAGE REFERENCE:
+Analyze the provided image and generate HTML that matches its design, layout, colors, and style.`;
+            if (prompt) {
+                systemPrompt += `\n\nAlso incorporate this additional requirement: ${prompt}`;
+            }
+        } else if (prompt) {
+            systemPrompt += `\n\nGenerate HTML for: ${prompt}`;
+        }
+
+        let response: any;
+
+        if (hasImage && imageData) {
+            // Use vision API with image
+            const imageBase64 = imageData;
+            response = await fetch(GEMINI_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-goog-api-key': GEMINI_API_KEY || '',
+                },
+                body: JSON.stringify({
+                    contents: [
+                        {
+                            parts: [
+                                {
+                                    text: systemPrompt,
+                                },
+                                {
+                                    inline_data: {
+                                        mime_type: imageMimeType,
+                                        data: imageBase64,
+                                    },
+                                },
+                            ],
+                        },
+                    ],
+                    generationConfig: {
+                        temperature: 1,
+                        top_p: 0.95,
+                        max_output_tokens: 8192,
+                    },
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.text();
+                console.error('Gemini API error:', errorData);
+                return NextResponse.json(
+                    { html: '', success: false, error: 'Failed to generate content from image' },
+                    { status: 500 }
+                );
+            }
+
+            const jsonResponse = await response.json();
+            response = jsonResponse;
+        } else {
+            // Use regular text-only generation
+            response = await ai.models.generateContent({
+                model: "gemini-2.5-flash",
+                contents: systemPrompt,
+            });
+        }
 
         const data = response as any;
 

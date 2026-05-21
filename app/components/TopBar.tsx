@@ -11,6 +11,7 @@ import {
   Code,
   Folder,
   X,
+  ExternalLink,
 } from 'lucide-react';
 import { useBuilderStore } from '../stores/builderStore';
 import {
@@ -215,6 +216,7 @@ export const TopBar: React.FC = () => {
   const [published, setPublished] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishMessage, setPublishMessage] = useState('');
+  const [siteVercelUrl, setSiteVercelUrl] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [isCodeModalOpen, setIsCodeModalOpen] = useState(false);
@@ -329,7 +331,6 @@ export const TopBar: React.FC = () => {
           extraCss,
         }),
       });
-
       const text = await response.text();
       const data = text ? JSON.parse(text) : {};
       if (!response.ok) {
@@ -341,6 +342,7 @@ export const TopBar: React.FC = () => {
 
       setPublished(true);
       setPublishMessage(data?.url ? `Published to ${data.url}` : 'Published successfully');
+      setSiteVercelUrl(data.url || null);
       setTimeout(() => setPublished(false), 5000);
     } catch (error) {
       console.error(error);
@@ -764,6 +766,10 @@ export const TopBar: React.FC = () => {
                   <Share2 size={12} />
                   Publish to Vercel
                 </button>
+                <a href={siteVercelUrl || '#'} target="_blank" rel="noopener noreferrer" className="w-full flex items-center gap-2 px-4 py-2 text-xs text-gray-300 hover:text-white hover:bg-gray-800 transition-colors">
+                  <ExternalLink size={12} />
+                  View on Vercel
+                </a>
                 <button
                   onClick={userData?.role !== 'pro' ? () => router.push('/pricing') : exportHTML}
                   className="w-full flex items-center gap-2 px-4 py-2 text-xs text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"

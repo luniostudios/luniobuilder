@@ -3,7 +3,8 @@ import { useState, useCallback } from 'react';
 interface GenerateOptions {
   prompt: string;
   context?: string;
-  elementType?: string;
+  imageData?: string; // Base64 encoded image
+  imageMimeType?: string; // e.g., "image/png", "image/jpeg"
 }
 
 interface GenerationResult {
