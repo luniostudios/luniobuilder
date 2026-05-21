@@ -637,12 +637,12 @@ const renderElementToReact = (element: BuilderElement, indent = 2, breakpoint: B
   const indentation = ' '.repeat(indent);
   const className = getElementClassName(element);
   const attrs = ` className="${className}"`;
-  const text = escapeJsxString(element.props.text as string || '');
+  const text = escapeHtml(element.props.text as string || '');
   const placeholder = escapeJsxString(element.props.placeholder as string || '');
   const href = escapeJsxString(element.props.href as string || '#');
   const src = escapeJsxString(element.props.src as string || '');
   const alt = escapeJsxString(element.props.alt as string || '');
-  const iconName = escapeJsxString(element.props.iconName as string || '★');
+  const iconName = escapeHtml(element.props.iconName as string || '★');
   const inputType = escapeJsxString(element.props.type as string || 'text');
 
   const renderChildren = (): string => {
@@ -840,12 +840,12 @@ export const renderElementToReactWithComponents = (
 
   const className = getElementClassName(element);
   const attrs = ` className="${className}"`;
-  const text = escapeJsxString(element.props.text as string || '');
+  const text = escapeHtml(element.props.text as string || '');
   const placeholder = escapeJsxString(element.props.placeholder as string || '');
   const href = escapeJsxString(element.props.href as string || '#');
   const src = escapeJsxString(element.props.src as string || '');
   const alt = escapeJsxString(element.props.alt as string || '');
-  const iconName = escapeJsxString(element.props.iconName as string || '★');
+  const iconName = escapeHtml(element.props.iconName as string || '★');
   const inputType = escapeJsxString(element.props.type as string || 'text');
 
   const renderChildren = (): string => {

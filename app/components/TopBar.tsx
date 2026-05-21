@@ -300,6 +300,7 @@ export const TopBar: React.FC = () => {
     try {
       // Gather page/global CSS to include in the exported React project so the deployed site matches preview
       const collectedCssParts: string[] = [];
+      const collectedCssImports: string[] = [];
       Array.from(document.querySelectorAll('style')).forEach(s => {
         if (s.innerHTML && s.innerHTML.trim()) collectedCssParts.push(s.innerHTML);
       });
@@ -307,6 +308,10 @@ export const TopBar: React.FC = () => {
       for (const link of linkNodes) {
         const href = link.href;
         if (!href) continue;
+        if (/fonts\.googleapis\.com/i.test(href)) {
+          collectedCssImports.push(`@import url("${href}");`);
+          continue;
+        }
         try {
           const resp = await fetch(href, { credentials: 'include' });
           if (resp.ok) {
@@ -319,7 +324,7 @@ export const TopBar: React.FC = () => {
         }
       }
 
-      const extraCss = sanitizeCss(collectedCssParts.join('\n\n'));
+      const extraCss = sanitizeCss([...collectedCssImports, ...collectedCssParts].join('\n\n'));
 
       const response = await fetch('/api/vercel', {
         method: 'POST',
@@ -449,6 +454,7 @@ export const TopBar: React.FC = () => {
 
     // Collect in-document <style> contents and attempt to fetch linked stylesheets.
     const collectedCssParts: string[] = [];
+    const collectedCssImports: string[] = [];
     const headLinkTags: string[] = [];
 
     Array.from(document.querySelectorAll('style')).forEach(s => {
@@ -459,6 +465,10 @@ export const TopBar: React.FC = () => {
     for (const link of linkNodes) {
       const href = link.href;
       if (!href) continue;
+      if (/fonts\.googleapis\.com/i.test(href)) {
+        collectedCssImports.push(`@import url("${href}");`);
+        continue;
+      }
       try {
         const resp = await fetch(href, { credentials: 'include' });
         if (resp.ok) {
@@ -473,7 +483,7 @@ export const TopBar: React.FC = () => {
       headLinkTags.push(link.outerHTML);
     }
 
-    const combinedStyles = sanitizeCss(`${collectedCssParts.join('\n\n')}\n\n/* Page-specific styles */\n${pageStyles}`);
+    const combinedStyles = sanitizeCss(`${collectedCssImports.join('\n\n')}\n\n${collectedCssParts.join('\n\n')}\n\n/* Page-specific styles */\n${pageStyles}`);
 
     const html = `<!DOCTYPE html>
 <html lang="en">
