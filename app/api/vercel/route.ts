@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '../../auth/auth';
 import { supabaseServer } from '../../lib/supabaseServer';
-import { generateReactProjectFiles } from '@/app/utils/builderUtils';
+import { generateNextProjectFiles } from '@/app/utils/builderUtils';
 
 export const runtime = 'nodejs';
 
@@ -47,8 +47,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Pages are required for deployment' }, { status: 400 });
   }
 
-  const files = generateReactProjectFiles(pages, projectName);
-  // Sanitize incoming extraCss to remove Next.js-specific font URLs that won't exist in CRA builds
+  const files = generateNextProjectFiles(pages, projectName);
+  // Sanitize incoming extraCss to remove bundled font URLs that won't work during export
   const extraCss = body?.extraCss;
   const sanitize = (css: any) => {
     if (!css || typeof css !== 'string') return '';
@@ -61,20 +61,17 @@ export async function POST(request: Request) {
   const extraCssSanitized = sanitize(extraCss);
   if (extraCssSanitized) {
     let appended = false;
-    for (const f of files) {
-      if (f.path === 'src/builder.css') {
-        f.content = `${extraCssSanitized}\n\n${f.content}`;
+    const preferredPaths = ['app/globals.css', 'styles/globals.css', 'src/builder.css', 'src/index.css'];
+    for (const path of preferredPaths) {
+      const target = files.find(f => f.path === path);
+      if (target) {
+        target.content = `${extraCssSanitized}\n\n${target.content}`;
         appended = true;
         break;
       }
     }
     if (!appended) {
-      const idx = files.findIndex(f => f.path === 'src/index.css');
-      if (idx !== -1) {
-        files[idx].content = `${extraCssSanitized}\n\n${files[idx].content}`;
-      } else {
-        files.push({ path: 'src/builder.css', content: extraCssSanitized });
-      }
+      files.push({ path: 'app/globals.css', content: extraCssSanitized });
     }
   }
   const deploymentName = projectName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || `luniobuilder-${Date.now()}`;
@@ -83,10 +80,10 @@ export async function POST(request: Request) {
     name: deploymentName,
     target: 'production',
     projectSettings: {
-      framework: 'create-react-app',
+      framework: 'nextjs',
       buildCommand: 'npm run build',
       installCommand: 'npm install',
-      outputDirectory: 'build',
+      outputDirectory: '.next',
     },
     files: files.map(file => ({
       file: file.path,
