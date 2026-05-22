@@ -12,7 +12,7 @@ type BuilderElement = any;
 const GOOGLE_FONT_OPTIONS = [
   'Arial',
   'Helvetica',
-  'Roboto',
+  'Roboto, sans-serif',
   'Open Sans',
   'Lato',
   'Montserrat',

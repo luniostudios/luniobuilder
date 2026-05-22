@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   if (projectId) {
     const { data, error } = await supabaseServer
       .from('projects')
-      .select('id, title, slug, content, created_at, updated_at')
+      .select('id, title, slug, content, created_at, updated_at, vercel_token')
       .eq('id', projectId)
       .eq('user_id', userId)
       .single();

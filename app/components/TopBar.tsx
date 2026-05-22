@@ -263,11 +263,15 @@ export const TopBar: React.FC = () => {
     setLoading(false);
   }
 
-  const requestVercelToken = () => {
+  const requestVercelToken = (allowPrompt = true) => {
     if (typeof window === 'undefined') return null;
     const projectKey = getVercelTokenKey();
     const existingToken = window.localStorage.getItem(projectKey) || window.localStorage.getItem('vercelToken');
     if (existingToken) return existingToken;
+
+    if (!allowPrompt) {
+      return null;
+    }
 
     const token = window.prompt(
       'Enter your Vercel Personal Token (scopes: deployments.read, deployments.write, projects.read):'
@@ -285,8 +289,8 @@ export const TopBar: React.FC = () => {
     setPublishMessage('');
     setShowPublishMenu(false);
 
-    const token = requestVercelToken();
-    if (!token) {
+    const token = requestVercelToken(Boolean(!projectId));
+    if (!token && !projectId) {
       setPublishMessage('Vercel token required to publish.');
       return;
     }
@@ -332,6 +336,7 @@ export const TopBar: React.FC = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          projectId,
           token,
           teamId,
           projectName,

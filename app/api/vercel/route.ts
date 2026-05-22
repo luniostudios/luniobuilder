@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/app/auth/auth';
+import { auth } from '../../auth/auth';
+import { supabaseServer } from '../../lib/supabaseServer';
 import { generateReactProjectFiles } from '@/app/utils/builderUtils';
 
 export const runtime = 'nodejs';
@@ -11,10 +12,32 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const token = body?.token;
+  const providedToken = body?.token;
+  const projectId = body?.projectId;
   const projectName = body?.projectName || 'LUNIO Project';
   const pages = body?.pages;
   const teamId = body?.teamId;
+
+  let token = providedToken;
+  if (projectId) {
+    const userId = session.user.id || session.user.email;
+    if (userId) {
+      const { data: project, error: projectError } = await supabaseServer
+        .from('projects')
+        .select('vercel_token')
+        .eq('id', projectId)
+        .eq('user_id', userId)
+        .single();
+
+      if (projectError && projectError.code !== 'PGRST116') {
+        return NextResponse.json({ error: projectError.message }, { status: 500 });
+      }
+
+      if (project?.vercel_token) {
+        token = project.vercel_token as string;
+      }
+    }
+  }
 
   if (!token) {
     return NextResponse.json({ error: 'Vercel token is required' }, { status: 400 });

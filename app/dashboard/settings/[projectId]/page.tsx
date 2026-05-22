@@ -10,6 +10,7 @@ interface ProjectRecord {
   slug: string;
   created_at: string;
   updated_at: string;
+  vercel_token?: string | null;
 }
 
 export default function ProjectSettingsPage() {
@@ -47,6 +48,7 @@ export default function ProjectSettingsPage() {
       setProject(data);
       setTitle(data.title || '');
       setSlug(data.slug || '');
+      setVercelKey(data.vercel_token || storedToken);
       setLoading(false);
     };
 
