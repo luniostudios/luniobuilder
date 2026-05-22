@@ -367,6 +367,8 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
                 desktop: {},
                 tablet: {},
                 mobile: {},
+                laptop: {},
+                mobileLandscape: {},
               };
             }
             el.pseudoClassStyles[pseudoClass]![breakpoint] = {

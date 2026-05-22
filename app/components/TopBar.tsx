@@ -13,6 +13,8 @@ import {
   X,
   ExternalLink,
   Sparkles,
+  Laptop,
+  RectangleHorizontalIcon,
 } from 'lucide-react';
 import { useBuilderStore } from '../stores/builderStore';
 import {
@@ -681,8 +683,10 @@ export const TopBar: React.FC = () => {
             {[
               { id: 'widescreen' as const, icon: <Monitor size={13} />, label: 'Widescreen' },
               { id: 'desktop' as const, icon: <MonitorCheck size={13} />, label: 'Desktop (default)' },
+              { id: 'laptop' as const, icon: <Laptop size={13} />, label: 'Laptop' },
               { id: 'tablet' as const, icon: <Tablet size={13} />, label: 'Tablet' },
-              { id: 'mobile' as const, icon: <Smartphone size={13} />, label: 'Mobile' },
+              { id: 'mobileLandscape' as const, icon: <Smartphone size={13} className='transform rotate-90' />, label: 'Mobile Landscape' },
+              { id: 'mobile' as const, icon: <Smartphone size={13}/>, label: 'Mobile' },
             ].map(bp => (
               <button
                 key={bp.id}

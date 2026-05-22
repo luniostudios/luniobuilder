@@ -2,7 +2,7 @@ import { BuilderElement, ElementType, StyleProperties, ResponsiveStyles, Page } 
 import { Breakpoint } from '../types/builder';
 
 export const generateId = (): string => {
-  return `el-${Math.random().toString(36).substr(2, 9)}`;
+  return `luniobuilder-${Math.random().toString(36).substr(2, 9)}`;
 };
 
 export const deepClone = <T>(obj: T): T => {
@@ -10,9 +10,11 @@ export const deepClone = <T>(obj: T): T => {
 };
 
 const emptyStyles = (): ResponsiveStyles => ({
-  desktop: {},
   widescreen: {},
+  desktop: {},
+  laptop: {},
   tablet: {},
+  mobileLandscape: {},
   mobile: {},
 });
 
@@ -32,6 +34,8 @@ export const createDefaultElement = (
       desktop: defaults.styles,
       tablet: {},
       mobile: {},
+      laptop: {},
+      mobileLandscape: {},
     },
     children: defaults.children || [],
     parentId,
@@ -168,6 +172,8 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
               tablet: {},
               mobile: {},
               widescreen: { fontSize: '24px', fontWeight: '700', margin: '0' },
+              laptop: { fontSize: '24px', fontWeight: '700', margin: '0' },
+              mobileLandscape: {},
             },
             children: [],
             parentId: null,
@@ -184,6 +190,8 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
               tablet: { display: 'none' },
               mobile: { display: 'none' },
               widescreen: { display: 'flex', alignItems: 'center', gap: '16px', listStyle: 'none', margin: '0', padding: '0' },
+              laptop: { display: 'flex', alignItems: 'center', gap: '16px', listStyle: 'none', margin: '0', padding: '0' },
+              mobileLandscape: { display: 'none' },
             },
             children: [
               {
@@ -191,7 +199,7 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
                 type: 'listItem',
                 name: 'Nav Item',
                 props: { text: 'Home', href: '#' },
-                styles: { desktop: { margin: '0' }, tablet: {}, mobile: {}, widescreen: { margin: '0' } },
+                styles: { desktop: { margin: '0' }, tablet: {}, mobile: {}, widescreen: { margin: '0' }, laptop: { margin: '0' }, mobileLandscape: { margin: '0' } },
                 children: [],
                 parentId: null,
                 locked: false,
@@ -202,7 +210,14 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
                 type: 'listItem',
                 name: 'Nav Item',
                 props: { text: 'Services', href: '#' },
-                styles: { desktop: { margin: '0' }, tablet: {}, mobile: {}, widescreen: { margin: '0' } },
+                styles: {
+                  desktop: { margin: '0' },
+                  tablet: {},
+                  mobile: {},
+                  widescreen: { margin: '0' },
+                  laptop: { margin: '0' },
+                  mobileLandscape: { margin: '0' }
+                },
                 children: [],
                 parentId: null,
                 locked: false,
@@ -223,6 +238,8 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
               tablet: { display: 'flex' },
               mobile: { display: 'flex' },
               widescreen: { display: 'none' },
+              laptop: { display: 'none' },
+              mobileLandscape: { display: 'flex' },
             },
             children: [],
             parentId: null,
@@ -291,6 +308,30 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
           gap: '24px',
           width: '100%',
         },
+        children: [
+          {
+            id: generateId(),
+            type: 'div',
+            name: 'Column',
+            props: {},
+            styles: { desktop: { display: 'flex', flex: '50%', width: '100%' }, tablet: { display: 'block', width: '100%' }, mobile: { display: 'block', width: '100%' }, widescreen: { display: 'block', width: '100%' }, laptop: { display: 'block', width: '100%' }, mobileLandscape: { display: 'block', width: '100%' } },
+            children: [],
+            parentId: null,
+            locked: false,
+            hidden: false,
+          },
+          {
+            id: generateId(),
+            type: 'div',
+            name: 'Column',
+            props: {},
+            styles: { desktop: { display: 'flex', flex: '50%', width: '100%' }, tablet: { display: 'block', width: '100%' }, mobile: { display: 'block', width: '100%' }, widescreen: { display: 'block', width: '100%' }, laptop: { display: 'block', width: '100%' }, mobileLandscape: { display: 'block', width: '100%' } },
+            children: [],
+            parentId: null,
+            locked: false,
+            hidden: false,
+          },
+        ],
       };
     case 'form':
       return {
@@ -447,18 +488,22 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
 
 export const getEffectiveStyles = (
   element: BuilderElement,
-  breakpoint: 'widescreen' | 'desktop' | 'tablet' | 'mobile'
+  breakpoint: 'widescreen' | 'desktop' | 'tablet' | 'mobile' | 'laptop' | 'mobileLandscape'
 ): StyleProperties => {
   const widescreen = element.styles.widescreen || {};
   const desktop = element.styles.desktop || {};
   const tablet = element.styles.tablet || {};
   const mobile = element.styles.mobile || {};
+  const laptop = element.styles.laptop || {};
+  const mobileLandscape = element.styles.mobileLandscape || {};
 
   if (breakpoint === 'desktop') return desktop;
   if (breakpoint === 'widescreen') return { ...desktop, ...widescreen };
   if (breakpoint === 'tablet') return { ...desktop, ...tablet };
-  if (breakpoint === 'mobile') return {...desktop, ...mobile}
-  return { ...desktop, ...tablet, ...mobile };
+  if (breakpoint === 'mobile') return { ...desktop, ...mobile }
+  if (breakpoint === 'laptop') return { ...desktop, ...laptop };
+  if (breakpoint === 'mobileLandscape') return { ...desktop, ...mobileLandscape };
+  return { ...desktop, ...tablet, ...mobile, ...widescreen, ...laptop, ...mobileLandscape };
 };
 
 const buildComputedStyleObject = (styles: StyleProperties): StyleProperties => {
@@ -513,10 +558,12 @@ export const styleObjectToCssString = (styles: StyleProperties): string => {
 const getElementClassName = (element: BuilderElement): string => `lunio-${element.id}`;
 
 const breakpointQueries: Record<Breakpoint, string | null> = {
-  widescreen: '(min-width: 1200px)',
+  widescreen: '(min-width: 1920px)',
   desktop: null,
-  tablet: '(max-width: 1023px)',
-  mobile: '(max-width: 767px)',
+  laptop: '(max-width: 1200px)',
+  tablet: '(max-width: 991px)',
+  mobileLandscape: '(max-width: 767px)',
+  mobile: '(max-width: 479px)',
 };
 
 const buildPseudoClassCssForElement = (element: BuilderElement): string => {
@@ -694,8 +741,8 @@ const renderElementToReact = (element: BuilderElement, indent = 2, breakpoint: B
       return `${indentation}<span${attrs}>${iconName}</span>`;
     case 'listItem':
       return `${indentation}<li${attrs}>${text}</li>`;
-      case 'iframe':
-        return `${indentation}<iframe src="${src}"${attrs}></iframe>`;
+    case 'iframe':
+      return `${indentation}<iframe src="${src}"${attrs}></iframe>`;
     default:
       return `${indentation}<div${attrs}>${children}</div>`;
   }
@@ -1013,15 +1060,17 @@ export const generateReactProjectFiles = (pages: Page[], projectName: string, br
     { path: '.gitignore', content: 'node_modules\n/build\n.DS_Store\n' },
     { path: 'README.md', content: `# ${projectName}\n\nGenerated by LUNIO Builder. Run \`npm install\` and \`npm start\` to begin.` },
     { path: 'public/index.html', content: `<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8" />\n  <meta name="viewport" content="width=device-width, initial-scale=1.0" />\n  <title>${projectName}</title>\n</head>\n<body>\n  <div id="root"></div>\n</body>\n</html>` },
-    { path: 'public/manifest.json', content: JSON.stringify({
-      short_name: projectName,
-      name: projectName,
-      start_url: '.',
-      display: 'standalone',
-      background_color: '#ffffff',
-      theme_color: '#000000',
-      icons: [],
-    }, null, 2) },
+    {
+      path: 'public/manifest.json', content: JSON.stringify({
+        short_name: projectName,
+        name: projectName,
+        start_url: '.',
+        display: 'standalone',
+        background_color: '#ffffff',
+        theme_color: '#000000',
+        icons: [],
+      }, null, 2)
+    },
     { path: 'public/robots.txt', content: 'User-agent: *\nDisallow:' },
     { path: 'src/index.js', content: `import React from 'react';\nimport ReactDOM from 'react-dom/client';\nimport App from './App';\nimport './index.css';\n\nconst root = ReactDOM.createRoot(document.getElementById('root'));\nroot.render(\n  <React.StrictMode>\n    <App />\n  </React.StrictMode>\n);` },
   ];

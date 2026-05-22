@@ -3,9 +3,7 @@
 import React, { useRef, useState } from 'react';
 import { useBuilderStore } from '../../stores/builderStore';
 import { ElementRenderer } from './ElementRenderer';
-import { AIGeneratorModal } from './AIGeneratorModal';
 import { ElementType } from '../../types/builder';
-import { Bot } from 'lucide-react';
 
 export const Canvas: React.FC = () => {
   const {
@@ -20,7 +18,6 @@ export const Canvas: React.FC = () => {
     setDraggedElementType,
     dropTargetId,
     moveElement,
-    addGeneratedElements,
   } = useBuilderStore();
 
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
@@ -30,8 +27,10 @@ export const Canvas: React.FC = () => {
   const breakpointWidth = {
     widescreen: '1920px',
     desktop: '1600px',
-    tablet: '921px',
-    mobile: '390px',
+    laptop: '1200px',
+    tablet: '991px',
+    mobileLandscape: '767px',
+    mobile: '479px',
   }[breakpoint];
 
   const handleCanvasClick = (e: React.MouseEvent) => {

@@ -25,11 +25,12 @@ export type ElementType =
 export interface StyleProperties {
   // Layout
   display?: string;
+  flex?: string;
   flexDirection?: string;
   justifyContent?: string;
   alignItems?: string;
   flexWrap?: string;
-  flexGrow?: string;
+  flexGrow?: number | string;
   flexShrink?: string;
   flexBasis?: string;
   alignSelf?: string;
@@ -146,7 +147,9 @@ export interface ElementProps {
 export interface ResponsiveStyles {
   widescreen: StyleProperties;
   desktop: StyleProperties;
+  laptop: StyleProperties;
   tablet: StyleProperties;
+  mobileLandscape: StyleProperties;
   mobile: StyleProperties;
 }
 
@@ -183,7 +186,7 @@ export interface Page {
   };
 }
 
-export type Breakpoint = 'widescreen' | 'desktop' | 'tablet' | 'mobile';
+export type Breakpoint = 'widescreen' | 'desktop' | 'tablet' | 'mobile' | 'laptop' | 'mobileLandscape';
 
 export interface BuilderState {
   pages: Page[];
