@@ -8,6 +8,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import Link from "next/link"
+import Image from "next/image"
 
 export default async function UserAvatar() {
     const session = await auth()
@@ -22,7 +23,7 @@ export default async function UserAvatar() {
                 <>
                     <Popover>
                         <PopoverTrigger asChild>
-                            <img src={session.user.image} className="w-10 rounded-full border-3 border-white/20" alt="User Avatar" />
+                            <Image src={session.user.image} className="w-10 rounded-full border-3 border-white/20 bg-white" alt="User Avatar" width={20} height={20} />
                         </PopoverTrigger>
                         <PopoverContent className="bg-[#0d1117] text-white border border-white/20">
                             <PopoverHeader className="ml-4 gap-2 flex flex-col">

@@ -371,6 +371,35 @@ export const TopBar: React.FC = () => {
     publishToVercel();
   };
 
+  const handleViewOnVercel = async () => {
+    if (!projectId) {
+      setPublishMessage('Save the project first to view on Vercel.');
+      return;
+    }
+    try {
+      const resp = await fetch(`/api/projects?projectId=${encodeURIComponent(projectId)}`);
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => null);
+        setPublishMessage(err?.error || 'Unable to fetch project info.');
+        return;
+      }
+      const data = await resp.json();
+      const vercelUrl = data?.vercelUrl || data?.url || null;
+      if (!vercelUrl) {
+        setPublishMessage('No Vercel URL found for this project. Publish first.');
+        return;
+      }
+      setSiteVercelUrl(vercelUrl);
+      window.open(vercelUrl, '_blank');
+      setPublishMessage('');
+    } catch (e) {
+      console.error(e);
+      setPublishMessage('Failed to fetch Vercel URL');
+    } finally {
+      setTimeout(() => setPublishMessage(''), 3000);
+    }
+  };
+
   const saveProject = useCallback(async (autoSave = false) => {
     if (isSavingRef.current) return;
     setSaveMessage('');
@@ -805,10 +834,14 @@ export const TopBar: React.FC = () => {
                   <Share2 size={12} />
                   Publish to Vercel
                 </button>
-                <a href={siteVercelUrl || '#'} target="_blank" rel="noopener noreferrer" className="w-full flex items-center gap-2 px-4 py-2 text-xs text-gray-300 hover:text-white hover:bg-gray-800 transition-colors">
+                <button
+                  onClick={handleViewOnVercel}
+                  disabled={!projectId}
+                  className={`w-full flex items-center gap-2 px-4 py-2 text-xs ${projectId ? 'text-gray-300 hover:text-white hover:bg-gray-800' : 'text-gray-600 cursor-not-allowed'} transition-colors`}
+                >
                   <ExternalLink size={12} />
                   View on Vercel
-                </a>
+                </button>
                 <button
                   onClick={userData?.role !== 'pro' ? () => router.push('/pricing') : exportHTML}
                   className="w-full flex items-center gap-2 px-4 py-2 text-xs text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"

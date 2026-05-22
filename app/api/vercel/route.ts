@@ -11,6 +11,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
   }
 
+  const userId = session.user.id || session.user.email;
+
   const body = await request.json();
   const providedToken = body?.token;
   const projectId = body?.projectId;
@@ -127,8 +129,30 @@ export async function POST(request: Request) {
       );
     }
 
-    const url = data.url ? `https://${data.url}` : undefined;
-    return NextResponse.json({ ...data, url });
+    // Determine the deployed domain (prefer aliases, then alias, then url)
+    const domain = (Array.isArray(data?.aliases) && data.aliases.length && data.aliases[0])
+      || data?.alias
+      || data?.url;
+    const fullDomain = domain ? (String(domain).startsWith('http') ? String(domain) : `https://${String(domain)}`) : undefined;
+
+    // Persist the domain in the projects table when projectId is provided
+    if (projectId && fullDomain && userId) {
+      try {
+        const { error: updateError } = await supabaseServer
+          .from('projects')
+          .update({ vercelUrl: fullDomain })
+          .eq('id', projectId)
+          .eq('user_id', userId);
+
+        if (updateError) {
+          console.error('Failed to update project vercelUrl:', updateError.message || updateError);
+        }
+      } catch (e) {
+        console.error('Error updating project vercelUrl:', e);
+      }
+    }
+
+    return NextResponse.json({ ...data, url: fullDomain });
   } catch (error) {
     console.error('Vercel deployment error:', error);
     return NextResponse.json({ error: 'Unable to deploy to Vercel' }, { status: 500 });
