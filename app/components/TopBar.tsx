@@ -196,7 +196,9 @@ const buildFileTree = (files: Array<{ path: string; content: string }>): FileTre
 export const TopBar: React.FC = () => {
   const {
     projectId,
+    projectName,
     setProjectId,
+    setProjectName,
     pages,
     currentPageId,
     breakpoint,
@@ -410,7 +412,7 @@ export const TopBar: React.FC = () => {
 
     const payload = {
       projectId,
-      title: page.name,
+      title: projectName || 'Untitled Project',
       slug: page.slug || '/untitled',
       content: {
         pages,
@@ -434,6 +436,9 @@ export const TopBar: React.FC = () => {
 
       if (data?.id) {
         setProjectId(data.id);
+        if (data?.title) {
+          setProjectName(data.title);
+        }
         if (!projectId) {
           router.replace(`/editor?projectId=${data.id}`);
         }
@@ -447,7 +452,7 @@ export const TopBar: React.FC = () => {
       isSavingRef.current = false;
       setTimeout(() => setSaveMessage(''), 2500);
     }
-  }, [projectId, pages, currentPageId, page.name, page.slug, router, setProjectId]);
+  }, [projectId, projectName, pages, currentPageId, page.slug, router, setProjectId, setProjectName]);
 
   useEffect(() => {
     isSavingRef.current = isSaving;

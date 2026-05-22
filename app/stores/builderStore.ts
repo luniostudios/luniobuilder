@@ -7,8 +7,10 @@ import { htmlToBuilderElements } from '../utils/htmlToBuilder';
 interface BuilderStore extends BuilderState {
   // Auth/project tracking
   projectId: string | null;
+  projectName: string | null;
   setProjectId: (id: string | null) => void;
-  loadProject: (projectId: string | null, pages: Page[], currentPageId: string) => void;
+  setProjectName: (name: string | null) => void;
+  loadProject: (projectId: string | null, pages: Page[], currentPageId: string, projectName?: string) => void;
 
   // Element selection
   selectElement: (id: string | null) => void;
@@ -76,6 +78,7 @@ const defaultPage: Page = {
 export const useBuilderStore = create<BuilderStore>((set, get) => ({
   pages: [defaultPage],
   projectId: null,
+  projectName: null,
   currentPageId: 'page-1',
   selectedElementId: null,
   hoveredElementId: null,
@@ -93,8 +96,10 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
   isPreviewMode: false,
 
   setProjectId: (id) => set({ projectId: id }),
-  loadProject: (projectId, pages, currentPageId) => set({
+  setProjectName: (name) => set({ projectName: name }),
+  loadProject: (projectId, pages, currentPageId, projectName) => set({
     projectId,
+    projectName,
     pages,
     currentPageId,
     selectedElementId: null,

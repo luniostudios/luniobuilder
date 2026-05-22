@@ -32,6 +32,7 @@ export default function Dashboard() {
   const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; projectId: string | null }>({ isOpen: false, projectId: null });
+  const [createProjectModal, setCreateProjectModal] = useState<{ isOpen: boolean; name: string }>({ isOpen: false, name: '' });
   const [roleUpdated, setRoleUpdated] = useState(false);
 
   useEffect(() => {
@@ -128,6 +129,61 @@ export default function Dashboard() {
   const projectLimit = getProjectLimitForRole(userData?.role);
   const projectCount = projects.length;
   const reachedProjectLimit = projectLimit !== null && projectCount >= projectLimit;
+
+  const openCreateProjectModal = () => {
+    setCreateProjectModal({ isOpen: true, name: '' });
+  };
+
+  const confirmCreateProject = async () => {
+    if (reachedProjectLimit) {
+      setError(`Your ${userData?.role || 'current'} plan allows up to ${projectLimit} projects.`);
+      return;
+    }
+
+    const projectName = createProjectModal.name.trim() || 'New Project';
+
+    setSaving(true);
+    setError(null);
+
+    const payload = {
+      title: projectName,
+      slug: `/project-${Date.now()}`,
+      content: {
+        pages: [
+          {
+            id: 'page-1',
+            name: 'Home',
+            slug: '/',
+            elements: [],
+            seo: {
+              title: 'My Website',
+              description: '',
+              keywords: '',
+            },
+          },
+        ],
+        currentPageId: 'page-1',
+      },
+    };
+
+    const response = await fetch('/api/projects', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      setError(data?.error || 'Unable to create project');
+      setSaving(false);
+      return;
+    }
+
+    setCreateProjectModal({ isOpen: false, name: '' });
+    router.push(`/editor?projectId=${data.id}`);
+  };
 
   const createProject = async () => {
     if (reachedProjectLimit) {
@@ -235,15 +291,13 @@ export default function Dashboard() {
             <p className='text-gray-400 mt-2'>Create new projects, open saved work, and go directly to the editor.</p>
           </div>
           <button
-            onClick={createProject}
-            disabled={saving || reachedProjectLimit || !userData}
+            onClick={openCreateProjectModal}
+            disabled={reachedProjectLimit || !userData}
             className='rounded-full px-5 py-3 text-sm font-semibold text-white border-2 border-white/20 transition hover:bg-white/10 disabled:opacity-50 disabled:hover:bg-transparent'
           >
             {reachedProjectLimit
               ? `Limit reached (${projectCount}/${projectLimit})`
-              : saving
-                ? 'Creating…'
-                : 'Create New Project'}
+              : 'Create New Project'}
           </button>
         </div>
 
@@ -317,6 +371,44 @@ export default function Dashboard() {
           ))}
         </div>
       </div>
+
+      {createProjectModal.isOpen && (
+        <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50'>
+          <div className='bg-[#111214] rounded-xl p-6 w-full max-w-sm'>
+            <h2 className='text-xl font-semibold text-white'>Create New Project</h2>
+            <p className='mt-2 text-sm text-gray-400'>Enter a name for your new project.</p>
+            <input
+              type='text'
+              placeholder='Project name'
+              value={createProjectModal.name}
+              onChange={(e) => setCreateProjectModal({ ...createProjectModal, name: e.target.value })}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  confirmCreateProject();
+                }
+              }}
+              className='mt-4 w-full px-3 py-2 rounded-lg bg-[#1a1d23] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-[#1D976C]'
+              autoFocus
+            />
+            <div className='mt-6 flex justify-end gap-4'>
+              <button
+                onClick={() => confirmCreateProject()}
+                disabled={saving}
+                className='px-4 py-2 rounded-lg bg-[#1D976C] text-sm text-black font-semibold transition hover:opacity-90 disabled:opacity-80'
+              >
+                {saving ? 'Creating…' : 'Create'}
+              </button>
+              <button
+                onClick={() => setCreateProjectModal({ isOpen: false, name: '' })}
+                disabled={saving}
+                className='px-4 py-2 rounded-lg bg-gray-700 text-sm text-gray-300 transition hover:bg-gray-600 disabled:opacity-80'
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

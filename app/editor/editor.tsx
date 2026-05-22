@@ -15,6 +15,7 @@ export default function App() {
 
   const {
     loadProject,
+    setProjectName,
     isPreviewMode,
     selectedElementId,
     getElementById,
@@ -106,7 +107,8 @@ export default function App() {
       }
 
       if (data?.content?.pages && data?.content?.currentPageId) {
-        loadProject(data.id, data.content.pages, data.content.currentPageId);
+        loadProject(data.id, data.content.pages, data.content.currentPageId, data.title);
+        setProjectName(data.title);
         setProjectLoadedId(projectQueryId);
       } else {
         setProjectError('Project content is malformed');
