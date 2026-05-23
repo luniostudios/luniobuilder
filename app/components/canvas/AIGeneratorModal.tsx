@@ -7,14 +7,12 @@ interface AIGeneratorModalProps {
   isOpen: boolean;
   onClose: () => void;
   onGenerate: (html: string) => void;
-  selectedElementContext?: string;
 }
 
 export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
   isOpen,
   onClose,
   onGenerate,
-  selectedElementContext = '',
 }) => {
   const [prompt, setPrompt] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -68,7 +66,6 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
 
     const result = await generate({
       prompt: prompt.trim(),
-      context: selectedElementContext,
       imageData,
       imageMimeType,
     });

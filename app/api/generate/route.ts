@@ -8,7 +8,6 @@ const MAX_FREE_DAILY_AI = 5;
 
 interface GenerateRequest {
     prompt: string;
-    context?: string;
     imageData?: string; // Base64 encoded image
     imageMimeType?: string; // e.g., "image/png", "image/jpeg"
 }
@@ -43,7 +42,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<GenerateRespo
         }
 
         const body: GenerateRequest = await req.json();
-        const { prompt, context = '', imageData, imageMimeType } = body;
+        const { prompt, imageData, imageMimeType } = body;
 
         if (!prompt && !imageData) {
             return NextResponse.json(
@@ -85,6 +84,8 @@ export async function POST(req: NextRequest): Promise<NextResponse<GenerateRespo
 
 Your response MUST be valid HTML only, with inline styles directly on elements. Do not use CSS classes, external stylesheets, or markdown. Do not include code blocks or explanations.
 
+Components that are allowed to be generated include: buttons, forms, cards, modals, navigation bars, footers, and any other common UI elements.
+
 Guidelines:
 - Generate semantic HTML
 - Use inline styles only
@@ -93,7 +94,7 @@ Guidelines:
 - Include accessibility attributes
 - Keep it self-contained
 
-Context: ${context}`;
+`;
 
         let systemPrompt = baseSystemPrompt;
         let hasImage = false;
