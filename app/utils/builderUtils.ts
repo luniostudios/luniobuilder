@@ -722,7 +722,9 @@ const renderElementToReact = (element: BuilderElement, indent = 2, breakpoint: B
     case 'paragraph':
       return `${indentation}<p${attrs}>${text}</p>`;
     case 'button':
-      return `${indentation}<button type="button"${attrs}>${text}</button>`;
+      return element.props.href 
+        ? `${indentation}<a href="${href}"${attrs}>${text}</a>`
+        : `${indentation}<button type="button"${attrs}>${text}</button>`;
     case 'link':
       return `${indentation}<a href="${href}"${attrs}>${text}</a>`;
     case 'image':
@@ -791,7 +793,9 @@ export const renderElementToHtml = (element: BuilderElement, breakpoint: Breakpo
     case 'paragraph':
       return `<p${attrs}>${text}</p>`;
     case 'button':
-      return `<button type="button"${attrs}>${text}</button>`;
+      return element.props.href 
+        ? `<a href="${href}"${attrs}>${text}</a>`
+        : `<button type="button"${attrs}>${text}</button>`;
     case 'link':
       return `<a href="${href}"${attrs}>${text}</a>`;
     case 'image':
@@ -925,7 +929,9 @@ export const renderElementToReactWithComponents = (
     case 'paragraph':
       return `${indentation}<p${attrs}>${text}</p>`;
     case 'button':
-      return `${indentation}<button type="button"${attrs}>${text}</button>`;
+      return element.props.href 
+        ? `${indentation}<a href="${href}"${attrs}>${text}</a>`
+        : `${indentation}<button type="button"${attrs}>${text}</button>`;
     case 'link':
       return `${indentation}<a href="${href}"${attrs}>${text}</a>`;
     case 'image':
@@ -1177,9 +1183,16 @@ export const generateNextProjectFiles = (pages: Page[], projectName: string, bre
   ];
 
   const pageImports = pageMetadata.map(meta => `import ${meta.componentName} from '../components/${meta.fileName}';`).join('\n');
-  const pageEntries = pageMetadata.map(meta => `  { title: '${meta.page.name.replace(/'/g, "\\'")}', Component: ${meta.componentName} }`).join(',\n');
-  const pageSource = `'use client';\nimport { useState } from 'react';\n${pageImports}\n\nconst pages = [\n${pageEntries}\n];\n\nexport default function Page() {\n  const [currentIndex, setCurrentIndex] = useState(0);\n  const ActivePage = pages[currentIndex].Component;\n\n  return (\n    <main className="app-shell">\n      ${pageMetadata.length > 1 ? `\n      <div className="page-selector">\n${pageMetadata.map((meta, index) => `        <button type="button" className={currentIndex === ${index} ? 'active' : ''} onClick={() => setCurrentIndex(${index})}>${meta.page.name.replace(/'/g, "\\'")}</button>`).join('\n')}\n      </div>\n      ` : ''}\n      <div className="page-view">\n        <ActivePage />\n      </div>\n    </main>\n  );\n}\n`;
-  files.push({ path: 'app/page.js', content: pageSource });
+  const pageEntries = pageMetadata.map(meta => `  { slug: '${(meta.page.slug || '').replace(/'/g, "\\'")}', title: '${meta.page.name.replace(/'/g, "\\'")}', Component: ${meta.componentName} }`).join(',\n');
+  
+  // Create root page (home)
+  const homePage = pageMetadata[0];
+  const rootPageSource = `${pageMetadata.map(m => `import ${m.componentName} from '../components/${m.fileName}';`).join('\n')}\n\nexport default function Page() {\n  const Component = ${homePage.componentName};\n  return <Component />;\n}\n`;
+  files.push({ path: 'app/page.js', content: rootPageSource });
+
+  // Create dynamic route for other pages
+  const dynamicRouteSource = `\nimport { notFound } from 'next/navigation';\n${pageMetadata.map(m => `import ${m.componentName} from '../../components/${m.fileName}';`).join('\n')}\n\nconst pages = [\n${pageEntries}\n];\n\nexport async function generateStaticParams() {\n  return pages.map(page => ({\n    slug: page.slug ? page.slug.replace(/^\\//, '') : '',\n  }));\n}\n\nexport default function Page({ params }) {\n  const slug = '/' + (params.slug || '');\n  const page = pages.find(p => p.slug === slug || p.slug === slug.replace(/^\\//, ''));\n  \n  if (!page) {\n    notFound();\n  }\n  \n  return <page.Component />;\n}\n`;
+  files.push({ path: 'app/[slug]', content: dynamicRouteSource });
 
   const globalsCss = `* { box-sizing: border-box; }\nbody { margin: 0; min-height: 100vh; background: #f8fafc; color: #111827; font-family: system-ui, sans-serif; }\nimg { max-width: 100%; display: block; }\n.app-shell { min-height: 100vh; }\n.page-selector { display: flex; flex-wrap: wrap; gap: 8px; padding: 16px; background: transparent; }\n.page-selector button { border: none; padding: 10px 14px; background: #e5e7eb; color: #111827; border-radius: 9999px; cursor: pointer; }\n.page-selector button.active { background: #2563eb; color: #ffffff; }\n.page-view { padding: 0; }\n`;
   const builderCss = `${pages.map(page => generateCssForPage(page)).filter(Boolean).join('\n\n')}`;

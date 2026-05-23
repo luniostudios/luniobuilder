@@ -27,6 +27,8 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     addElementFromPalette,
     updateElementProps,
     pushHistory,
+    setCurrentPage,
+    pages,
   } = useBuilderStore();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -73,6 +75,22 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
 
   const setEditingRef = (node: HTMLElement | null) => {
     editingRef.current = node;
+  };
+
+  const handleButtonClick = (e: React.MouseEvent, href?: string) => {
+    if (isPreview && href) {
+      e.preventDefault();
+      // Check if href matches an internal page slug
+      const targetPage = (pages as any[])?.find((p: any) => p.slug === href || p.slug === href.replace(/^\//, '') || `/${p.slug}` === href);
+      if (targetPage) {
+        setCurrentPage(targetPage.id);
+        return;
+      }
+      // Otherwise, if it's an external link, open it
+      if (href.startsWith('http')) {
+        window.open(href, '_blank');
+      }
+    }
   };
 
   if (element.hidden && !isPreview) {
@@ -274,11 +292,27 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
           >
             {editingValue}
           </span>
+        ) : isPreview && element.props.href ? (
+          <a
+            ref={(node) => setEditingRef(node as HTMLElement | null)}
+            href={element.props.href}
+            style={safeCssStyles}
+            onClick={(e) => handleButtonClick(e, element.props.href as string)}
+            className='hover:opacity-90'
+          >
+            {element.props.text || 'Button'}
+          </a>
         ) : (
           <button
             ref={(node) => setEditingRef(node as HTMLElement | null)}
             style={safeCssStyles}
-            onClick={handleClick}
+            onClick={(e) => {
+              if (isPreview && element.props.href) {
+                handleButtonClick(e, element.props.href as string);
+              } else {
+                handleClick(e);
+              }
+            }}
             onDoubleClick={handleDoubleClick}
             className={isPreview ? 'hover:opacity-90' : 'cursor-pointer'}
           >

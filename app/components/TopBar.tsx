@@ -289,6 +289,10 @@ export const TopBar: React.FC = () => {
     return null;
   };
 
+  const getProjectTitle = () => {
+    return projectName || 'LUNIO Project';
+  };
+
   const publishToVercel = async () => {
     setPublishMessage('');
     setShowPublishMenu(false);
@@ -299,7 +303,9 @@ export const TopBar: React.FC = () => {
       return;
     }
 
-    const defaultName = page.name || 'luniobuilder-project';
+    // Make the defaultName the title of the project if it exists, otherwise fall back to the previous projectName or a generic default
+
+    const defaultName = getProjectTitle() || 'LUNIO Project';
     const projectName = window.prompt('Vercel Project Name:', defaultName)?.trim() || defaultName;
     const teamId = window.prompt('Vercel Team ID (optional):', '')?.trim() || undefined;
 
@@ -486,6 +492,7 @@ export const TopBar: React.FC = () => {
   const zoomIn = () => setCanvasScale(Math.min(canvasScale + 0.1, 2));
   const zoomOut = () => setCanvasScale(Math.max(canvasScale - 0.1, 0.25));
 
+  //Export to HTML
   const exportHTML = async () => {
     const page = getCurrentPage();
     const bodyContent = page.elements.length
