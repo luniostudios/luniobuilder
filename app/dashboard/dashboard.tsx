@@ -185,54 +185,6 @@ export default function Dashboard() {
     router.push(`/editor?projectId=${data.id}`);
   };
 
-  const createProject = async () => {
-    if (reachedProjectLimit) {
-      setError(`Your ${userData?.role || 'current'} plan allows up to ${projectLimit} projects.`);
-      return;
-    }
-
-    setSaving(true);
-    setError(null);
-
-    const payload = {
-      title: 'New Project',
-      slug: `/project-${Date.now()}`,
-      content: {
-        pages: [
-          {
-            id: 'page-1',
-            name: 'Home',
-            slug: '/',
-            elements: [],
-            seo: {
-              title: 'My Website',
-              description: '',
-              keywords: '',
-            },
-          },
-        ],
-        currentPageId: 'page-1',
-      },
-    };
-
-    const response = await fetch('/api/projects', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      setError(data?.error || 'Unable to create project');
-      setSaving(false);
-      return;
-    }
-
-    router.push(`/editor?projectId=${data.id}`);
-  };
-
   const deleteProject = async (projectId: string) => {
 
     setDeletingProjectId(projectId);

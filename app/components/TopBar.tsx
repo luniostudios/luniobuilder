@@ -215,6 +215,7 @@ export const TopBar: React.FC = () => {
     selectedElementId,
     deleteElement,
     duplicateElement,
+    addGeneratedElements,
   } = useBuilderStore();
 
   const router = useRouter();
@@ -649,9 +650,7 @@ export const TopBar: React.FC = () => {
     });
   };
 
-  function addGeneratedElements(html: string, arg1: null) {
-    throw new Error('Function not implemented.');
-  }
+  
 
   return (
     <>

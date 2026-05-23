@@ -122,7 +122,6 @@ export const Canvas: React.FC = () => {
           {page.elements.map(el => (
             <ElementRenderer key={el.id} element={el} />
           ))}
-
           {page.elements.length === 0 && (
             <div
               data-canvas-root="true"
