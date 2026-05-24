@@ -47,10 +47,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} bg-[#111114]`}>
       <head>
         <meta property="og:image" content="/socials/og.png" />
         <meta property="og:image:alt" content="LUNIO Builder" />

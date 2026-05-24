@@ -11,6 +11,10 @@ const Simu = () => {
                         <div className="h-3 w-3 rounded-full bg-yellow-500/80"></div>
                         <div className="h-3 w-3 rounded-full bg-green-500/80"></div>
                     </div>
+                        <a href="https://www.producthunt.com/products/lunio-builder?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-lunio-builder" target="_blank" rel="noopener noreferrer" className="max-lg:hidden">
+                            <img alt="LUNIO Builder - Drag and Drop No Code Website Builder. Start Building Today! | Product Hunt" width="150" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1154975&amp;theme=light&amp;t=1779661437933" />
+                        </a>
+  
                     <div className="flex items-center gap-4 text-xs font-medium text-slate-400">
                         <div className="flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-md">
                             <Smartphone className="h-3 w-3" />
