@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { signIn } from 'next-auth/react';
+import { Check, X } from 'lucide-react';
 
 interface PricingTabsProps {
     hasSession: boolean;
@@ -90,22 +91,68 @@ const PricingTabs: React.FC<PricingTabsProps> = ({ hasSession }) => {
         }
     };
 
+    const [isAnnual, setIsAnnual] = useState(false);
+
+    const pricingTiers = [
+        {
+            name: 'Free',
+            description: 'Perfect for individuals and hobbyists starting their journey.',
+            monthlyPrice: 0,
+            annualPrice: 0,
+            popular: false,
+            buttonText: 'Sign In for Free',
+            features: [
+                { name: '1 Workspace Project', included: true },
+                { name: 'LUNIO Builder Watermark', included: true },
+                { name: '5 Daily AI Requests', included: true },
+                { name: 'Basic Support', included: true },
+                { name: 'Code Export', included: false },
+                { name: 'Priority Support', included: false },
+                { name: 'Team Collaboration', included: false },
+            ],
+        },
+        {
+            name: 'Pro',
+            description: 'Ideal for professionals and freelancers building high-converting sites.',
+            monthlyPrice: 5,
+            annualPrice: 4,
+            popular: true,
+            buttonText: 'Subscribe',
+            features: [
+                { name: 'Up to 20 Workspace Projects', included: true },
+                { name: 'Early Access to New Features', included: true },
+                { name: 'Unlimited AI Requests', included: true },
+                { name: 'Priority 24/7 Support', included: true },
+                { name: 'HTML/React Code Export', included: true },
+                { name: 'No LUNIO Builder Watermark', included: true },
+                { name: 'Team Collaboration', included: false },
+            ],
+        },
+    ];
+
+    const toggleBilling = () => {
+        setIsAnnual(!isAnnual);
+        setBilling(!isAnnual ? 'annually' : 'monthly');
+    };
+
     return (
         <div className='flex flex-col justify-between min-h-screen mb-20'>
-            <div className='flex flex-col md:flex-row px-[15%] max-lg:px-0 justify-center items-center gap-8 mt-20'>
-                <div className='flex flex-col items-center justify-center gap-10'>
-                    <div className='rounded-3xl p-5 text-center'>
-                        <h1 className='text-4xl max-md:text-3xl font-bold'>The Affordable Plans</h1>
-                        <div>
-                            <p className='mt-4'>Check out the features each plan offers and make a decision that suits your needs.</p>
-                            <p>Whether it's for hobby projects or professional use, LUNIO Builder has you covered.</p>
-                            <p>If you need something more custom, contact us for a tailored plan.</p>
-                        </div>
-                    </div>
-                    <div className='flex items-center justify-center gap-2 rounded-md bg-gray-300/20 p-1.5 '>
+            {/* Header Section */}
+            <div className="pt-20 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
+                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 mb-6">
+                    Transparent, Affordable Pricing
+                </h1>
+                <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto mb-10">
+                    Check out the features each plan offers and make a decision that suits your needs.
+                    Whether it's for hobby projects or professional use, LUNIO Builder has you covered.
+                </p>
+
+                {/* Billing Toggle */}
+                <div className='flex items-center justify-center '>
+                    <div className='flex w-50 items-center justify-center gap-2 rounded-md bg-gray-300/20 p-1.5 mb-10 '>
                         <button
                             type='button'
-                            onClick={() => setBilling('monthly')}
+                            onClick={toggleBilling}
                             className={`flex flex-row items-center rounded-md px-4 py-2 text-sm font-semibold transition ${billing === 'monthly'
                                 ? 'bg-white text-slate-900 shadow-sm'
                                 : 'text-slate-900 hover:text-gray-500'
@@ -115,7 +162,7 @@ const PricingTabs: React.FC<PricingTabsProps> = ({ hasSession }) => {
                         </button>
                         <button
                             type='button'
-                            onClick={() => setBilling('annually')}
+                            onClick={toggleBilling}
                             className={`flex flex-row  items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition ${billing === 'annually'
                                 ? 'bg-white text-slate-900 shadow-sm'
                                 : 'text-slate-900 hover:text-gray-500'
@@ -123,80 +170,97 @@ const PricingTabs: React.FC<PricingTabsProps> = ({ hasSession }) => {
                         >
                             Annually
                         </button>
-
                     </div>
-
                 </div>
-            </div>
 
-            <div className='flex flex-col md:flex-row px-[15%] max-md:px-8 max-lg:px-0 justify-center items-center gap-8 mt-10'>
-                <div className='bg-white border-3 border-slate-500/5 p-6 md:w-1/3'>
-                    <h2 className='text-4xl font-bold mb-4'>FREE</h2>
-                    <p className='text-gray-600 mb-4 text-sm'>Want to just try it out? Perfect for static websites and hobby projects. If you need more features, consider upgrading to a paid plan.</p>
-                    <div className='flex items-baseline gap-2 mb-2'>
-                        <h2 className='text-5xl font-normal mb-6 mt-6'>$0</h2>
-                        <span className='text-lg text-gray-500'>/forever</span>
-                    </div>
-                    {hasSession ? (
-                        <Link href='/dashboard' className='w-full text-xl bg-blue-500/20 mb-4 text-blue-500 border-2 border-blue-500/40 py-2 px-4 rounded flex items-center justify-center'>
-                            Go to Dashboard
-                        </Link>
-                    ) : (
-                        <Link
-                            href='/auth/signin'
-                            className='w-full text-xl bg-blue-500/20 mb-4 text-blue-500 border-2 border-blue-500/40 py-2 px-4 rounded flex items-center justify-center'
+                {/* Pricing Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch">
+                    {pricingTiers.map((tier) => (
+                        <div
+                            key={tier.name}
+                            className={`relative flex flex-col bg-white rounded-3xl p-8 transition-all duration-300 ${tier.popular
+                                ? 'ring-2 ring-green-600 shadow-2xl scale-100 md:scale-105 z-10'
+                                : 'border border-slate-200 shadow-lg hover:shadow-xl'
+                                }`}
                         >
-                            Sign In
-                        </Link>
-                    )}
-                    <hr />
-                    <h6 className='text-sm font-bold mb-4 mt-4'>What's Included:</h6>
-                    <ul className='mt-6'>
-                        <li className='mb-2'><span className='text-slate-600'>✽</span> Only 1 Project</li>
-                        <li className='mb-2'><span className='text-slate-600'>✽</span> LUNIO Watermark</li>
-                        <li className='mb-2'><span className='text-slate-600'>✽</span> No Code Export</li>
-                        <li className='mb-2'><span className='text-slate-600'>✽</span> 24/7 Support</li>
-                    </ul>
-                    <div className='mt-6 p-5 bg-red-500/10 rounded-lg gap-1 flex flex-col items-start'>
-                        <h1 className='font-bold'>AI Usage Limit</h1>
-                        <p className='text-sm text-gray-600'>Limited to 5 AI-generated elements per day.</p>
-                    </div>
-                </div>
+                            {tier.popular && (
+                                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                                    <span className="bg-green-600 text-white text-sm font-bold uppercase tracking-wider py-1 px-4 rounded-full">
+                                        Limited Time
+                                    </span>
+                                </div>
+                            )}
+                            <div className="mb-6 text-left">
+                                <h3 className="text-2xl font-bold text-slate-900 mb-2">{tier.name}</h3>
+                                <p className="text-slate-500 text-sm h-10">{tier.description}</p>
+                            </div>
 
-                <div className='bg-white p-6 md:w-1/3 border-3 border-slate-500/20'>
-                    <div className='flex flex-row items-center gap-2 mb-2'>
-                        <h2 className='flex text-4xl font-bold mb-4'>Pro</h2>
-                        <span className='flex text-sm text-green-500 font-semibold mb-2 border border-green-500/40 py-1 px-2 rounded-2xl'>Limited Time</span>
-                        {billing === 'annually' && <span className='flex text-xs text-yellow-500 font-semibold border mb-2 border-yellow-500/40 bg-amber-300/20 py-1 px-2 rounded-2xl'>Save 20%</span>}
-                    </div>
-                    <p className='text-gray-600 mb-4 text-sm'>Ready to go beyond the basics? Ideal for freelancers and growing businesses. If you still need more features, consider contacting us.</p>
-                    <div className='flex items-baseline gap-2 mb-2'>
-                        <h2 className='text-5xl font-normal mb-6 mt-6'>{proPrice.amount}</h2>
-                        <span className='text-lg text-gray-500'>{proPrice.label}</span>
-                    </div>
-                    <button
-                        type='button'
-                        onClick={handleSubscribe}
-                        disabled={userData?.role === 'pro' || isLoading}
-                        className={`w-full text-xl mb-4 rounded py-2 px-4 border-2 transition ${userData?.role === 'pro' ? 'cursor-default' : ''} ${isLoading ? 'cursor-wait border-gray-400 bg-gray-200 text-gray-500' : 'border-blue-500/40 bg-blue-500/20 text-blue-500 hover:bg-blue-500/30'}`}
-                    >
-                        {isLoading ? 'Redirecting…' : userData?.role === 'pro' ? 'Already Subscribed' : 'Subscribe'}
-                    </button>
-                    <hr />
-                    <h6 className='text-sm font-bold mb-4 mt-4'>Extra Features Included:</h6>
-                    <ul className='mt-6'>
-                        <li className='mb-2'><span className='text-slate-600'>✽</span> Unlimited Projects</li>
-                        <li className='mb-2'><span className='text-slate-600'>✽</span> Early Access Features</li>
-                        <li className='mb-2'><span className='text-slate-600'>✽</span> Code Export</li>
-                        <li className='mb-2'><span className='text-slate-600'>✽</span> 24/7 Priority Support</li>
-                    </ul>
-                    <div className='mt-6 p-5 bg-red-500/10 rounded-lg gap-1 flex flex-col items-start'>
-                        <h1 className='font-bold'>AI Usage Limit</h1>
-                        <p className='text-sm text-gray-600'>Unlimited AI-generated elements per day.</p>
-                    </div>
+                            {tier.name === 'Pro' && billing === 'annually' && (
+                                < span className="absolute -right-4 -top-3 max-lg:-right-2 max-lg:-top-2 transform rotate-12 bg-emerald-100 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+                                    Save up to 20%
+                                </span>
+                            )}
+
+                            <div className="mb-6 text-left">
+                                <div className="flex items-baseline text-5xl font-extrabold text-slate-900">
+                                    ${isAnnual ? tier.annualPrice : tier.monthlyPrice}
+                                    <span className="text-lg font-medium text-slate-500 ml-2">/mo</span>
+                                </div>
+                                {isAnnual && (
+                                    <p className="text-sm text-slate-400 mt-2">
+                                        Billed ${tier.annualPrice * 12} annually
+                                    </p>
+                                )}
+                                {!isAnnual && <p className="text-sm text-transparent mt-2 hidden sm:block">&nbsp;</p>}
+                            </div>
+
+                            {tier.name === 'Free' && hasSession ?
+                                <Link href='/dashboard' className={`w-full py-4 px-6 rounded-xl font-bold text-lg transition-colors mb-8 ${tier.popular
+                                    ? 'bg-green-600 hover:bg-green-700 text-white shadow-md'
+                                    : 'bg-green-50 hover:bg-green-100 text-green-700'
+                                    }`}>
+                                    Go to Dashboard
+                                </Link>
+                                :
+                                <button
+                                    onClick={handleSubscribe}
+                                    disabled={userData?.role === 'pro' || isLoading}
+                                    className={`w-full py-4 px-6 rounded-xl font-bold text-lg transition-colors mb-8 ${tier.popular
+                                        ? 'bg-green-600 hover:bg-green-700 text-white shadow-md'
+                                        : 'bg-green-50 hover:bg-green-100 text-green-700'
+                                        }`}
+                                >
+                                    {tier.name === 'Pro' && hasSession && userData?.role === 'pro' ?
+                                        <Link href='/dashboard' >
+                                            Already Subscribed
+                                        </Link>
+                                        : tier.buttonText}
+                                </button>}
+
+                            <div className="grow">
+                                <p className="text-sm font-semibold text-slate-900 mb-4 text-left uppercase tracking-wide">
+                                    What's included
+                                </p>
+                                <ul className="space-y-4 text-left">
+                                    {tier.features.map((feature, index) => (
+                                        <li key={index} className="flex items-start">
+                                            {feature.included ? (
+                                                <Check className="h-5 w-5 text-green-600 shrink-0 mr-3" />
+                                            ) : (
+                                                <X className="h-5 w-5 text-slate-300 shrink-0 mr-3" />
+                                            )}
+                                            <span className={`text-sm ${feature.included ? 'text-slate-700' : 'text-slate-400'}`}>
+                                                {feature.name}
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 
