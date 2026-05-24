@@ -18,7 +18,7 @@ const Header = async () => {
     const session = await auth()
 
     return (
-        <div className='bg-[#111114] w-full mt-0 flex flex-row justify-between items-center gap-2 py-4 z-10 px-[15%] max-lg:px-10'>
+        <div className='bg-[#111114] w-full mt-0 flex flex-row justify-between items-center gap-2 py-4 z-10 px-[8%] max-lg:px-10'>
             <div className='flex'>
                 <Link href="/">
                     <img src="/logobuilder.png" alt="LUNIO Builder Logo" title='LUNIO Builder Logo' className='h-10 w-full max-lg:h-6' />
@@ -32,7 +32,7 @@ const Header = async () => {
                         <li><Link href="/documentation" className='text-gray-400 hover:text-gray-300 transition-colors'>Documentation</Link></li>
                         {!session && (
                             <li><Link href="/auth/signin" className="flex flex-row text-white border justify-center border-white/20 rounded-full px-3 py-1 items-center gap-2 hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                <User size={16} />
+                                <img src="https://img.icons8.com/?size=16&id=80935&format=png&color=000000" alt="" />
                                 Sign In
                             </Link>
                             </li>
