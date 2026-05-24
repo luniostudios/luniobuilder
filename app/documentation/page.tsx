@@ -341,7 +341,6 @@ export default function DocumentationPage() {
           <div className="flex items-center space-x-4">
             <Link href="/">
               <img src="/logobuilder.png" alt="Luniobuilder Logo" className="h-8 w-auto invert" />
-              <p className="text-sm text-muted-foreground">Learn how to use LUNIO Builder</p>
             </Link>
           </div>
 
@@ -374,7 +373,7 @@ export default function DocumentationPage() {
         <aside className={`fixed top-16 z-30 -ml-2 h-[calc(100vh-4rem)] w-full shrink-0 overflow-y-auto border-r bg-white md:sticky md:block ${
           sidebarOpen ? 'block' : 'hidden md:block'
         }`}>
-          <div className="p-6">
+          <div className="py-6">
             <div className="mb-4 md:hidden">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -388,7 +387,7 @@ export default function DocumentationPage() {
               </div>
             </div>
 
-            <nav className="space-y-2">
+            <nav>
               {filteredTopics.map(topic => {
                 const active = topic.id === selectedTopicId;
                 return (
@@ -399,9 +398,9 @@ export default function DocumentationPage() {
                       setSelectedTopicId(topic.id);
                       setSidebarOpen(false);
                     }}
-                    className={`w-full rounded-lg border p-3 text-left transition-all duration-200 hover:bg-accent ${
+                    className={`w-full py-4 px-4 text-left transition-all duration-200 hover:bg-accent ${
                       active
-                        ? 'border-primary bg-primary/5 text-primary'
+                        ? 'bg-primary/10 text-primary'
                         : 'border-transparent text-muted-foreground hover:text-foreground'
                     }`}
                   >
