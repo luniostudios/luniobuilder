@@ -10,6 +10,5 @@ export default function robots(): MetadataRoute.Robots {
       disallow: ["/dashboard", "/editor", "/api/"],
     },
     sitemap: `${site}/sitemap.xml`,
-    host: site.replace(/^https?:\/\//, ""),
   };
 }
