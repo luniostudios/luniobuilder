@@ -4,6 +4,7 @@ import { FormEvent, useMemo, useState } from 'react'
 import SignInButton from '../../components/auth/googleSignIn'
 import GitHub from '../../components/auth/githubSignIn'
 import Discord from '../../components/auth/discordSignIn'
+import { Check } from 'lucide-react'
 
 const page = () => {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
@@ -102,21 +103,22 @@ const page = () => {
           </div>
 
           <p className="mt-6 text-sm text-gray-400">
-            Email authentication is coming soon. For now, use Google sign in to access your account instantly.
+            By signing in, you agree to our <a href="/legal/terms" className="underline">Terms of Service</a> and <a href="/legal/privacy" className="underline">Privacy Policy</a>.
           </p>
         </section>
 
-        <aside className="rounded-[32px] border border-white/10 bg-[#0b1016] p-10">
+        <aside className="rounded-[32px] border border-white/10 bg-[#0b10169c] p-10">
           <div className="space-y-6">
             <div className="rounded-3xl bg-white/5 p-6">
               <p className="text-sm uppercase tracking-[0.24em] text-[#8ce6b6]">Why choose LUNIO Builder?</p>
-              <h2 className="mt-3 text-2xl font-bold">Visual editor drag and drop experience.</h2>
-              <p className="mt-3 text-gray-400">Sign in once and access your projects, website editor, and dashboard immediately. LUNIO Builder keeps your website builder workflow focused and modern.</p>
+              <h2 className="mt-3 text-2xl font-bold">Visual Drag & Drop Editor Experience.</h2>
+              <p className="mt-3 text-gray-400">Sign in once and access your dashboard, interactive editor, and projects immediately. LUNIO Builder keeps your website builder workflow focused and modern.</p>
             </div>
 
             <div className="grid gap-4">
-              {['No-code editor', 'Instant previews', 'Project management', 'drag & drop experience'].map((item) => (
+              {['No Code Editor', 'Instant Previews', 'Drag & Drop Experience', 'Fast Publishing'].map((item) => (
                 <div key={item} className="rounded-3xl border border-white/10 bg-white/5 p-4 text-gray-300">
+                  <Check size={18} className="inline-block mr-2 text-[#1d976c]" />
                   {item}
                 </div>
               ))}
