@@ -9,7 +9,8 @@ import { ContextMenu } from '../components/ContextMenu';
 import { useBuilderStore } from '../stores/builderStore';
 import { useSession } from "next-auth/react"
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { redirect, useSearchParams } from 'next/navigation';
+import router, { Router } from 'next/router';
 
 export default function App() {
 
@@ -121,15 +122,6 @@ export default function App() {
   }, [projectQueryId, session, projectLoadedId, loadProject]);
 
   const contextElement = contextMenu ? getElementById(contextMenu.id) : null;
-
-  if (!session) {
-    return <div className='bg-black w-full min-h-screen flex flex-col gap-2 items-center justify-center'>
-      <h1 className='text-3xl text-white'>Please sign in to access the editor</h1>
-      <Link href={"/"} className='ml-4 bg-linear-to-r from-[#1D976C] to-[#93F9B9] text-gray-800 font-bold py-2 px-4 rounded-lg'>
-        Back
-      </Link>
-    </div>;
-  }
 
   if (!projectQueryId) {
     return (

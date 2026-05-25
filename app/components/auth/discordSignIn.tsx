@@ -9,7 +9,7 @@ export default function SignIn() {
     const handleSignIn = async () => {
         setIsLoading(true)
         try {
-            await signIn("discord", { callbackUrl: "/" })
+            await signIn("discord", { callbackUrl: "/dashboard" })
         } catch (error) {
             console.error("Sign in error:", error)
         } finally {

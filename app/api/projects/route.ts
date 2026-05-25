@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   if (projectId) {
     const { data, error } = await supabaseServer
       .from('projects')
-      .select('id, title, slug, content, created_at, updated_at, vercel_token, vercelUrl')
+      .select('id, title, slug, content, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
       .eq('id', projectId)
       .eq('user_id', userId)
       .single();
@@ -33,7 +33,7 @@ export async function GET(request: Request) {
 
   const { data, error } = await supabaseServer
     .from('projects')
-    .select('id, title, slug, content, created_at, updated_at')
+    .select('id, title, slug, content, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
     .eq('user_id', userId)
     .order('updated_at', { ascending: false });
 
@@ -113,7 +113,7 @@ export async function POST(request: Request) {
   const { data, error } = await supabaseServer
     .from('projects')
     .insert({ user_id: userId, title, slug, content })
-    .select('id, title, slug, content, created_at, updated_at')
+    .select('id, title, slug, content, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
     .single();
 
   if (error) {
@@ -169,7 +169,7 @@ export async function PATCH(request: Request) {
     .update(updates)
     .eq('id', projectId)
     .eq('user_id', userId)
-    .select('id, title, slug, content, created_at, updated_at, vercel_token, vercelUrl')
+    .select('id, title, slug, content, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
     .single();
 
   if (error) {
