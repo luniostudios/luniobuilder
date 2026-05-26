@@ -19,7 +19,7 @@ const page = async () => {
           <p className='text-gray-400 mt-4 w-[90%]'>LUNIO Builder is a Drag & Drop No Code Website Builder. It allows you to create stunning websites with ease. With its intuitive drag & drop interface, you can design your website in minutes, without any coding knowledge. Once you finish, you can publish your website to Vercel with a single click.</p>
           <div className='flex flex-col gap-2'>
             <div className='flex flex-col sm:flex-row gap-4 max-lg:flex-row items-center'>
-              <Link href={session ? "/dashboard" : "/pricing"} className='bg-linear-to-r from-[#1D976C] to-[#93F9B9] text-gray-800 font-bold py-4 px-6 rounded-lg max-md:text-xs'>
+              <Link href={session ? "/dashboard" : "/auth/signin"} className='bg-linear-to-r from-[#1D976C] to-[#93F9B9] text-gray-800 font-bold py-4 px-6 rounded-lg max-md:text-xs'>
                 {session ? 'Go to Dashboard' : 'Start Building Today'}
               </Link>
               <Link href="/documentation" className='text-white text-lg py-3 px-6 hover:text-gray-300 border-2 rounded-lg border-white/20 transition-colors hover:bg-white/10 font-bold underline-offset-4'>
