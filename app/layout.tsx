@@ -64,23 +64,11 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <Analytics />
         {children}
-        {/*Start of Tawk.to Script*/}
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-              (function(){
-              var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-              s1.async=true;
-              s1.src='https://embed.tawk.to/69f383549c20d41c33c4080f/1jnfji0t8';
-              s1.charset='UTF-8';
-              s1.setAttribute('crossorigin','*');
-              s0.parentNode.insertBefore(s1,s0);
-              })();
-            `,
-          }}
+        window.$crisp=[];window.CRISP_WEBSITE_ID="f49a14fc-d01b-432a-a6b5-2b9d5c0ae78f";(function(){d=document;s=d.createElement("script");s.src="https://client.crisp.chat/l.js";s.async=1;d.getElementsByTagName("head")[0].appendChild(s);})();`,}}
         />
-        {/*End of Tawk.to Script*/}
       </body>
     </html>
   );

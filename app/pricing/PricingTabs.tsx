@@ -95,7 +95,7 @@ const PricingTabs: React.FC<PricingTabsProps> = ({ hasSession }) => {
 
     const pricingTiers = [
         {
-            name: 'Free',
+            name: 'STARTER',
             description: 'Perfect for individuals and hobbyists starting their journey.',
             monthlyPrice: 0,
             annualPrice: 0,
@@ -105,14 +105,14 @@ const PricingTabs: React.FC<PricingTabsProps> = ({ hasSession }) => {
                 { name: '1 Workspace Project', included: true },
                 { name: 'LUNIO Builder Watermark', included: true },
                 { name: '5 Daily AI Requests', included: true },
-                { name: 'Basic Support', included: true },
+                { name: '24/7 Basic Support', included: true },
                 { name: 'Code Export', included: false },
                 { name: 'Priority Support', included: false },
                 { name: 'Team Collaboration', included: false },
             ],
         },
         {
-            name: 'Pro',
+            name: 'PRO',
             description: 'Ideal for professionals and freelancers building high-converting sites.',
             monthlyPrice: 5,
             annualPrice: 4,
@@ -123,7 +123,7 @@ const PricingTabs: React.FC<PricingTabsProps> = ({ hasSession }) => {
                 { name: 'Early Access to New Features', included: true },
                 { name: 'Unlimited AI Requests', included: true },
                 { name: 'Priority 24/7 Support', included: true },
-                { name: 'HTML/React Code Export', included: true },
+                { name: 'HTML/React.js Code Export', included: true },
                 { name: 'No LUNIO Builder Watermark', included: true },
                 { name: 'Team Collaboration', included: false },
             ],
@@ -139,13 +139,10 @@ const PricingTabs: React.FC<PricingTabsProps> = ({ hasSession }) => {
         <div className='flex flex-col justify-between min-h-screen mb-20'>
             {/* Header Section */}
             <div className="pt-20 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
-                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 mb-6">
-                    Transparent, Affordable Pricing
-                </h1>
-                <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto mb-10">
-                    Check out the features each plan offers and make a decision that suits your needs.
-                    Whether it's for hobby projects or professional use, LUNIO Builder has you covered.
-                </p>
+                <div className="text-center max-w-3xl mx-auto mb-16">
+                    <h2 className="text-3xl md:text-5xl font-extrabold text-black mt-4 font-sans">Transparent Affordable Pricing</h2>
+                    <p className="text-black mt-4">Start creating absolutely free and upgrade as your business grows.</p>
+                </div>
 
                 {/* Billing Toggle */}
                 <div className='flex items-center justify-center '>
@@ -172,7 +169,6 @@ const PricingTabs: React.FC<PricingTabsProps> = ({ hasSession }) => {
                         </button>
                     </div>
                 </div>
-
                 {/* Pricing Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch">
                     {pricingTiers.map((tier) => (
@@ -191,8 +187,8 @@ const PricingTabs: React.FC<PricingTabsProps> = ({ hasSession }) => {
                                 </div>
                             )}
                             <div className="mb-6 text-left">
-                                <h3 className="text-2xl font-bold text-slate-900 mb-2">{tier.name}</h3>
-                                <p className="text-slate-500 text-sm h-10">{tier.description}</p>
+                                <h3 className="text-md font-bold text-slate-900 mb-2">{tier.name}</h3>
+                                <p className="text-black/50 text-sm h-10">{tier.description}</p>
                             </div>
 
                             {tier.name === 'Pro' && billing === 'annually' && (
