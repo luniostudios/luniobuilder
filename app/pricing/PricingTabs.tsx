@@ -48,7 +48,7 @@ const PricingTabs: React.FC<PricingTabsProps> = ({ hasSession }) => {
         if (billing === 'monthly') {
             return { amount: '$5', label: '/month', note: '' };
         }
-        return { amount: '$48', label: '/year', note: 'Save 20%' };
+        return { amount: '$45', label: '/year', note: 'Save 20%' };
     }, [billing]);
 
     const handleSubscribe = async () => {
