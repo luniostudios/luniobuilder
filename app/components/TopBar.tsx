@@ -659,7 +659,7 @@ export const TopBar: React.FC = () => {
           {/* Logo */}
           <div className="flex items-center gap-2 mr-2">
             <Link href="/dashboard" className="text-white font-semibold text-sm tracking-tight">
-              {userData ? `${userData.name || userData.email}!` : 'LUNIO Builder'}
+              Dashboard
             </Link>
           </div>
 
