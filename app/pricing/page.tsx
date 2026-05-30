@@ -17,7 +17,7 @@ const page = async () => {
     return (
         <div>
             <Header />
-            <PricingTabs hasSession={!!session} />
+            <PricingTabs hasSession={!session} />
             <FAQ />
             <Footer />
         </div>

@@ -143,6 +143,8 @@ const mapHtmlTagToElementType = (tagName: string): ElementType | null => {
     section: 'section',
     div: 'div',
     main: 'section',
+    header: 'section',
+    footer: 'section',
     article: 'section',
     aside: 'section',
     nav: 'navbar',

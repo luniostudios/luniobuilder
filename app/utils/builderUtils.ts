@@ -1183,7 +1183,10 @@ export const generateNextProjectFiles = (pages: Page[], projectName: string, bre
   ];
 
   const pageImports = pageMetadata.map(meta => `import ${meta.componentName} from '../components/${meta.fileName}';`).join('\n');
-  const pageEntries = pageMetadata.map(meta => `  { slug: '${(meta.page.slug || '').replace(/'/g, "\\'")}', title: '${meta.page.name.replace(/'/g, "\\'")}', Component: ${meta.componentName} }`).join(',\n');
+  const pageEntries = pageMetadata
+    .filter(meta => meta.page.slug && meta.page.slug !== '/')
+    .map(meta => `  { slug: '${(meta.page.slug || '').replace(/'/g, "\\'")}', title: '${meta.page.name.replace(/'/g, "\\'")}', Component: ${meta.componentName} }`)
+    .join(',\n');
   
   // Create root page (home)
   const homePage = pageMetadata[0];
@@ -1191,8 +1194,10 @@ export const generateNextProjectFiles = (pages: Page[], projectName: string, bre
   files.push({ path: 'app/page.js', content: rootPageSource });
 
   // Create dynamic route for other pages
-  const dynamicRouteSource = `\nimport { notFound } from 'next/navigation';\n${pageMetadata.map(m => `import ${m.componentName} from '../../components/${m.fileName}';`).join('\n')}\n\nconst pages = [\n${pageEntries}\n];\n\nexport async function generateStaticParams() {\n  return pages.map(page => ({\n    slug: page.slug ? page.slug.replace(/^\\//, '') : '',\n  }));\n}\n\nexport default function Page({ params }) {\n  const slug = '/' + (params.slug || '');\n  const page = pages.find(p => p.slug === slug || p.slug === slug.replace(/^\\//, ''));\n  \n  if (!page) {\n    notFound();\n  }\n  \n  return <page.Component />;\n}\n`;
-  files.push({ path: 'app/[slug]', content: dynamicRouteSource });
+  const dynamicRouteSource = `\nimport { notFound } from 'next/navigation';\n${pageMetadata
+    .filter(meta => meta.page.slug && meta.page.slug !== '/')
+    .map(m => `import ${m.componentName} from '../../components/${m.fileName}';`).join('\n')}\n\nconst pages = [\n${pageEntries}\n];\n\nexport async function generateStaticParams() {\n  return pages.map(page => ({\n    slug: page.slug.replace(/^\\//, ''),\n  }));\n}\n\nexport default function Page({ params }) {\n  const slug = '/' + (params.slug || '');\n  const page = pages.find(p => p.slug === slug || p.slug === slug.replace(/^\\//, ''));\n  \n  if (!page) {\n    notFound();\n  }\n  \n  return <page.Component />;\n}\n`;
+  files.push({ path: 'app/[slug]/page.js', content: dynamicRouteSource });
 
   const globalsCss = `* { box-sizing: border-box; }\nbody { margin: 0; min-height: 100vh; background: #f8fafc; color: #111827; font-family: system-ui, sans-serif; }\nimg { max-width: 100%; display: block; }\n.app-shell { min-height: 100vh; }\n.page-selector { display: flex; flex-wrap: wrap; gap: 8px; padding: 16px; background: transparent; }\n.page-selector button { border: none; padding: 10px 14px; background: #e5e7eb; color: #111827; border-radius: 9999px; cursor: pointer; }\n.page-selector button.active { background: #2563eb; color: #ffffff; }\n.page-view { padding: 0; }\n`;
   const builderCss = `${pages.map(page => generateCssForPage(page)).filter(Boolean).join('\n\n')}`;
