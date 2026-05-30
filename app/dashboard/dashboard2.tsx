@@ -385,7 +385,7 @@ export default function dashboard() {
 
                             <div>
                                 <h1 className="text-2xl font-bold text-gray-900">🚀 Welcome back, {userData?.name || 'User'}</h1>
-                                <p className="text-gray-500 mt-1">Here's what's happening with your LUNIO Builder sites today.</p>
+                                <p className="text-gray-500 mt-1">Here's what's happening with your websites today.</p>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-center">
