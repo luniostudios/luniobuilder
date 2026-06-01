@@ -5,6 +5,7 @@ import { GoogleGenAI } from "@google/genai";
 
 const ai = new GoogleGenAI({});
 const MAX_FREE_DAILY_AI = 5;
+const UNSPLASH_ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY;
 
 interface GenerateRequest {
     prompt: string;
@@ -225,6 +226,51 @@ Analyze the provided image and generate HTML that matches its design, layout, co
             .replace(/```css\n?/g, '')
             .replace(/```\n?/g, '')
             .trim();
+
+        // Helper: fetch a usable Unsplash image URL for the given query.
+        async function fetchUnsplashImage(query: string) {
+            try {
+                if (UNSPLASH_ACCESS_KEY) {
+                    const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=1&orientation=landscape`;
+                    const res = await fetch(url, {
+                        headers: {
+                            Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}`,
+                        },
+                    });
+                    if (res.ok) {
+                        const j = await res.json();
+                        const result = j?.results?.[0];
+                        if (result && result.urls) return result.urls.regular || result.urls.full || result.urls.raw;
+                    }
+                }
+
+                // Fallback to source.unsplash.com (no key required)
+                return `https://source.unsplash.com/1600x900/?${encodeURIComponent(query || 'abstract')}`;
+            } catch (err) {
+                return `https://source.unsplash.com/1600x900/?${encodeURIComponent(query || 'abstract')}`;
+            }
+        }
+
+        // If the generated HTML likely needs a working image, replace common placeholders with an Unsplash URL.
+        try {
+            // Determine a query for Unsplash: prefer the user's prompt, else a generic term
+            const imageQuery = prompt || 'hero background';
+            const unsplashUrl = await fetchUnsplashImage(imageQuery);
+
+            // Replace common placeholder tokens the model might emit
+            cleanedContent = cleanedContent
+                .replace(/\{\{\s*IMAGE_URL\s*\}\}/gi, unsplashUrl)
+                .replace(/__IMAGE_URL__/gi, unsplashUrl)
+                .replace(/IMAGE_URL/gi, unsplashUrl);
+
+            // Replace empty or hash image src attributes: src="" or src='#' or src="null"
+            cleanedContent = cleanedContent.replace(/(<img[^>]*src=\s*["'])(?:#|''|""|\s*)(["'][^>]*>)/gi, `$1${unsplashUrl}$2`);
+
+            // Replace background-image placeholders like url('') or url("") or url(#)
+            cleanedContent = cleanedContent.replace(/background-image\s*:\s*url\((['"]?)(?:#|''|""|\s*)(['"]?)\)/gi, `background-image: url('${unsplashUrl}')`);
+        } catch (err) {
+            console.warn('Unsplash replacement failed:', err);
+        }
 
         if (role === 'free') {
             const updatedUsage = {
