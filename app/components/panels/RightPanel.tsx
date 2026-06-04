@@ -109,8 +109,8 @@ export const RightPanel: React.FC = () => {
                 key={tab}
                 onClick={() => setRightPanelTab(tab)}
                 className={`flex-1 py-3 text-xs font-medium capitalize transition-colors ${rightPanelTab === tab
-                    ? 'text-white border-b-2 border-blue-300 bg-blue-300/5'
-                    : 'text-gray-400 hover:text-gray-200'
+                  ? 'text-white border-b-2 border-blue-300 bg-blue-300/5'
+                  : 'text-gray-400 hover:text-gray-200'
                   }`}
               >
                 {tab === 'css' ? 'CSS' : tab}
@@ -540,7 +540,7 @@ const buildBoxShadow = ({ inset, x, y, blur, spread, color }: Record<string, str
 
 const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
   const { updateElementStyles, updateElementPseudoClassStyles, pseudoClassState, setPseudoClassState } = useBuilderStore() as any;
-  
+
   // Get styles based on current pseudo-class state
   let styles: any;
   if (pseudoClassState === 'base') {
@@ -557,10 +557,38 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
   const [textClipImageTab, setTextClipImageTab] = useState<'value' | 'unsplash'>('value');
 
   const update = (key: keyof StyleProperties, value: string) => {
+    const animationFields: Array<keyof StyleProperties> = [
+      'animationName',
+      'animationDuration',
+      'animationTimingFunction',
+      'animationDelay',
+      'animationIterationCount',
+      'animationDirection',
+      'animationFillMode',
+      'animationPlayState',
+    ];
+
+    const updates: Partial<StyleProperties> = { [key]: value };
+
+    if (key === 'animation') {
+      animationFields.forEach(field => {
+        updates[field] = '';
+      });
+    }
+
+    if (animationFields.includes(key)) {
+      updates.animation = '';
+    }
+
     if (pseudoClassState === 'base') {
-      updateElementStyles(element.id, { [key]: value });
+      updateElementStyles(element.id, updates);
     } else {
-      updateElementPseudoClassStyles(element.id, pseudoClassState as 'hover' | 'active' | 'focus', breakpoint as 'widescreen' | 'desktop' | 'tablet' | 'mobile', { [key]: value });
+      updateElementPseudoClassStyles(
+        element.id,
+        pseudoClassState as 'hover' | 'active' | 'focus',
+        breakpoint as 'widescreen' | 'desktop' | 'tablet' | 'mobile',
+        updates
+      );
     }
   };
 
@@ -612,11 +640,10 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
           <button
             key={state}
             onClick={() => setPseudoClassState(state)}
-            className={`flex-1 text-xs py-1.5 px-2 rounded-md font-medium transition-colors ${
-              pseudoClassState === state
+            className={`flex-1 text-xs py-1.5 px-2 rounded-md font-medium transition-colors ${pseudoClassState === state
                 ? 'bg-blue-600/40 text-blue-200 border border-blue-400/50'
                 : 'bg-gray-900 text-gray-400 border border-gray-700 hover:text-gray-200'
-            }`}
+              }`}
           >
             {state === 'base' ? 'Default' : state.charAt(0).toUpperCase() + state.slice(1)}
           </button>
@@ -758,7 +785,7 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
 
       {/* Typography */}
       <Section title="Typography">
-          <InputRow
+        <InputRow
           label="Font"
           value={styles.fontFamily || ''}
           onChange={v => update('fontFamily', v)}
@@ -999,6 +1026,30 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
         <InputRow label="Opacity" value={styles.opacity || ''} onChange={v => update('opacity', v)} placeholder="1" />
         <InputRow label="z-index" value={styles.zIndex || ''} onChange={v => update('zIndex', v)} placeholder="auto" />
         <InputRow label="Transition" value={styles.transition || ''} onChange={v => update('transition', v)} placeholder="all 0.2s ease" />
+      </Section>
+
+      <Section title="Animation" defaultOpen={false}>
+        <div className="mb-3">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Animations</p>
+              <p className="text-[11px] text-gray-500">Apply a custom CSS animation or use a quick preset.</p>
+            </div>
+          </div>
+          <InputRow
+            label="Animation Name"
+            value={styles.animationName || ''}
+            onChange={v => update('animationName', v)}
+            options={['fade-in', 'fade-out', 'slide-up', 'pop-in', 'bounce', 'spin', 'slide-in']}
+          />
+          <InputRow label="Duration" value={styles.animationDuration || ''} onChange={v => update('animationDuration', v)} placeholder="0.8s" />
+          <InputRow label="Timing" value={styles.animationTimingFunction || ''} onChange={v => update('animationTimingFunction', v)} placeholder="ease" />
+          <InputRow label="Delay" value={styles.animationDelay || ''} onChange={v => update('animationDelay', v)} placeholder="0s" />
+          <InputRow label="Repeat" value={styles.animationIterationCount || ''} onChange={v => update('animationIterationCount', v)} placeholder="1 or infinite" />
+          <InputRow label="Direction" value={styles.animationDirection || ''} onChange={v => update('animationDirection', v)} placeholder="normal" />
+          <InputRow label="Fill mode" value={styles.animationFillMode || ''} onChange={v => update('animationFillMode', v)} placeholder="both" />
+          <InputRow label="Play state" value={styles.animationPlayState || ''} onChange={v => update('animationPlayState', v)} placeholder="running" />
+        </div>
       </Section>
     </div>
   );

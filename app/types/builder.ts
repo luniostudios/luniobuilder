@@ -123,6 +123,17 @@ export interface StyleProperties {
 
   // Transition
   transition?: string;
+
+  // Animation
+  animation?: string;
+  animationName?: string;
+  animationDuration?: string;
+  animationTimingFunction?: string;
+  animationDelay?: string;
+  animationIterationCount?: string;
+  animationDirection?: string;
+  animationFillMode?: string;
+  animationPlayState?: string;
 }
 
 export interface ElementProps {
