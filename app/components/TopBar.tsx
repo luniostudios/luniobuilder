@@ -858,24 +858,24 @@ export const TopBar: React.FC = () => {
                   View on Vercel
                 </button>
                 <button
-                  onClick={userData?.role !== 'pro' ? () => router.push('/pricing') : exportHTML}
+                  onClick={userData?.role !== 'pro' && userData?.role !== 'admin' ? () => router.push('/pricing') : exportHTML}
                   className="w-full flex items-center gap-2 px-4 py-2 text-xs text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
                 >
                   <Download size={12} />
                   Export HTML
-                  {userData?.role !== 'pro' && (
+                  {userData?.role !== 'pro' && userData?.role !== 'admin' && (
                     <span className="ml-auto inline-flex align-center rounded-full bg-blue-500/20 text-blue-300 border border-blue-300 text-[10px] px-2 py-0.5">
                       Pro
                     </span>
                   )}
                 </button>
                 <button
-                  onClick={userData?.role !== 'pro' ? () => router.push('/pricing') : exportReact}
+                  onClick={userData?.role !== 'pro' && userData?.role !== 'admin' ? () => router.push('/pricing') : exportReact}
                   className="w-full flex items-center gap-2 px-4 py-2 text-xs text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
                 >
                   <Download size={12} />
                   Export React
-                  {userData?.role !== 'pro' && (
+                  {userData?.role !== 'pro' && userData?.role !== 'admin' && (
                     <span className="ml-auto inline-flex align-center rounded-full bg-blue-500/20 text-blue-300 border border-blue-300 text-[10px] px-2 py-0.5">
                       Pro
                     </span>

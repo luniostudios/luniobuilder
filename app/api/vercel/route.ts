@@ -140,7 +140,7 @@ export async function POST(request: Request) {
       try {
         const { error: updateError } = await supabaseServer
           .from('projects')
-          .update({ vercelUrl: fullDomain })
+          .update({ vercelUrl: fullDomain, status: 'published' })
           .eq('id', projectId)
           .eq('user_id', userId);
 

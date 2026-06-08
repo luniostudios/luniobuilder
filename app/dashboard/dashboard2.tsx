@@ -20,6 +20,7 @@ import {
     Rocket,
     ArrowUpRight,
     Send,
+    Infinity,
 } from 'lucide-react';
 
 import { useEffect } from 'react';
@@ -156,8 +157,9 @@ export default function dashboard() {
 
         switch (role.toLowerCase()) {
             case 'admin':
+                return 100000;
             case 'owner':
-                return null;
+                return 100000;
             case 'pro':
                 return 20;
             case 'business':
@@ -316,13 +318,13 @@ export default function dashboard() {
                 <div className="p-4 border-t border-gray-100">
                     <button className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-gray-50 transition-colors text-left">
                         <img
-                            src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"
+                            src={`${session?.user?.image || 'https://www.gravatar.com/avatar?d=mp&f=y'}`}
                             alt="User Avatar"
                             className="w-9 h-9 rounded-full bg-gray-100 ring-2 ring-white"
                         />
                         <div className="flex-1 overflow-hidden">
-                            <p className="text-sm font-medium text-gray-900 truncate">{userData?.name}</p>
-                            <p className="text-xs text-gray-500 truncate">{userData?.role?.toUpperCase()} Plan</p>
+                            <p className="text-sm font-medium text-gray-900 truncate">{session?.user?.name}</p>
+                            <p className="text-xs text-gray-500 truncate">{userData?.role?.toUpperCase()}</p>
                         </div>
                     </button>
                 </div>
@@ -384,14 +386,14 @@ export default function dashboard() {
                             </div>
 
                             <div>
-                                <h1 className="text-2xl font-bold text-gray-900">🚀 Welcome back, {userData?.name || 'User'}</h1>
+                                <h1 className="text-2xl font-bold text-gray-900">🚀 Welcome back, {userData?.name || 'User'} <span className="text-sm font-normal text-red-400">{userData?.role?.toUpperCase()}</span></h1>
                                 <p className="text-gray-500 mt-1">Here's what's happening with your websites today.</p>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-center">
                                     <span className="text-sm font-medium text-gray-500">Total Sites</span>
-                                    <div className="mt-2 flex items-baseline gap-2">
-                                        <span className="text-2xl font-bold text-gray-900">{projects.length}/{projectLimit}</span>
+                                    <div className="mt-2 flex flex-row items-baseline gap-2">
+                                        <span className="flex flex-row  items-center text-2xl font-bold text-gray-900">{projects.length}/{projectLimit < 1000 ? projectLimit : "∞"}</span>
                                     </div>
                                 </div>
                             </div>
