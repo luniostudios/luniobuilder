@@ -386,7 +386,10 @@ export default function dashboard() {
                             </div>
 
                             <div>
-                                <h1 className="text-2xl font-bold text-gray-900">🚀 Welcome back, {userData?.name || 'User'} <span className="text-sm font-normal text-red-400">{userData?.role?.toUpperCase()}</span></h1>
+                                {
+                                    // session.user may not have a `role` property on its type, cast to any to safely access it
+                                }
+                                <h1 className="text-2xl font-bold text-gray-900">🚀 Welcome back, {session?.user?.name || 'User'} <span className="text-sm font-normal text-red-400">{((session?.user as any)?.role ?? '').toUpperCase()}</span></h1>
                                 <p className="text-gray-500 mt-1">Here's what's happening with your websites today.</p>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
