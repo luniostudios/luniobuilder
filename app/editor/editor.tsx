@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { TopBar } from '../components/TopBar';
 import { LeftPanel } from '../components/panels/LeftPanel';
 import { RightPanel } from '../components/panels/RightPanel';
@@ -9,8 +9,7 @@ import { ContextMenu } from '../components/ContextMenu';
 import { useBuilderStore } from '../stores/builderStore';
 import { useSession } from "next-auth/react"
 import Link from 'next/link';
-import { redirect, useSearchParams } from 'next/navigation';
-import router, { Router } from 'next/router';
+import { useSearchParams } from 'next/navigation';
 
 export default function App() {
 

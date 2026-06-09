@@ -23,7 +23,7 @@ export default async function UserAvatar() {
                 <>
                     <Popover>
                         <PopoverTrigger asChild>
-                            <Image src={session.user.image} className="w-10 rounded-full bg-white" alt="User Avatar" width={20} height={20} />
+                            <Image src={session.user.image } className="w-10 rounded-full bg-white" alt="User Avatar" width={20} height={20} />
                         </PopoverTrigger>
                         <PopoverContent className="bg-[#0d1117] text-white border border-white/20">
                             <PopoverHeader className="ml-4 gap-2 flex flex-col">

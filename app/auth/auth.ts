@@ -6,6 +6,7 @@ import Discord from "next-auth/providers/discord"
 import supabase from "./db"
 import { authorizeUser } from "./credentialsProvider"
 import jwt from "jsonwebtoken"
+import Resend from "next-auth/providers/resend"
 
 const authOptions = {
     adapter: supabase,
@@ -19,6 +20,11 @@ const authOptions = {
             clientSecret: process.env.AUTH_GITHUB_SECRET as string,
         }),
         Discord,
+        Resend({
+            // If your environment variable is named differently than default
+            apiKey: process.env.AUTH_RESEND_KEY,
+            from: process.env.EMAIL_FROM
+        }),
         Credentials({
             name: "Credentials",
             credentials: {

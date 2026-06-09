@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import {
     LayoutDashboard,
     Globe,
-    LayoutTemplate,
     Settings,
     BarChart3,
     Search,
@@ -13,14 +12,12 @@ import {
     MoreVertical,
     ExternalLink,
     Edit2,
-    Copy,
     Trash2,
     Menu,
     X,
     Rocket,
     ArrowUpRight,
     Send,
-    Infinity,
 } from 'lucide-react';
 
 import { useEffect } from 'react';

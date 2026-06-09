@@ -40,8 +40,14 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'lh6.googleusercontent.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
-    domains: ['avatars.githubusercontent.com', 'lh3.googleusercontent.com', 'discordapp.com', 'cdn.discordapp.com', 's.gravatar.com', 'www.gravatar.com'],
+    domains: ['avatars.githubusercontent.com', 'lh3.googleusercontent.com', 'discordapp.com', 'cdn.discordapp.com', 's.gravatar.com', 'www.gravatar.com', 'lh6.googleusercontent.com'],
   },
 };
 
