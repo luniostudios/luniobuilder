@@ -33,6 +33,7 @@ interface NavItemProps {
 
 interface ProjectRecord {
     id: string;
+    user_id?: string;
     title: string;
     slug: string;
     created_at: Date;
@@ -54,6 +55,7 @@ export default function dashboard() {
     const [searchQuery, setSearchQuery] = useState('');
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
+    
     const toggleDropdown = (id: string) => {
         if (openDropdown === id) {
             setOpenDropdown(null);
@@ -61,9 +63,10 @@ export default function dashboard() {
             setOpenDropdown(id);
         }
     };
-
+    
     const { data: session, status } = useSession();
     const router = useRouter();
+    const role = (session?.user as any)?.role || 'free';
     const searchParams = useSearchParams();
     const [projects, setProjects] = useState<ProjectRecord[]>([]);
     const [userData, setUserData] = useState<UserData | null>(null);
@@ -386,7 +389,7 @@ export default function dashboard() {
                                 {
                                     // session.user may not have a `role` property on its type, cast to any to safely access it
                                 }
-                                <h1 className="text-2xl font-bold text-gray-900">🚀 Welcome back, {session?.user?.name || 'User'} <span className="text-sm font-normal text-red-400">{((session?.user as any)?.role ?? '').toUpperCase()}</span></h1>
+                                <h1 className="text-2xl font-bold text-gray-900">🚀 Welcome back, {session?.user?.name || 'User'} <span className={`text-sm font-normal rounded-full px-2 py-1 align-middle  ${role === 'admin' ? 'text-red-500 bg-red-500/20' : role === 'owner' ? 'text-green-500' : role === 'pro' ? 'text-blue-500' : role === 'business' ? 'text-purple-500' : 'text-gray-400'}`}>{role}</span></h1>
                                 <p className="text-gray-500 mt-1">Here's what's happening with your websites today.</p>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -402,7 +405,7 @@ export default function dashboard() {
                         {/* Projects Section */}
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
-                                <h2 className="text-lg font-bold text-gray-900">Your Projects</h2>
+                                <h2 className="text-lg font-bold text-gray-900">{userData && (userData.role?.toLowerCase() === 'admin' || userData.role?.toLowerCase() === 'owner') ? 'All Projects' : 'Your Projects'}</h2>
                                 <button className="text-sm font-medium text-gray-600 hover:text-gray-500 flex items-center gap-1">
                                     View all templates <ArrowUpRight size={14} />
                                 </button>
@@ -423,7 +426,7 @@ export default function dashboard() {
 
                                 {/* Project Cards */}
                                 {projects.map((project) => (
-                                    <div key={project.id} className="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all overflow-visible relative flex flex-col h-70">
+                                    <div key={project.id} className="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all overflow-visible relative flex flex-col h-full">
 
                                         {/* Image / Thumbnail Container */}
                                         <div className="relative w-full h-40 overflow-hidden rounded-t-xl bg-gray-100 shrink-0">
@@ -466,6 +469,9 @@ export default function dashboard() {
                                                         {project.vercelUrl}
                                                         <ExternalLink size={12} className="opacity-0 -translate-y-1 group-hover/link:opacity-100 group-hover/link:translate-y-0 transition-all" />
                                                     </a>
+                                                    {userData && (userData.role?.toLowerCase() === 'admin' || userData.role?.toLowerCase() === 'owner') && project.user_id && (
+                                                        <div className="text-xs text-gray-500 mt-1">Owner: {project.user_id}</div>
+                                                    )}
                                                 </div>
 
                                                 {/* Action Menu */}

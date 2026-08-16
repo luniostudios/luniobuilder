@@ -570,12 +570,95 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
 
     const updates: Partial<StyleProperties> = { [key]: value };
 
+    // Helper: parse a simple CSS animation shorthand into explicit properties.
+    const parseAnimationShorthand = (raw: string) => {
+      const out: Record<string, string> = {
+        animationName: '',
+        animationDuration: '',
+        animationTimingFunction: '',
+        animationDelay: '',
+        animationIterationCount: '',
+        animationDirection: '',
+        animationFillMode: '',
+        animationPlayState: '',
+      };
+
+      if (!raw) return out;
+      const tokens = String(raw).trim().split(/\s+/);
+
+      const timingFunctions = new Set(['ease', 'linear', 'ease-in', 'ease-out', 'ease-in-out', 'step-start', 'step-end']);
+      const directions = new Set(['normal', 'reverse', 'alternate', 'alternate-reverse']);
+      const fillModes = new Set(['none', 'forwards', 'backwards', 'both']);
+      const playStates = new Set(['running', 'paused']);
+
+      let nameSet = false;
+      let durationFound = false;
+
+      for (const t of tokens) {
+        const token = t.trim();
+        if (!token) continue;
+
+        // duration or delay (s or ms)
+        if (/^\d*\.?\d+(ms|s)$/.test(token)) {
+          if (!durationFound) {
+            out.animationDuration = token;
+            durationFound = true;
+          } else if (!out.animationDelay) {
+            out.animationDelay = token;
+          }
+          continue;
+        }
+
+        // timing-function (named or function)
+        if (token.includes('(') || timingFunctions.has(token)) {
+          out.animationTimingFunction = token;
+          continue;
+        }
+
+        // iteration count
+        if (/^\d+$/.test(token) || token === 'infinite') {
+          out.animationIterationCount = token;
+          continue;
+        }
+
+        if (directions.has(token)) {
+          out.animationDirection = token;
+          continue;
+        }
+
+        if (fillModes.has(token)) {
+          out.animationFillMode = token;
+          continue;
+        }
+
+        if (playStates.has(token)) {
+          out.animationPlayState = token;
+          continue;
+        }
+
+        // Fallback: treat first unmatched token as name
+        if (!nameSet) {
+          out.animationName = token;
+          nameSet = true;
+        }
+      }
+
+      return out;
+    };
+
+    // If the user set the shorthand `animation`, expand it into explicit fields
+    // instead of keeping the shorthand alongside non-shorthand properties.
     if (key === 'animation') {
+      const parsed = parseAnimationShorthand(value || '');
       animationFields.forEach(field => {
-        updates[field] = '';
+        updates[field] = (parsed as any)[field] || '';
       });
+      // remove shorthand to avoid mixing shorthand with longhand
+      updates.animation = '';
     }
 
+    // When editing one of the explicit animation fields, clear the shorthand
+    // to ensure the final style uses only explicit properties (no mixing).
     if (animationFields.includes(key)) {
       updates.animation = '';
     }

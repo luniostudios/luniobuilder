@@ -13,16 +13,35 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  // fetch user role to determine admin rights
+  const { data: userRecord, error: userRecordError } = await supabaseServer
+    .schema('next_auth')
+    .from('users')
+    .select('role')
+    .eq('id', userId)
+    .single();
+
+  if (userRecordError) {
+    return NextResponse.json({ error: userRecordError.message }, { status: 500 });
+  }
+
+  const role = (userRecord?.role || '').toString().toLowerCase();
+
   const url = new URL(request.url);
   const projectId = url.searchParams.get('projectId');
 
   if (projectId) {
-    const { data, error } = await supabaseServer
+    let query = supabaseServer
       .from('projects')
-      .select('id, title, slug, content, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
-      .eq('id', projectId)
-      .eq('user_id', userId)
-      .single();
+      .select('id, user_id, title, slug, content, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
+      .eq('id', projectId);
+
+    // allow admins/owners to fetch any project
+    if (role !== 'admin' && role !== 'owner') {
+      query = (query as any).eq('user_id', userId);
+    }
+
+    const { data, error } = await query.single();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -31,11 +50,17 @@ export async function GET(request: Request) {
     return NextResponse.json(data);
   }
 
-  const { data, error } = await supabaseServer
+  // list projects: admins see all projects
+  let listQuery = supabaseServer
     .from('projects')
-    .select('id, title, slug, content, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
-    .eq('user_id', userId)
+    .select('id, user_id, title, slug, content, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
     .order('updated_at', { ascending: false });
+
+  if (role !== 'admin' && role !== 'owner') {
+    listQuery = (listQuery as any).eq('user_id', userId);
+  }
+
+  const { data, error } = await listQuery;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -113,7 +138,7 @@ export async function POST(request: Request) {
   const { data, error } = await supabaseServer
     .from('projects')
     .insert({ user_id: userId, title, slug, content })
-    .select('id, title, slug, content, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
+    .select('id, user_id, title, slug, content, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
     .single();
 
   if (error) {
@@ -133,6 +158,20 @@ export async function PATCH(request: Request) {
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  // fetch role to allow admins to update any project
+  const { data: userRec, error: userRecError } = await supabaseServer
+    .schema('next_auth')
+    .from('users')
+    .select('role')
+    .eq('id', userId)
+    .single();
+
+  if (userRecError) {
+    return NextResponse.json({ error: userRecError.message }, { status: 500 });
+  }
+
+  const userRole = (userRec?.role || '').toString().toLowerCase();
 
   const body = await request.json();
   const projectId = body.projectId;
@@ -164,13 +203,17 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'No project fields provided to update' }, { status: 400 });
   }
 
-  const { data, error } = await supabaseServer
+  let updateQuery = supabaseServer
     .from('projects')
     .update(updates)
     .eq('id', projectId)
-    .eq('user_id', userId)
-    .select('id, title, slug, content, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
-    .single();
+    .select('id, user_id, title, slug, content, created_at, updated_at, vercel_token, vercelUrl, status, socialOg');
+
+  if (userRole !== 'admin' && userRole !== 'owner') {
+    updateQuery = (updateQuery as any).eq('user_id', userId);
+  }
+
+  const { data, error } = await (updateQuery as any).single();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -190,17 +233,36 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  // fetch role to allow admins to delete any project
+  const { data: userRec2, error: userRec2Error } = await supabaseServer
+    .schema('next_auth')
+    .from('users')
+    .select('role')
+    .eq('id', userId)
+    .single();
+
+  if (userRec2Error) {
+    return NextResponse.json({ error: userRec2Error.message }, { status: 500 });
+  }
+
+  const userRole2 = (userRec2?.role || '').toString().toLowerCase();
+
   const body = await request.json();
   const projectId = body.projectId;
   if (!projectId) {
     return NextResponse.json({ error: 'Missing projectId' }, { status: 400 });
   }
 
-  const { error } = await supabaseServer
+  let deleteQuery = supabaseServer
     .from('projects')
     .delete()
-    .eq('id', projectId)
-    .eq('user_id', userId);
+    .eq('id', projectId);
+
+  if (userRole2 !== 'admin' && userRole2 !== 'owner') {
+    deleteQuery = (deleteQuery as any).eq('user_id', userId);
+  }
+
+  const { error } = await deleteQuery;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
