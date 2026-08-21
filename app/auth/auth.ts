@@ -1,10 +1,8 @@
 import NextAuth, { NextAuthConfig } from "next-auth"
 import Google from "next-auth/providers/google"
-import Credentials from "next-auth/providers/credentials"
 import GitHub from "next-auth/providers/github";
 import Discord from "next-auth/providers/discord"
 import supabase from "./db"
-import { authorizeUser } from "./credentialsProvider"
 import jwt from "jsonwebtoken"
 import Resend from "next-auth/providers/resend"
 
@@ -23,26 +21,20 @@ const authOptions = {
         Resend({
             // If your environment variable is named differently than default
             apiKey: process.env.AUTH_RESEND_KEY,
-            from: process.env.EMAIL_FROM
-        }),
-        Credentials({
-            name: "Credentials",
-            credentials: {
-                email: { label: "Email", type: "email", placeholder: "Enter your email" },
-                password: { label: "Password", type: "password", placeholder: "Enter your password" }
+            from: process.env.EMAIL_FROM,
+
+            async generateVerificationToken() {
+                return crypto.randomUUID()
             },
-            async authorize(credentials) {
-                if (!credentials?.email || !credentials?.password) {
-                    return null
+
+            normalizeIdentifier(identifier: string): string {
+                let [local, domain] = identifier.toLowerCase().trim().split("@")
+                domain = domain.split(",")[0]
+                if (identifier.split("@").length > 2) {
+                    throw new Error("Only one email allowed")
                 }
-
-                const user = await authorizeUser(
-                    credentials.email as string,
-                    credentials.password as string
-                )
-
-                return user || null
-            }
+                return `${local}@${domain}`
+            },
         }),
     ],
     callbacks: {

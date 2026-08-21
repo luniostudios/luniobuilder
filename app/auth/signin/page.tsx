@@ -1,12 +1,11 @@
 "use client"
 
-import { FormEvent, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import SignInButton from '../../components/auth/googleSignIn'
 import GitHub from '../../components/auth/githubSignIn'
 import Discord from '../../components/auth/discordSignIn'
-import { AlertCircle, Check, Loader } from 'lucide-react'
+import { Check } from 'lucide-react'
 
 const page = () => {
   const router = useRouter()
@@ -18,9 +17,8 @@ const page = () => {
     await signIn('resend', {
       email,
       redirect: true,
+      callbackUrl: '/dashboard',
     })
-
-    router.push('/dashboard')
   }
 
   return (

@@ -2,7 +2,7 @@ import { Box, ChevronRight, Layers, Layout, MousePointerClick, PlayIcon, Smartph
 
 const Simu = () => {
     return (
-        <div className="flex rounded-2xl border border-white/10 bg-[#111114]/50 p-2 shadow-2xl backdrop-blur-xl ring-1 ring-white/10" >
+        <div className="hidden rounded-2xl border border-white/10 bg-[#111114]/50 p-2 shadow-2xl backdrop-blur-xl ring-1 ring-white/10" >
             <div className="rounded-xl border border-white/10 bg-[#111114] overflow-hidden shadow-2xl">
                 {/* Mockup Header */}
                 <div className="flex items-center justify-between border-b border-white/5 bg-[#0d1117] px-4 py-3">
