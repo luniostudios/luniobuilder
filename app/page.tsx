@@ -2,7 +2,6 @@ import Link from 'next/link'
 import { auth } from './auth/auth'
 import Header from './components/home/Header'
 import Footer from './components/home/Footer'
-import Simu from './components/home/Simu'
 import Scroll from './components/home/Scroll'
 
 const page = async () => {
@@ -14,9 +13,9 @@ const page = async () => {
         <div className="aspect-2/1 w-full bg-linear-to-b from-[#1D976C] to-[#93F9B9] rounded-full"></div>
       </div>
       <Header />
-      <div className='text-white flex flex-row items-center gap-10 justify-center py-16 align-middle max-md:pt-20 max-md:flex-col max-lg:px-5'>
+      <div className='text-white flex flex-row items-center gap-10 justify-center py-20 align-middle max-md:pt-20 max-md:flex-col max-lg:px-5'>
         <div className='flex flex-col gap-10 max-w-5xl max-lg:w-full'>
-          <h1 className='text-9xl leading-tight justify-center align-middle font-black max-lg:text-[47px]'>Design Freely. Build Fearlessly.</h1>
+          <h1 className='text-9xl leading-tight justify-center align-middle font-black max-lg:text-6xl'>Design Freely. Build Fearlessly.</h1>
           <p className='text-gray-400 mt-4 w-[60%]'>LUNIO Builder is the visual website builder that turns your ideas into production-ready sites — drag, drop, and ship. No code required.</p>
           <div className='flex flex-col gap-2'>
             <div className='flex flex-col sm:flex-row gap-4 max-lg:flex-row items-center'>
@@ -45,7 +44,7 @@ const page = async () => {
                 </div>
                 <span>100+ builders</span>
               </div>
-              <div className="hidden sm:flex items-center gap-1.5">
+              <div className="flex flex-row items-center gap-1.5">
                 <div className="flex">
                   {[...Array(5)].map((_, i) => (
                     <svg key={i} className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
@@ -57,9 +56,6 @@ const page = async () => {
               </div>
             </div>
           </div>
-        </div>
-        <div className='flex flex-col items-center justify-center max-lg:w-full'>
-          <Simu />
         </div>
       </div>
       <Scroll />

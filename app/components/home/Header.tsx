@@ -18,7 +18,7 @@ const Header = async () => {
     const session = await auth()
 
     return (
-        <div className='bg-[#111114] w-full mt-0 flex flex-row justify-between align-middle items-center gap-2 py-4 z-10 px-[10%] max-lg:px-10'>
+        <div className='bg-[#111114] w-full mt-0 flex flex-row justify-between align-middle items-center gap-2 py-4 z-10 px-[10%] max-lg:px-5'>
             <div className='flex'>
                 <Link href={"/"}>
                     <div className="flex items-center text-white gap-2 cursor-pointer font-bold uppercase text-lg">
@@ -30,17 +30,13 @@ const Header = async () => {
                     </div>
                 </Link>
             </div>
-            <div className='flex flex-col items-center gap-6 justify-center max-md:hidden'>
-                <ul className='flex gap-6 items-center justify-center'>
-                    <li><Link href="/pricing#faq" className='text-gray-400 hover:text-gray-300 transition-colors'>FAQ</Link></li>
-                    <li><Link href="/pricing" className='text-gray-400 hover:text-gray-300 transition-colors'>Pricing</Link></li>
-                    <li><Link href="/documentation" className='text-gray-400 hover:text-gray-300 transition-colors'>Documentation</Link></li>
-                </ul>
-            </div>
 
             <div className='flex items-center gap-6 justify-center max-md:hidden'>
                 <nav>
                     <ul className='flex gap-6 items-center justify-center'>
+                        <li><Link href="/pricing#faq" className='text-gray-400 hover:text-gray-300 transition-colors'>FAQ</Link></li>
+                    <li><Link href="/pricing" className='text-gray-400 hover:text-gray-300 transition-colors'>Pricing</Link></li>
+                    <li><Link href="/documentation" className='text-gray-400 hover:text-gray-300 transition-colors'>Documentation</Link></li>
                         {!session && (
                             <li><Link href="/auth/signin" className="flex flex-row text-white border justify-center border-white/20 rounded-full px-3 py-1 items-center gap-2 hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                                 <User size={16} />

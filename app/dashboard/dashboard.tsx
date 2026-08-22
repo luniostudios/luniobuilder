@@ -55,7 +55,7 @@ export default function dashboard() {
     const [searchQuery, setSearchQuery] = useState('');
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
-    
+
     const toggleDropdown = (id: string) => {
         if (openDropdown === id) {
             setOpenDropdown(null);
@@ -63,7 +63,7 @@ export default function dashboard() {
             setOpenDropdown(id);
         }
     };
-    
+
     const { data: session, status } = useSession();
     const router = useRouter();
     const role = (session?.user as any)?.role || 'free';
@@ -294,9 +294,17 @@ export default function dashboard() {
                     {/* Logo */}
                     <div className="h-16 flex items-center px-6 border-b border-gray-100">
                         <div className="flex items-center gap-2 text-xl font-bold tracking-tight text-gray-900">
-                            <a href="/" className="flex items-center gap-2">
-                                <img src="/logobuilder.png" alt="LUNIO Logo" className="w-full h-8 invert " />
-                            </a>
+                            <div className='flex'>
+                                <Link href={"/"}>
+                                    <div className="flex items-center text-black gap-2 cursor-pointer font-bold uppercase text-lg">
+                                        <div className='flex flex-row text-2xl align-middle items-center'>
+                                            <h1>LUNI</h1>
+                                            <Rocket width={20} className="text-bold" />
+                                        </div>
+                                        <h1 className='flex flex-row text-2xl align-middle items-center'>BUILDER</h1>
+                                    </div>
+                                </Link>
+                            </div>
                         </div>
                         <button
                             className="ml-auto lg:hidden text-gray-500"
@@ -324,7 +332,7 @@ export default function dashboard() {
                         />
                         <div className="flex-1 overflow-hidden">
                             <p className="text-sm font-medium text-gray-900 truncate">{session?.user?.name}</p>
-                            <p className="text-xs text-gray-500 truncate">{userData?.role?.toUpperCase()}</p>
+                            <p className="text-xs text-gray-500 truncate"><span className={`text-sm font-normal rounded-full px-2 py-1 align-middle  ${role === 'admin' ? 'text-red-500 bg-red-500/20' : role === 'owner' ? 'text-green-500' : role === 'pro' ? 'text-blue-500' : role === 'business' ? 'text-purple-500' : 'text-gray-400'}`}>{role}</span></p>
                         </div>
                     </button>
                 </div>
@@ -537,7 +545,7 @@ export default function dashboard() {
                                                 )}
                                             </div>
 
-                                            <div className="flex items-center justify-between text-xs text-gray-400 mt-4 border-t border-gray-100 pt-3">                                           
+                                            <div className="flex items-center justify-between text-xs text-gray-400 mt-4 border-t border-gray-100 pt-3">
                                                 <span>
                                                     Edited
 
