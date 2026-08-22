@@ -18,7 +18,7 @@ const Header = async () => {
     const session = await auth()
 
     return (
-        <div className='bg-[#111114] w-full mt-0 flex flex-row justify-between items-center gap-2 py-4 z-10 px-[6%] max-lg:px-10'>
+        <div className='bg-[#111114] w-full mt-0 flex flex-row justify-between align-middle items-center gap-2 py-4 z-10 px-[10%] max-lg:px-10'>
             <div className='flex'>
                 <Link href={"/"}>
                     <div className="flex items-center text-white gap-2 cursor-pointer font-bold uppercase text-lg">
