@@ -372,6 +372,17 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
           />
         );
 
+      case 'custom':
+        return (
+          <iframe
+            srcDoc={`<!doctype html><html><head><style>${String(element.props.css || '')}</style></head><body>${String(element.props.html || '')}<script>${String(element.props.javascript || '').replace(/<\/script/gi, '<\\/script')}</script></body></html>`}
+            title="Custom code"
+            sandbox="allow-scripts"
+            style={{ ...safeCssStyles, width: '100%', minHeight: '120px', border: 'none', background: 'transparent' }}
+            onClick={handleClick}
+          />
+        );
+
       case 'divider':
         return <hr style={safeCssStyles} onClick={handleClick} />;
 

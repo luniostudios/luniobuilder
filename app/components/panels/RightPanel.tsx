@@ -1674,6 +1674,29 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
         </div>
       )}
 
+      {element.type === 'custom' && (
+        <div className="space-y-3">
+          <p className="text-[11px] text-gray-500">Runs in an isolated preview frame.</p>
+          {([
+            ['html', 'HTML', '<div>...</div>'],
+            ['css', 'CSS', '.class { color: red; }'],
+            ['javascript', 'JavaScript', 'document.querySelector(...)'],
+          ] as const).map(([key, label, placeholder]) => (
+            <div key={key}>
+              <label className="text-xs text-gray-500 block mb-1">{label}</label>
+              <textarea
+                value={String(element.props[key] || '')}
+                onChange={e => update(key, e.target.value)}
+                placeholder={placeholder}
+                rows={key === 'html' ? 6 : 5}
+                spellCheck={false}
+                className="w-full bg-gray-900 text-gray-200 text-xs font-mono rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-y"
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
       {element.type === 'icon' && (
         <div>
           <label className="text-xs text-gray-500 block mb-1">Icon Name (Lucide)</label>

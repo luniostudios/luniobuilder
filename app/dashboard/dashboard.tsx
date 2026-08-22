@@ -24,6 +24,8 @@ import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { redirect, useRouter, useSearchParams } from 'next/navigation';
+import { Page } from '@/app/types/builder';
+import { generateCssForPage, renderElementToHtml } from '@/app/utils/builderUtils';
 
 interface NavItemProps {
     icon: React.ComponentType<{ size: number; className?: string }>;
@@ -40,6 +42,10 @@ interface ProjectRecord {
     updated_at: Date;
     vercelUrl: string;
     status: string;
+    content?: {
+        pages?: Page[];
+        currentPageId?: string;
+    };
 }
 
 interface UserData {
@@ -48,6 +54,21 @@ interface UserData {
     email: string;
     role: string;
 }
+
+const buildProjectPreviewDocument = (project: ProjectRecord): string => {
+    const pages = project.content?.pages || [];
+    const currentPage = pages.find(page => page.id === project.content?.currentPageId) || pages[0];
+
+    if (!currentPage) {
+        return '<!doctype html><html><body style="margin:0;background:#f3f4f6"></body></html>';
+    }
+
+    const markup = currentPage.elements.map(element => renderElementToHtml(element)).join('');
+    const css = generateCssForPage(currentPage);
+    const safeMarkup = markup.replace(/<\/script/gi, '<\\/script');
+
+    return `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-serif}*{box-sizing:border-box}img{max-width:100%;display:block}#preview-root{transform-origin:top left;will-change:transform}${css}</style></head><body><div id="preview-root">${safeMarkup}</div><script>(function(){var root=document.getElementById('preview-root');function fit(){if(!root)return;root.style.transform='none';root.style.width='100%';var width=Math.max(root.scrollWidth,1),height=Math.max(root.scrollHeight,1),scale=Math.min(1,window.innerWidth/width,window.innerHeight/height);root.style.width=(100/scale)+'%';root.style.transform='scale('+scale+')';}window.addEventListener('load',fit);window.addEventListener('resize',fit);if(window.ResizeObserver)new ResizeObserver(fit).observe(root);setTimeout(fit,50);})();</script></body></html>`;
+};
 
 export default function dashboard() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -438,11 +459,14 @@ export default function dashboard() {
 
                                         {/* Image / Thumbnail Container */}
                                         <div className="relative w-full h-40 overflow-hidden rounded-t-xl bg-gray-100 shrink-0">
-                                            <img
-                                                src="https://plus.unsplash.com/premium_photo-1681666713641-8d722b681edc?q=80&w=1510&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-                                                title={project.title}
-                                                alt={project.title}
-                                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                            <iframe
+                                                srcDoc={buildProjectPreviewDocument(project)}
+                                                title={`${project.title} website preview`}
+                                                sandbox="allow-scripts"
+                                                tabIndex={-1}
+                                                aria-hidden="true"
+                                                scrolling="no"
+                                                className="pointer-events-none w-full h-full border-0 bg-white transition-transform duration-500 group-hover:scale-105"
                                             />
 
                                             {/* Hover Overlay */}

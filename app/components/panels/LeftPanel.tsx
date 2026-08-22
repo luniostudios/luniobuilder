@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from 'react';
-import { LayoutGrid as Layout, Type, Image, MousePointer, Square, Columns2 as Columns, Grid2x2 as Grid, AlignLeft, Link, Star, Minus, Move, FileText, ChevronRight, ChevronDown, Eye, EyeOff, Lock, Unlock, Trash2, Copy, Plus, Layers, Package, Globe, Monitor, Play, Form, List, ListEnd, Laptop, LayoutIcon, LayoutPanelTop, IdCard, TextInitialIcon } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { LayoutGrid as Layout, Type, Image, MousePointer, Square, Columns2 as Columns, Grid2x2 as Grid, AlignLeft, Link, Star, Minus, Move, FileText, ChevronRight, ChevronDown, Eye, EyeOff, Lock, Unlock, Trash2, Copy, Plus, Layers, Package, Globe, Monitor, Play, Form, List, ListEnd, Laptop, LayoutIcon, LayoutPanelTop, IdCard, TextInitialIcon, Code2, ChevronsDownUp } from 'lucide-react';
 import { DndContext, DragEndEvent, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -31,7 +31,8 @@ const COMPONENT_ICONS: Record<string, React.ReactNode> = {
   icon: <Star size={25} />,
   list: <List size={25} />,
   listItem: <ListEnd size={25} />,
-  iframe: <Laptop size={25} />
+  iframe: <Laptop size={25} />,
+  custom: <Code2 size={25} />,
 };
 
 export const LeftPanel: React.FC = () => {
@@ -204,7 +205,7 @@ const isDescendant = (ancestorId: string, descendantId: string, page: Page): boo
   return search(ancestor.children);
 };
 
-const LayerItem: React.FC<{ element: BuilderElement; depth: number }> = ({ element, depth }) => {
+const LayerItem: React.FC<{ element: BuilderElement; depth: number; collapseSignal: number }> = ({ element, depth, collapseSignal }) => {
   const {
     selectedElementId,
     selectElement,
@@ -219,6 +220,10 @@ const LayerItem: React.FC<{ element: BuilderElement; depth: number }> = ({ eleme
   const hasChildren = element.children.length > 0;
   const isSelected = selectedElementId === element.id;
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: element.id });
+
+  useEffect(() => {
+    if (collapseSignal > 0) setIsExpanded(false);
+  }, [collapseSignal]);
 
   return (
     <div
@@ -300,7 +305,7 @@ const LayerItem: React.FC<{ element: BuilderElement; depth: number }> = ({ eleme
       {hasChildren && isExpanded && (
         <SortableContext items={element.children.map(child => child.id)} strategy={verticalListSortingStrategy}>
           {element.children.map(child => (
-            <LayerItem key={child.id} element={child} depth={depth + 1} />
+            <LayerItem key={child.id} element={child} depth={depth + 1} collapseSignal={collapseSignal} />
           ))}
         </SortableContext>
       )}
@@ -312,6 +317,7 @@ const LayersTab: React.FC = () => {
   const { getCurrentPage, getElementById, moveElement } = useBuilderStore();
   const page = getCurrentPage();
   const sensors = useSensors(useSensor(PointerSensor));
+  const [collapseSignal, setCollapseSignal] = useState(0);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const activeId = event.active.id as string;
@@ -334,6 +340,18 @@ const LayersTab: React.FC = () => {
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <div className="py-2">
+        <div className="flex items-center justify-between px-3 pb-2">
+          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Layers</span>
+          <button
+            type="button"
+            onClick={() => setCollapseSignal(signal => signal + 1)}
+            className="p-1 text-gray-500 hover:text-gray-200 rounded transition-colors"
+            title="Collapse all layers"
+            aria-label="Collapse all layers"
+          >
+            <ChevronsDownUp size={14} />
+          </button>
+        </div>
         {page.elements.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-gray-600">
             <Layers size={24} className="mb-2" />
@@ -342,7 +360,7 @@ const LayersTab: React.FC = () => {
         ) : (
           <SortableContext items={page.elements.map(el => el.id)} strategy={verticalListSortingStrategy}>
             {page.elements.map(el => (
-              <LayerItem key={el.id} element={el} depth={0} />
+              <LayerItem key={el.id} element={el} depth={0} collapseSignal={collapseSignal} />
             ))}
           </SortableContext>
         )}

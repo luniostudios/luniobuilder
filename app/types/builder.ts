@@ -20,7 +20,8 @@ export type ElementType =
   | 'icon'
   | 'list'
   | 'listItem'
-  | 'iframe';
+  | 'iframe'
+  | 'custom';
 
 export interface StyleProperties {
   // Layout

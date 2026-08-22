@@ -477,6 +477,20 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
           border: 'none',
         },
       };
+    case 'custom':
+      return {
+        name: 'Custom Code',
+        props: {
+          html: '<div class="custom-content">Your custom code</div>',
+          css: '.custom-content { padding: 24px; color: #374151; }',
+          javascript: '',
+        },
+        styles: {
+          width: '100%',
+          minHeight: '120px',
+          border: '1px dashed #9ca3af',
+        },
+      };
     default:
       return {
         name: type,
@@ -745,6 +759,8 @@ const renderElementToReact = (element: BuilderElement, indent = 2, breakpoint: B
       return `${indentation}<li${attrs}>${text}</li>`;
     case 'iframe':
       return `${indentation}<iframe src="${src}"${attrs}></iframe>`;
+    case 'custom':
+      return `${indentation}<iframe srcDoc={'${escapeJsxString(getCustomCodeDocument(element))}'}${attrs} title="Custom code"></iframe>`;
     default:
       return `${indentation}<div${attrs}>${children}</div>`;
   }
@@ -752,6 +768,20 @@ const renderElementToReact = (element: BuilderElement, indent = 2, breakpoint: B
 
 export const renderElementToReactString = (element: BuilderElement, breakpoint: Breakpoint = 'desktop'): string => {
   return renderElementToReact(element, 2, breakpoint);
+};
+
+const getCustomCodeDocument = (element: BuilderElement): string => {
+  const html = String(element.props.html || '').replace(/<\/script/gi, '<\\/script');
+  const css = String(element.props.css || '');
+  const javascript = String(element.props.javascript || '').replace(/<\/script/gi, '<\\/script');
+  return `<!doctype html><html><head><style>${css}</style></head><body>${html}<script>${javascript}</script></body></html>`;
+};
+
+const getCustomCodeMarkup = (element: BuilderElement): string => {
+  const html = String(element.props.html || '');
+  const css = String(element.props.css || '');
+  const javascript = String(element.props.javascript || '').replace(/<\/script/gi, '<\\/script');
+  return `${html}<style>${css}</style><script>${javascript}</script>`;
 };
 
 export const renderElementToHtml = (element: BuilderElement, breakpoint: Breakpoint = 'desktop'): string => {
@@ -816,6 +846,8 @@ export const renderElementToHtml = (element: BuilderElement, breakpoint: Breakpo
       return `<li${attrs}>${text}</li>`;
     case 'iframe':
       return `<iframe src="${src}"${attrs}></iframe>`;
+    case 'custom':
+      return `<div${attrs}>${getCustomCodeMarkup(element)}</div>`;
     default:
       return `<div${attrs}>${renderChildren()}</div>`;
   }
@@ -952,6 +984,8 @@ export const renderElementToReactWithComponents = (
       return `${indentation}<li${attrs}>${text}</li>`;
     case 'iframe':
       return `${indentation}<iframe src="${src}"${attrs}></iframe>`;
+    case 'custom':
+      return `${indentation}<iframe srcDoc={'${escapeJsxString(getCustomCodeDocument(element))}'}${attrs} title="Custom code"></iframe>`;
     default:
       return `${indentation}<div${attrs}>${children}</div>`;
   }
@@ -1234,7 +1268,7 @@ export const canHaveChildren = (type: ElementType): boolean => {
 };
 
 export const COMPONENT_CATEGORIES = {
-  Layout: ['section', 'div', 'hero', 'navbar', 'columns', 'grid', 'card'],
+  Layout: ['section', 'div', 'hero', 'navbar', 'columns', 'grid', 'card', 'custom'],
   Typography: ['heading', 'paragraph', 'link', 'list', 'listItem'],
   Media: ['image', 'video', 'icon', 'iframe'],
   Forms: ['form', 'input', 'textarea', 'button'],
@@ -1264,6 +1298,7 @@ export const COMPONENT_LABELS: Record<ElementType, string> = {
   list: 'List',
   listItem: 'List Item',
   iframe: 'Iframe',
+  custom: 'Custom Code',
 };
 
 export { emptyStyles };
