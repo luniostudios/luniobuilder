@@ -281,3 +281,34 @@ body {
 .animate-marquee {
   animation: marquee 40s linear infinite,
 }
+
+.btn-primary {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.75rem;
+    border-radius: 14px;
+    font-weight: 400;
+    font-size: 0.95rem;
+    color: #050811;
+    background: limegreen;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+  }
+
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.75rem;
+    border-radius: 14px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: white;
+    background: black;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }

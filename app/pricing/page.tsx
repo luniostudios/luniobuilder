@@ -1,9 +1,9 @@
 import Header from '../components/home/Header'
 import { auth } from "../../app/auth/auth"
-import PricingTabs from './PricingTabs'
 import Footer from '../components/home/Footer'
 import { Metadata } from 'next';
 import FAQ from './FAQ';
+import Pricing from './Pricing';
 
 export const metadata: Metadata = {
   title: "LUNIO Builder - Pricing",
@@ -17,7 +17,7 @@ const page = async () => {
     return (
         <div>
             <Header />
-            <PricingTabs hasSession={!session} />
+            <Pricing hasSession={!session} />
             <FAQ />
             <Footer />
         </div>

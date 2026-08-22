@@ -339,9 +339,17 @@ export default function DocumentationPage() {
       <header className="sticky top-0 z-40 w-full border-b bg-white/95 backdrop-blur supports-backdrop-filter:bg-white/60">
         <div className="container flex h-16 items-center px-4">
           <div className="flex items-center space-x-4">
-            <Link href="/">
-              <img src="/logobuilder.png" alt="Luniobuilder Logo" className="h-8 w-auto invert" />
-            </Link>
+            <div className='flex'>
+                <Link href={"/"}>
+                    <div className="flex items-center text-black gap-2 cursor-pointer font-bold uppercase text-lg">
+                        <div className='flex flex-row text-2xl align-middle items-center'>
+                            <h1>LUNI</h1>
+                            <Rocket width={20} className="text-bold" />
+                        </div>
+                        <h1 className='flex flex-row text-2xl align-middle items-center'>BUILDER</h1>
+                    </div>
+                </Link>
+            </div>
           </div>
 
           <div className="ml-auto flex items-center space-x-4">
