@@ -18,6 +18,7 @@ import {
     Rocket,
     ArrowUpRight,
     Send,
+    Users,
 } from 'lucide-react';
 
 import { useEffect } from 'react';
@@ -26,6 +27,7 @@ import Link from 'next/link';
 import { redirect, useRouter, useSearchParams } from 'next/navigation';
 import { Page } from '@/app/types/builder';
 import { generateCssForPage, renderElementToHtml } from '@/app/utils/builderUtils';
+import Userss from './users/users';
 
 interface NavItemProps {
     icon: React.ComponentType<{ size: number; className?: string }>;
@@ -75,6 +77,12 @@ export default function dashboard() {
     const [activeTab, setActiveTab] = useState('projects');
     const [searchQuery, setSearchQuery] = useState('');
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
+    const [isNav, setNav] = useState('');
+
+    function settNav(p0: string) {
+        setNav(p0);
+    }
 
 
     const toggleDropdown = (id: string) => {
@@ -337,9 +345,21 @@ export default function dashboard() {
 
                     {/* Navigation */}
                     <nav className="p-4 space-y-1">
-                        <NavItem icon={LayoutDashboard} label="Projects" id="projects" />
-                        <NavItem icon={BarChart3} label="Analytics" id="analytics" />
-                        <NavItem icon={Settings} label="Settings" id="settings" />
+                        <Link onClick={() => setNav('projects')} href={''}>
+                            <NavItem icon={LayoutDashboard} label="Projects" id="projects" />
+                        </Link>
+                        <Link onClick={() => setNav('analytics')} href={''}>
+                            <NavItem icon={BarChart3} label="Analytics" id="analytics" />
+                        </Link>
+                        <Link onClick={() => setNav('settings')} href={''}>
+                            <NavItem icon={Settings} label="Settings" id="settings" />
+                        </Link>
+                        {userData && (userData.role?.toLowerCase() === 'admin' || userData.role?.toLowerCase() === 'owner') && (
+
+                            <Link onClick={() => setNav('users')} href={''}>
+                                <NavItem icon={Users} label="Users" id="users" />
+                            </Link>
+                        )}
                     </nav>
                 </div>
 
@@ -399,212 +419,214 @@ export default function dashboard() {
                 {/* Scrollable Dashboard Area */}
                 <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
 
-                    <div className="max-w-6xl mx-auto space-y-8">
+                    {isNav === 'users' ? <Userss /> :
 
-                        {/* Greeting & Stats */}
-                        <div className="space-y-6">
-                            <div className="flex sm:hidden w-full relative mb-6">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                                <input
-                                    type="text"
-                                    placeholder="Search projects..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-                                />
-                            </div>
+                        <div className="max-w-6xl mx-auto space-y-8">
 
-                            <div>
-                                {
-                                    // session.user may not have a `role` property on its type, cast to any to safely access it
-                                }
-                                <h1 className="text-2xl font-bold text-gray-900">🚀 Welcome back, {session?.user?.name || 'User'} <span className={`text-sm font-normal rounded-full px-2 py-1 align-middle  ${role === 'admin' ? 'text-red-500 bg-red-500/20' : role === 'owner' ? 'text-green-500' : role === 'pro' ? 'text-blue-500' : role === 'business' ? 'text-purple-500' : 'text-gray-400'}`}>{role}</span></h1>
-                                <p className="text-gray-500 mt-1">Here's what's happening with your websites today.</p>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-center">
-                                    <span className="text-sm font-medium text-gray-500">Total Sites</span>
-                                    <div className="mt-2 flex flex-row items-baseline gap-2">
-                                        <span className="flex flex-row  items-center text-2xl font-bold text-gray-900">{projects.length}/{projectLimit < 1000 ? projectLimit : "∞"}</span>
+                            {/* Greeting & Stats */}
+                            <div className="space-y-6">
+                                <div className="flex sm:hidden w-full relative mb-6">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search projects..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                                    />
+                                </div>
+
+                                <div>
+                                    {
+                                        // session.user may not have a `role` property on its type, cast to any to safely access it
+                                    }
+                                    <h1 className="text-2xl font-bold text-gray-900">🚀 Welcome back, {session?.user?.name || 'User'} <span className={`text-sm font-normal rounded-full px-2 py-1 align-middle  ${role === 'admin' ? 'text-red-500 bg-red-500/20' : role === 'owner' ? 'text-green-500' : role === 'pro' ? 'text-blue-500' : role === 'business' ? 'text-purple-500' : 'text-gray-400'}`}>{role}</span></h1>
+                                    <p className="text-gray-500 mt-1">Here's what's happening with your websites today.</p>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-center">
+                                        <span className="text-sm font-medium text-gray-500">Total Sites</span>
+                                        <div className="mt-2 flex flex-row items-baseline gap-2">
+                                            <span className="flex flex-row  items-center text-2xl font-bold text-gray-900">{projects.length}/{projectLimit < 1000 ? projectLimit : "∞"}</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Projects Section */}
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-lg font-bold text-gray-900">{userData && (userData.role?.toLowerCase() === 'admin' || userData.role?.toLowerCase() === 'owner') ? 'All Projects' : 'Your Projects'}</h2>
-                                <button className="text-sm font-medium text-gray-600 hover:text-gray-500 flex items-center gap-1">
-                                    View all templates <ArrowUpRight size={14} />
-                                </button>
-                            </div>
+                            {/* Projects Section */}
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-lg font-bold text-gray-900">{userData && (userData.role?.toLowerCase() === 'admin' || userData.role?.toLowerCase() === 'owner') ? 'All Projects' : 'Your Projects'}</h2>
+                                    <button className="text-sm font-medium text-gray-600 hover:text-gray-500 flex items-center gap-1">
+                                        View all templates <ArrowUpRight size={14} />
+                                    </button>
+                                </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-                                {/* Create New Card */}
-                                <button onClick={openCreateProjectModal} disabled={reachedProjectLimit || !userData} className="group flex flex-col items-center justify-center h-70 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 hover:border-gray-400 transition-all">
-                                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-4 group-hover:scale-110 transition-transform">
-                                        <Plus className="text-gray-900 w-6 h-6" />
-                                    </div>
-                                    <span className="font-semibold text-gray-900">{reachedProjectLimit
-                                        ? `Limit reached (${projectCount}/${projectLimit})`
-                                        : 'Create New Project'}</span>
-                                    <span className="text-sm text-gray-500 mt-1">{reachedProjectLimit ? 'Upgrade to Pro for more projects.' : 'Start from scratch or a template'}</span>
-                                </button>
-
-                                {/* Project Cards */}
-                                {projects.map((project) => (
-                                    <div key={project.id} className="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all overflow-visible relative flex flex-col h-full">
-
-                                        {/* Image / Thumbnail Container */}
-                                        <div className="relative w-full h-40 overflow-hidden rounded-t-xl bg-gray-100 shrink-0">
-                                            <iframe
-                                                srcDoc={buildProjectPreviewDocument(project)}
-                                                title={`${project.title} website preview`}
-                                                sandbox="allow-scripts"
-                                                tabIndex={-1}
-                                                aria-hidden="true"
-                                                scrolling="no"
-                                                className="pointer-events-none w-full h-full border-0 bg-white transition-transform duration-500 group-hover:scale-105"
-                                            />
-
-                                            {/* Hover Overlay */}
-                                            <div className="absolute inset-0 bg-gray-900/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
-                                                <Link href={`/editor?projectId=${project.id}`} className="bg-white text-gray-900 px-4 py-2 rounded-lg text-sm font-medium shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 flex items-center gap-2 hover:bg-gray-50">
-                                                    <Edit2 size={16} /> Open Builder
-                                                </Link>
-                                            </div>
-
-                                            {/* Status Badge */}
-                                            <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 bg-white/90 backdrop-blur text-xs font-medium rounded-md shadow-sm text-gray-700">
-                                                {project.status === 'published' ? (
-                                                    <>
-                                                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                                                        Published
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                                                        Draft
-                                                    </>
-                                                )}
-                                            </div>
+                                    {/* Create New Card */}
+                                    <button onClick={openCreateProjectModal} disabled={reachedProjectLimit || !userData} className="group flex flex-col items-center justify-center h-70 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 hover:border-gray-400 transition-all">
+                                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-4 group-hover:scale-110 transition-transform">
+                                            <Plus className="text-gray-900 w-6 h-6" />
                                         </div>
+                                        <span className="font-semibold text-gray-900">{reachedProjectLimit
+                                            ? `Limit reached (${projectCount}/${projectLimit})`
+                                            : 'Create New Project'}</span>
+                                        <span className="text-sm text-gray-500 mt-1">{reachedProjectLimit ? 'Upgrade to Pro for more projects.' : 'Start from scratch or a template'}</span>
+                                    </button>
 
-                                        {/* Card Content */}
-                                        <div className="p-4 flex flex-col flex-1 justify-between">
-                                            <div className="flex items-start justify-between">
-                                                <div className="overflow-hidden pr-2">
-                                                    <h3 className="font-semibold text-gray-900 truncate">{project.title}</h3>
-                                                    <a href={project.vercelUrl} target="_blank" rel="noreferrer" className="text-sm text-gray-500 hover:text-gray-600 truncate flex items-center gap-1 mt-0.5 group/link">
-                                                        {project.vercelUrl}
-                                                        <ExternalLink size={12} className="opacity-0 -translate-y-1 group-hover/link:opacity-100 group-hover/link:translate-y-0 transition-all" />
-                                                    </a>
-                                                    {userData && (userData.role?.toLowerCase() === 'admin' || userData.role?.toLowerCase() === 'owner') && project.user_id && (
-                                                        <div className="text-xs text-gray-500 mt-1">Owner: {project.user_id}</div>
-                                                    )}
+                                    {/* Project Cards */}
+                                    {projects.map((project) => (
+                                        <div key={project.id} className="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all overflow-visible relative flex flex-col h-full">
+
+                                            {/* Image / Thumbnail Container */}
+                                            <div className="relative w-full h-40 overflow-hidden rounded-t-xl bg-gray-100 shrink-0">
+                                                <iframe
+                                                    srcDoc={buildProjectPreviewDocument(project)}
+                                                    title={`${project.title} website preview`}
+                                                    sandbox="allow-scripts"
+                                                    tabIndex={-1}
+                                                    aria-hidden="true"
+                                                    scrolling="no"
+                                                    className="pointer-events-none w-full h-full border-0 bg-white transition-transform duration-500 group-hover:scale-105"
+                                                />
+
+                                                {/* Hover Overlay */}
+                                                <div className="absolute inset-0 bg-gray-900/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[2px]">
+                                                    <Link href={`/editor?projectId=${project.id}`} className="bg-white text-gray-900 px-4 py-2 rounded-lg text-sm font-medium shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 flex items-center gap-2 hover:bg-gray-50">
+                                                        <Edit2 size={16} /> Open Builder
+                                                    </Link>
                                                 </div>
 
-                                                {/* Action Menu */}
-                                                <div className="relative">
-                                                    <button
-                                                        onClick={() => toggleDropdown(project.id)} className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
-                                                    >
-                                                        <MoreVertical size={18} />
-                                                    </button>
-
-                                                    {/* Dropdown Menu */}
-                                                    {openDropdown === project.id && (
+                                                {/* Status Badge */}
+                                                <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 bg-white/90 backdrop-blur text-xs font-medium rounded-md shadow-sm text-gray-700">
+                                                    {project.status === 'published' ? (
                                                         <>
-                                                            <div className="fixed inset-0 z-10" onClick={() => setOpenDropdown(null)}></div>
-                                                            <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-20">
-                                                                <Link href={`/dashboard/settings/${project.id}`} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                                                    <Settings size={14} className="text-gray-400" /> Settings
-                                                                </Link>
-                                                                <Link href={`/editor?projectId=${project.id}`} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                                                    <Send size={14} className="text-gray-400" /> Open Builder
-                                                                </Link>
-                                                                {project.status === 'Draft' && (
-                                                                    <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                                                        <Rocket size={14} className="text-gray-400" /> Publish
-                                                                    </button>
-                                                                )}
-                                                                <div className="h-px bg-gray-100 my-1"></div>
-                                                                <button onClick={() => {
-                                                                    setDeleteModal({ isOpen: true, projectId: project.id });
-                                                                }}
-                                                                    disabled={deletingProjectId === project.id} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
-                                                                    <Trash2 size={14} className="text-red-500" /> Delete
-                                                                </button>
-                                                            </div>
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                                                            Published
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                                            Draft
                                                         </>
                                                     )}
                                                 </div>
-                                                {deleteModal.isOpen && deleteModal.projectId === project.id && (
-                                                    <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50'>
-                                                        <div className='bg-[#111214] rounded-xl p-6 w-full max-w-sm'>
-                                                            <h2 className='text-xl font-semibold text-white'>Confirm Deletion</h2>
-                                                            <p className='mt-2 text-sm text-gray-400'>Are you sure you want to delete this project? This action cannot be undone.</p>
-                                                            <div className='mt-6 flex justify-end gap-4'>
-                                                                <button
-                                                                    onClick={() => {
-                                                                        deleteProject(project.id);
-                                                                        setDeleteModal({ isOpen: false, projectId: null });
+                                            </div>
+
+                                            {/* Card Content */}
+                                            <div className="p-4 flex flex-col flex-1 justify-between">
+                                                <div className="flex items-start justify-between">
+                                                    <div className="overflow-hidden pr-2">
+                                                        <h3 className="font-semibold text-gray-900 truncate">{project.title}</h3>
+                                                        <a href={project.vercelUrl} target="_blank" rel="noreferrer" className="text-sm text-gray-500 hover:text-gray-600 truncate flex items-center gap-1 mt-0.5 group/link">
+                                                            {project.vercelUrl}
+                                                            <ExternalLink size={12} className="opacity-0 -translate-y-1 group-hover/link:opacity-100 group-hover/link:translate-y-0 transition-all" />
+                                                        </a>
+                                                        {userData && (userData.role?.toLowerCase() === 'admin' || userData.role?.toLowerCase() === 'owner') && project.user_id && (
+                                                            <div className="text-xs text-gray-500 mt-1">Owner: {project.user_id}</div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Action Menu */}
+                                                    <div className="relative">
+                                                        <button
+                                                            onClick={() => toggleDropdown(project.id)} className="p-1.5 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+                                                        >
+                                                            <MoreVertical size={18} />
+                                                        </button>
+
+                                                        {/* Dropdown Menu */}
+                                                        {openDropdown === project.id && (
+                                                            <>
+                                                                <div className="fixed inset-0 z-10" onClick={() => setOpenDropdown(null)}></div>
+                                                                <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-20">
+                                                                    <Link href={`/dashboard/settings/${project.id}`} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                                                        <Settings size={14} className="text-gray-400" /> Settings
+                                                                    </Link>
+                                                                    <Link href={`/editor?projectId=${project.id}`} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                                                        <Send size={14} className="text-gray-400" /> Open Builder
+                                                                    </Link>
+                                                                    {project.status === 'Draft' && (
+                                                                        <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                                                            <Rocket size={14} className="text-gray-400" /> Publish
+                                                                        </button>
+                                                                    )}
+                                                                    <div className="h-px bg-gray-100 my-1"></div>
+                                                                    <button onClick={() => {
+                                                                        setDeleteModal({ isOpen: true, projectId: project.id });
                                                                     }}
-                                                                    disabled={deletingProjectId === project.id}
-                                                                    className='px-4 py-2 rounded-lg bg-red-600 text-sm text-white transition hover:bg-red-500 disabled:bg-red-500 disabled:opacity-80'
-                                                                >
-                                                                    {deletingProjectId === project.id ? 'Deleting…' : 'Delete'}
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => setDeleteModal({ isOpen: false, projectId: null })}
-                                                                    className='px-4 py-2 rounded-lg bg-gray-700 text-sm text-gray-300 transition hover:bg-gray-600'
-                                                                >
-                                                                    Cancel
-                                                                </button>
+                                                                        disabled={deletingProjectId === project.id} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
+                                                                        <Trash2 size={14} className="text-red-500" /> Delete
+                                                                    </button>
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                    {deleteModal.isOpen && deleteModal.projectId === project.id && (
+                                                        <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50'>
+                                                            <div className='bg-[#111214] rounded-xl p-6 w-full max-w-sm'>
+                                                                <h2 className='text-xl font-semibold text-white'>Confirm Deletion</h2>
+                                                                <p className='mt-2 text-sm text-gray-400'>Are you sure you want to delete this project? This action cannot be undone.</p>
+                                                                <div className='mt-6 flex justify-end gap-4'>
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            deleteProject(project.id);
+                                                                            setDeleteModal({ isOpen: false, projectId: null });
+                                                                        }}
+                                                                        disabled={deletingProjectId === project.id}
+                                                                        className='px-4 py-2 rounded-lg bg-red-600 text-sm text-white transition hover:bg-red-500 disabled:bg-red-500 disabled:opacity-80'
+                                                                    >
+                                                                        {deletingProjectId === project.id ? 'Deleting…' : 'Delete'}
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => setDeleteModal({ isOpen: false, projectId: null })}
+                                                                        className='px-4 py-2 rounded-lg bg-gray-700 text-sm text-gray-300 transition hover:bg-gray-600'
+                                                                    >
+                                                                        Cancel
+                                                                    </button>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                )}
-                                            </div>
+                                                    )}
+                                                </div>
 
-                                            <div className="flex items-center justify-between text-xs text-gray-400 mt-4 border-t border-gray-100 pt-3">
-                                                <span>
-                                                    Edited
+                                                <div className="flex items-center justify-between text-xs text-gray-400 mt-4 border-t border-gray-100 pt-3">
+                                                    <span>
+                                                        Edited
 
-                                                    {(() => {
-                                                        const now = new Date();
-                                                        const updatedAt = new Date(project.updated_at);
-                                                        const diffInSeconds = Math.floor((now.getTime() - updatedAt.getTime()) / 1000);
+                                                        {(() => {
+                                                            const now = new Date();
+                                                            const updatedAt = new Date(project.updated_at);
+                                                            const diffInSeconds = Math.floor((now.getTime() - updatedAt.getTime()) / 1000);
 
-                                                        if (diffInSeconds < 60) {
-                                                            return ` ${diffInSeconds} seconds ago`;
-                                                        } else if (diffInSeconds < 3600) {
-                                                            return ` ${Math.floor(diffInSeconds / 60)} minutes ago`;
-                                                        } else if (diffInSeconds < 86400) {
-                                                            return ` ${Math.floor(diffInSeconds / 3600)} hours ago`;
-                                                        } else {
-                                                            return ` ${Math.floor(diffInSeconds / 86400)} days ago`;
-                                                        }
-                                                    })()}
-                                                </span>
+                                                            if (diffInSeconds < 60) {
+                                                                return ` ${diffInSeconds} seconds ago`;
+                                                            } else if (diffInSeconds < 3600) {
+                                                                return ` ${Math.floor(diffInSeconds / 60)} minutes ago`;
+                                                            } else if (diffInSeconds < 86400) {
+                                                                return ` ${Math.floor(diffInSeconds / 3600)} hours ago`;
+                                                            } else {
+                                                                return ` ${Math.floor(diffInSeconds / 86400)} days ago`;
+                                                            }
+                                                        })()}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
+                                    ))}
+                                </div>
+
+                                {projects.length === 0 && (
+                                    <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
+                                        <Globe className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                                        <h3 className="text-gray-900 font-medium">No projects found</h3>
+                                        <p className="text-gray-500 text-sm mt-1">Try adjusting your search query.</p>
                                     </div>
-                                ))}
+                                )}
                             </div>
 
-                            {projects.length === 0 && (
-                                <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
-                                    <Globe className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                                    <h3 className="text-gray-900 font-medium">No projects found</h3>
-                                    <p className="text-gray-500 text-sm mt-1">Try adjusting your search query.</p>
-                                </div>
-                            )}
-                        </div>
-
-                    </div>
+                        </div>}
                 </div>
                 {createProjectModal.isOpen && (
                     <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50'>
