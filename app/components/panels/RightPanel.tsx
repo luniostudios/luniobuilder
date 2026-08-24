@@ -538,6 +538,16 @@ const buildBoxShadow = ({ inset, x, y, blur, spread, color }: Record<string, str
   return values.join(' ').trim();
 };
 
+const parseFilterBlur = (filter?: string) => {
+  const match = String(filter || '').match(/blur\(\s*([^)]*?)\s*\)/i);
+  return match?.[1] || '';
+};
+
+const buildFilterWithBlur = (filter: string | undefined, blur: string) => {
+  const withoutBlur = String(filter || '').replace(/blur\(\s*[^)]*?\s*\)/gi, '').replace(/\s+/g, ' ').trim();
+  return blur.trim() ? `${withoutBlur}${withoutBlur ? ' ' : ''}blur(${blur.trim()})` : withoutBlur;
+};
+
 const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
   const { updateElementStyles, updateElementPseudoClassStyles, pseudoClassState, setPseudoClassState } = useBuilderStore() as any;
 
@@ -1107,6 +1117,13 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
           />
         </div>
         <InputRow label="Opacity" value={styles.opacity || ''} onChange={v => update('opacity', v)} placeholder="1" />
+        <InputRow
+          label="Blur"
+          value={parseFilterBlur(styles.filter)}
+          onChange={v => update('filter', buildFilterWithBlur(styles.filter, v))}
+          placeholder="0px"
+          unit="px"
+        />
         <InputRow label="z-index" value={styles.zIndex || ''} onChange={v => update('zIndex', v)} placeholder="auto" />
         <InputRow label="Transition" value={styles.transition || ''} onChange={v => update('transition', v)} placeholder="all 0.2s ease" />
       </Section>
@@ -1603,8 +1620,8 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
           <label className="text-xs text-gray-500 block mb-1">Autoplay</label>
           <input
             type="checkbox"
-            checked={element.props.autoplay || false}
-            onChange={e => update('autoplay', e.target.checked)}
+            checked={element.props.autoPlay || false}
+            onChange={e => update('autoPlay', e.target.checked)}
             className="mt-2"
           />
           <label className="text-xs text-gray-500 block mb-1">Muted</label>

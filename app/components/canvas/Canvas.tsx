@@ -87,7 +87,7 @@ export const Canvas: React.FC = () => {
   if (isPreviewMode) {
     return (
       <div className="flex-1 overflow-auto bg-gray-100 flex justify-center">
-        <div style={{ width: breakpointWidth }} className="bg-white relative">
+        <div style={{ width: breakpointWidth }} className="bg-white min-h-screen pb-10 relative">
           {page.elements.map(el => (
             <ElementRenderer key={el.id} element={el} isPreview />
           ))}
@@ -105,7 +105,6 @@ export const Canvas: React.FC = () => {
           transformOrigin: 'top center',
           width: breakpointWidth,
           transition: 'width 0.3s ease',
-          minHeight: 'calc(100vh - 4rem)',
         }}
       >
         {/* Actual canvas */}

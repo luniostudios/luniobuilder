@@ -533,6 +533,7 @@ export const TopBar: React.FC = () => {
     }
 
     const combinedStyles = sanitizeCss(`${collectedCssImports.join('\n\n')}\n\n${collectedCssParts.join('\n\n')}\n\n/* Page-specific styles */\n${pageStyles}`);
+    const navigationScript = `<script>(function(){document.addEventListener('click',function(event){var toggle=event.target.closest('[data-lunio-nav-toggle]');if(!toggle)return;var nav=toggle.closest('nav');var menu=nav&&nav.querySelector('[data-lunio-nav-menu]');if(!menu)return;var open=menu.classList.toggle('lunio-nav-open');toggle.setAttribute('aria-expanded',String(open));if(open){menu.style.display='flex';menu.style.position='absolute';menu.style.top='100%';menu.style.left='0';menu.style.right='0';menu.style.flexDirection='column';menu.style.alignItems='stretch';menu.style.gap='12px';menu.style.padding='16px';menu.style.backgroundColor='#fff';menu.style.boxShadow='0 8px 20px rgba(15,23,42,.12)';menu.style.zIndex='101';}else{menu.style.display='';}});})();</script>`;
 
     const html = `<!DOCTYPE html>
 <html lang="en">
@@ -546,6 +547,7 @@ export const TopBar: React.FC = () => {
 </head>
 <body style="width:100%;height:100%;margin:0;padding:0;font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
   ${bodyContent}
+  ${navigationScript}
 </body>
 </html>`;
 

@@ -81,7 +81,7 @@ export const createStarterPage = (): Page => {
           id: generateId(),
           type: 'div',
           name: 'Nav Links',
-          props: {},
+          props: { isNavMenu: true },
           styles: {
             desktop: { display: 'flex', alignItems: 'center', gap: '32px' },
             tablet: { display: 'none' },

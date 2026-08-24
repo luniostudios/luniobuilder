@@ -184,7 +184,7 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
             id: generateId(),
             type: 'list',
             name: 'Nav Links',
-            props: {},
+            props: { isNavMenu: true },
             styles: {
               desktop: { display: 'flex', alignItems: 'center', gap: '16px', listStyle: 'none', margin: '0', padding: '0' },
               tablet: { display: 'none' },
@@ -697,7 +697,7 @@ const styleObjectToJsxString = (styles: StyleProperties): string => {
 const renderElementToReact = (element: BuilderElement, indent = 2, breakpoint: Breakpoint = 'desktop'): string => {
   const indentation = ' '.repeat(indent);
   const className = getElementClassName(element);
-  const attrs = ` className="${className}"`;
+  const attrs = ` className="${className}"${element.props.isNavMenu ? ' data-lunio-nav-menu="true"' : ''}${element.props.iconName === 'Menu' ? ' data-lunio-nav-toggle="true"' : ''}`;
   const text = escapeHtml(element.props.text as string || '');
   const placeholder = escapeJsxString(element.props.placeholder as string || '');
   const href = escapeJsxString(element.props.href as string || '#');
@@ -754,7 +754,9 @@ const renderElementToReact = (element: BuilderElement, indent = 2, breakpoint: B
     case 'textarea':
       return `${indentation}<textarea placeholder="${placeholder}"${attrs}></textarea>`;
     case 'icon':
-      return `${indentation}<span${attrs}>${iconName}</span>`;
+      return element.props.iconName === 'Menu'
+        ? `${indentation}<button type="button" aria-label="Toggle navigation menu"${attrs} onClick={(event) => { const menu = event.currentTarget.closest('nav')?.querySelector('[data-lunio-nav-menu]'); menu?.classList.toggle('lunio-nav-open'); }}>${iconName}</button>`
+        : `${indentation}<span${attrs}>${iconName}</span>`;
     case 'listItem':
       return `${indentation}<li${attrs}>${text}</li>`;
     case 'iframe':
@@ -786,7 +788,7 @@ const getCustomCodeMarkup = (element: BuilderElement): string => {
 
 export const renderElementToHtml = (element: BuilderElement, breakpoint: Breakpoint = 'desktop'): string => {
   const className = getElementClassName(element);
-  const attrs = ` class="${className}"`;
+  const attrs = ` class="${className}"${element.props.isNavMenu ? ' data-lunio-nav-menu="true"' : ''}${element.props.iconName === 'Menu' ? ' data-lunio-nav-toggle="true"' : ''}`;
   const text = escapeHtml(element.props.text as string || '');
   const placeholder = escapeHtml(element.props.placeholder as string || '');
   const href = escapeHtml(element.props.href as string || '#');
@@ -841,7 +843,9 @@ export const renderElementToHtml = (element: BuilderElement, breakpoint: Breakpo
     case 'textarea':
       return `<textarea placeholder="${placeholder}"${attrs}></textarea>`;
     case 'icon':
-      return `<span${attrs}>${iconName}</span>`;
+      return element.props.iconName === 'Menu'
+        ? `<button type="button" aria-label="Toggle navigation menu"${attrs}>${iconName}</button>`
+        : `<span${attrs}>${iconName}</span>`;
     case 'listItem':
       return `<li${attrs}>${text}</li>`;
     case 'iframe':
@@ -922,7 +926,7 @@ export const renderElementToReactWithComponents = (
   }
 
   const className = getElementClassName(element);
-  const attrs = ` className="${className}"`;
+  const attrs = ` className="${className}"${element.props.isNavMenu ? ' data-lunio-nav-menu="true"' : ''}${element.props.iconName === 'Menu' ? ' data-lunio-nav-toggle="true"' : ''}`;
   const text = escapeHtml(element.props.text as string || '');
   const placeholder = escapeJsxString(element.props.placeholder as string || '');
   const href = escapeJsxString(element.props.href as string || '#');
@@ -979,7 +983,9 @@ export const renderElementToReactWithComponents = (
     case 'textarea':
       return `${indentation}<textarea placeholder="${placeholder}"${attrs}></textarea>`;
     case 'icon':
-      return `${indentation}<span${attrs}>${iconName}</span>`;
+      return element.props.iconName === 'Menu'
+        ? `${indentation}<button type="button" aria-label="Toggle navigation menu"${attrs} onClick={(event) => { const menu = event.currentTarget.closest('nav')?.querySelector('[data-lunio-nav-menu]'); menu?.classList.toggle('lunio-nav-open'); }}>${iconName}</button>`
+        : `${indentation}<span${attrs}>${iconName}</span>`;
     case 'listItem':
       return `${indentation}<li${attrs}>${text}</li>`;
     case 'iframe':
@@ -1122,7 +1128,7 @@ export const generateReactProjectFiles = (pages: Page[], projectName: string, br
 import './builder.css';\n\nconst pages = [\n${pageEntries}\n];\n\nconst App = () => {\n  const [currentIndex, setCurrentIndex] = useState(0);\n  const ActivePage = pages[currentIndex].Component;\n\n  return (\n    <div className="app-shell">\n      ${pageMetadata.length > 1 ? `\n      <div className="page-selector">\n${pageMetadata.map((meta, index) => `        <button type="button" className={currentIndex === ${index} ? 'active' : ''} onClick={() => setCurrentIndex(${index})}>${meta.page.name.replace(/'/g, "\\'")}</button>`).join('\n')}\n      </div>\n      ` : ''}\n      <main className="page-view">\n        <ActivePage />\n      </main>\n    </div>\n  );\n};\n\nexport default App;`;
 
   files.push({ path: 'src/App.jsx', content: appSource });
-  files.push({ path: 'src/App.css', content: `body { margin: 0; font-family: system-ui, sans-serif; background: #ffffff; color: #111827; }\n.app-shell { min-height: 100vh; background: #ffffff; }\n.page-selector { display: flex; flex-wrap: wrap; gap: 8px; padding: 16px; background: transparent; }\n.page-selector button { border: none; padding: 10px 14px; background: #e5e7eb; color: #111827; border-radius: 9999px; cursor: pointer; }\n.page-selector button.active { background: #2563eb; color: #ffffff; }\n.page-view { padding: 0; }` });
+  files.push({ path: 'src/App.css', content: `body { margin: 0; font-family: system-ui, sans-serif; background: #ffffff; color: #111827; }\n.app-shell { min-height: 100vh; background: #ffffff; }\n.page-selector { display: flex; flex-wrap: wrap; gap: 8px; padding: 16px; background: transparent; }\n.page-selector button { border: none; padding: 10px 14px; background: #e5e7eb; color: #111827; border-radius: 9999px; cursor: pointer; }\n.page-selector button.active { background: #2563eb; color: #ffffff; }\n.page-view { padding: 0; }\n.lunio-nav-open { display: flex !important; position: absolute; top: 100%; left: 0; right: 0; flex-direction: column; align-items: stretch; gap: 12px; padding: 16px; background: #ffffff; box-shadow: 0 8px 20px rgba(15,23,42,.12); z-index: 101; }` });
   files.push({ path: 'src/builder.css', content: `${pages.map(page => generateCssForPage(page)).filter(Boolean).join('\n\n')}` });
   files.push({ path: 'src/index.css', content: `* { box-sizing: border-box; }\nbody { margin: 0; background: #f8fafc; color: #111827; }\nimg { max-width: 100%; display: block; }` });
   files.push({ path: 'src/reportWebVitals.js', content: `const reportWebVitals = onPerfEntry => {\n  if (onPerfEntry && onPerfEntry instanceof Function) {\n    import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {\n      getCLS(onPerfEntry);\n      getFID(onPerfEntry);\n      getFCP(onPerfEntry);\n      getLCP(onPerfEntry);\n      getTTFB(onPerfEntry);\n    });\n  }\n};\nexport default reportWebVitals;` });
@@ -1233,7 +1239,7 @@ export const generateNextProjectFiles = (pages: Page[], projectName: string, bre
     .map(m => `import ${m.componentName} from '../../components/${m.fileName}';`).join('\n')}\n\nconst pages = [\n${pageEntries}\n];\n\nexport async function generateStaticParams() {\n  return pages.map(page => ({\n    slug: page.slug.replace(/^\\//, ''),\n  }));\n}\n\nexport default function Page({ params }) {\n  const slug = '/' + (params.slug || '');\n  const page = pages.find(p => p.slug === slug || p.slug === slug.replace(/^\\//, ''));\n  \n  if (!page) {\n    notFound();\n  }\n  \n  return <page.Component />;\n}\n`;
   files.push({ path: 'app/[slug]/page.js', content: dynamicRouteSource });
 
-  const globalsCss = `* { box-sizing: border-box; }\nbody { margin: 0; min-height: 100vh; background: #f8fafc; color: #111827; font-family: system-ui, sans-serif; }\nimg { max-width: 100%; display: block; }\n.app-shell { min-height: 100vh; }\n.page-selector { display: flex; flex-wrap: wrap; gap: 8px; padding: 16px; background: transparent; }\n.page-selector button { border: none; padding: 10px 14px; background: #e5e7eb; color: #111827; border-radius: 9999px; cursor: pointer; }\n.page-selector button.active { background: #2563eb; color: #ffffff; }\n.page-view { padding: 0; }\n`;
+  const globalsCss = `* { box-sizing: border-box; }\nbody { margin: 0; min-height: 100vh; background: #f8fafc; color: #111827; font-family: system-ui, sans-serif; }\nimg { max-width: 100%; display: block; }\n.app-shell { min-height: 100vh; }\n.page-selector { display: flex; flex-wrap: wrap; gap: 8px; padding: 16px; background: transparent; }\n.page-selector button { border: none; padding: 10px 14px; background: #e5e7eb; color: #111827; border-radius: 9999px; cursor: pointer; }\n.page-selector button.active { background: #2563eb; color: #ffffff; }\n.page-view { padding: 0; }\n.lunio-nav-open { display: flex !important; position: absolute; top: 100%; left: 0; right: 0; flex-direction: column; align-items: stretch; gap: 12px; padding: 16px; background: #ffffff; box-shadow: 0 8px 20px rgba(15,23,42,.12); z-index: 101; }\n`;
   const builderCss = `${pages.map(page => generateCssForPage(page)).filter(Boolean).join('\n\n')}`;
   files.push({ path: 'app/globals.css', content: `${globalsCss}\n${builderCss}` });
 
@@ -1243,7 +1249,7 @@ export const generateNextProjectFiles = (pages: Page[], projectName: string, bre
     const componentDependencies = Array.from(collectReactDependenciesForComponent(component, componentNameMap));
     const componentImports = componentDependencies.map(dep => `import ${dep} from './${dep}';`).join('\n');
     const componentBody = renderElementToReactWithComponents(component, componentNameMap, 2, true, breakpoint);
-    const componentSource = `${componentImports ? `${componentImports}\n\n` : ''}export default function ${componentName}() {\n  return (\n${componentBody}\n  );\n}\n`;
+    const componentSource = `'use client';\n\n${componentImports ? `${componentImports}\n\n` : ''}export default function ${componentName}() {\n  return (\n${componentBody}\n  );\n}\n`;
     const componentPath = `components/${componentName}.jsx`;
     if (!componentFolderFiles.has(componentPath)) {
       componentFolderFiles.add(componentPath);
@@ -1257,7 +1263,7 @@ export const generateNextProjectFiles = (pages: Page[], projectName: string, bre
     const pageBody = meta.page.elements.length
       ? meta.page.elements.map(element => renderElementToReactWithComponents(element, componentNameMap, 2, false, breakpoint)).join('\n')
       : `  <div style={{ padding: 32, fontFamily: 'system-ui, sans-serif', color: '#4b5563' }}>No content to export.</div>`;
-    const pageSource = `${pageImports ? `${pageImports}\n\n` : ''}export default function ${meta.componentName}() {\n  return (\n    <>\n${pageBody}\n    </>\n  );\n}\n`;
+    const pageSource = `'use client';\n\n${pageImports ? `${pageImports}\n\n` : ''}export default function ${meta.componentName}() {\n  return (\n    <>\n${pageBody}\n    </>\n  );\n}\n`;
     files.push({ path: `components/${meta.fileName}.jsx`, content: pageSource });
   });
 

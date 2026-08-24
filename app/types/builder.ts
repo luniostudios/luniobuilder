@@ -103,6 +103,7 @@ export interface StyleProperties {
   borderStyle?: string;
 
   // Effects
+  filter?: string;
   boxShadow?: string;
   opacity?: string;
   overflow?: string;

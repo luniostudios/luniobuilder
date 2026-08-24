@@ -1,6 +1,6 @@
 "use client";
 
-import React, { JSX, useEffect, useRef, useState } from 'react';
+import React, { JSX, createContext, useContext, useEffect, useRef, useState } from 'react';
 import { BuilderElement, ElementType } from '../../types/builder';
 import { useBuilderStore } from '../../stores/builderStore';
 import { canHaveChildren, getEffectiveStyles, stylesToCSS } from '../../utils/builderUtils';
@@ -10,6 +10,14 @@ interface ElementRendererProps {
   element: BuilderElement;
   isPreview?: boolean;
 }
+
+interface NavbarMenuContextValue {
+  isOpen: boolean;
+  toggle: (event: React.MouseEvent) => void;
+  menuIds: Set<string>;
+}
+
+const NavbarMenuContext = createContext<NavbarMenuContextValue | null>(null);
 
 export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPreview = false }) => {
   const {
@@ -33,6 +41,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
 
   const [isEditing, setIsEditing] = useState(false);
   const [editingValue, setEditingValue] = useState(element.props.text || '');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   const styles = getEffectiveStyles(element, breakpoint);
@@ -57,6 +66,8 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     whiteSpace: 'pre-wrap',
     minWidth: 0,
   };
+  const navbarMenu = useContext(NavbarMenuContext);
+  const isMenuTarget = navbarMenu?.menuIds.has(element.id) ?? false;
 
   useEffect(() => {
     if (isEditing && editingRef.current) {
@@ -104,6 +115,10 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
         </div>
       </div>
     );
+  }
+
+  if (element.hidden && isPreview) {
+    return null;
   }
 
   const isSelected = selectedElementId === element.id;
@@ -292,16 +307,6 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
           >
             {editingValue}
           </span>
-        ) : isPreview && element.props.href ? (
-          <a
-            ref={(node) => setEditingRef(node as HTMLElement | null)}
-            href={element.props.href}
-            style={safeCssStyles}
-            onClick={(e) => handleButtonClick(e, element.props.href as string)}
-            className='hover:opacity-90'
-          >
-            {element.props.text || 'Button'}
-          </a>
         ) : (
           <button
             ref={(node) => setEditingRef(node as HTMLElement | null)}
@@ -359,7 +364,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
             onClick={handleClick}
             autoPlay={element.props.autoPlay}
             muted={element.props.muted}
-            loop={element.props.autoPlay}
+            loop={element.props.loop}
           />
         );
 
@@ -434,7 +439,19 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
         const iconName = (element.props.iconName as string) || 'Star';
         const IconComp = (LucideIcons as unknown as Record<string, React.ComponentType<{ style?: React.CSSProperties; onClick?: (e: React.MouseEvent) => void }>>)[iconName];
         if (!IconComp) return <div style={safeCssStyles} onClick={handleClick}>?</div>;
-        return <IconComp style={safeCssStyles} onClick={handleClick} />;
+        const isMenuToggle = iconName === 'Menu' && navbarMenu;
+        return isMenuToggle ? (
+          <button
+            type="button"
+            aria-label="Toggle navigation menu"
+            aria-expanded={navbarMenu.isOpen}
+            style={{ ...safeCssStyles, border: 'none', background: 'transparent', padding: 0 }}
+            onClick={navbarMenu.toggle}
+            onDoubleClick={handleDoubleClick}
+          >
+            <IconComp style={{ width: '100%', height: '100%' }} />
+          </button>
+        ) : <IconComp style={safeCssStyles} onClick={handleClick} />;
       }
 
       case 'listItem':
@@ -461,35 +478,47 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
 
   if (!canHaveChildren(element.type)) {
     const content = renderContent();
-    if (!isPreview) {
-      return (
-        <div
-          ref={ref}
-          className={wrapperClasses}
-          draggable={!element.locked && !isEditing}
-          onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-          onDragEnd={handleDragEnd}
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-        >
-          {dropIndicatorBefore && <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-500 z-50" />}
-          {content}
-          {isSelected && !element.locked && (
-            <div className="absolute -top-5 left-0 bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-t-sm whitespace-nowrap z-50 pointer-events-none">
-              {element.name}
-            </div>
-          )}
-          {dropIndicatorAfter && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 z-50" />}
-        </div>
-      );
-    }
-    return <>{content}</>;
+    return (
+      <div
+        ref={ref}
+        className={wrapperClasses}
+        draggable={!isPreview && !element.locked && !isEditing}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+        onDragEnd={handleDragEnd}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        {dropIndicatorBefore && <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-500 z-50" />}
+        {content}
+        {isSelected && !element.locked && (
+          <div className="absolute -top-5 left-0 bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-t-sm whitespace-nowrap z-50 pointer-events-none">
+            {element.name}
+          </div>
+        )}
+        {dropIndicatorAfter && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 z-50" />}
+      </div>
+    );
   }
 
   // Container elements
   const containerStyle: React.CSSProperties = safeCssStyles;
+  const menuStyle: React.CSSProperties = isMenuTarget && navbarMenu?.isOpen ? {
+    ...containerStyle,
+    display: 'flex',
+    position: 'absolute',
+    top: '100%',
+    right: 0,
+    left: 0,
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: '12px',
+    padding: '16px',
+    backgroundColor: '#ffffff',
+    boxShadow: '0 8px 20px rgba(15, 23, 42, 0.12)',
+    zIndex: 101,
+  } : containerStyle;
 
   const renderChildren = () => (
     <>
@@ -508,16 +537,33 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     switch (element.type) {
       case 'list':
         return (
-          <ul style={containerStyle} onClick={handleClick} className={isPreview ? '' : 'cursor-pointer'}>
+          <ul style={menuStyle} onClick={handleClick} className={isPreview ? '' : 'cursor-pointer'}>
             {renderChildren()}
           </ul>
         );
       case 'navbar':
-        return (
-          <nav style={containerStyle} onClick={handleClick} className={isPreview ? '' : 'cursor-pointer'}>
-            {renderChildren()}
-          </nav>
-        );
+        {
+          const menuIds = new Set(
+            element.children
+              .filter(child => child.props.isNavMenu === true || (
+                ['list', 'div'].includes(child.type) &&
+                getEffectiveStyles(child, breakpoint).display === 'none'
+              ))
+              .map(child => child.id)
+          );
+          const toggleMenu = (event: React.MouseEvent) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setIsMenuOpen(open => !open);
+          };
+          return (
+            <NavbarMenuContext.Provider value={{ isOpen: isMenuOpen, toggle: toggleMenu, menuIds }}>
+              <nav style={containerStyle} onClick={handleClick} className={isPreview ? '' : 'cursor-pointer'}>
+                {renderChildren()}
+              </nav>
+            </NavbarMenuContext.Provider>
+          );
+        }
       case 'form':
         return (
           <form style={containerStyle} onClick={handleClick} onSubmit={e => e.preventDefault()} className={isPreview ? '' : 'cursor-pointer'}>
@@ -533,13 +579,11 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     }
   })();
 
-  if (isPreview) return containerElement;
-
   return (
     <div
       ref={ref}
       className={wrapperClasses}
-      draggable={!element.locked}
+      draggable={!isPreview && !element.locked}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
