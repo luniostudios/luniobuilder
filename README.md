@@ -7,7 +7,8 @@ LUNIO Builder is a NO-CODE drag & drop website builder that allows you to create
 ## Screenshots
 
 ![App Screenshot](https://i.ibb.co/MxncYCXh/luniobui.png)
-![App Screenshot](https://i.ibb.co/1fTKCss8/crop.png)
+![App Screenshot](https://i.ibb.co/Q3FpjQCP/luniobuil.png)
+![App Screenshot](https://i.ibb.co/Xrt6T2nd/luniobuild.png)
 
 
 ## Demo
