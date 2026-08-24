@@ -42,6 +42,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const billing = body?.billing === 'annually' ? 'annually' : 'monthly';
+    const email = body?.email || null;
     const target = PRICE_TARGETS[billing];
 
     if (!target) {
@@ -73,6 +74,7 @@ export async function POST(request: Request) {
 
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
+      customer_email: email || undefined,
       payment_method_types: ['card'],
       line_items: [
         {

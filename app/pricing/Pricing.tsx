@@ -92,7 +92,7 @@ export default function Pricing({ hasSession }: PricingTabsProps) {
     }, [hasSession]);
 
     const handleSubscribe = async () => {
-        if (!hasSession) {
+        if (hasSession) {
             signIn('google');
             return;
         }
@@ -104,11 +104,11 @@ export default function Pricing({ hasSession }: PricingTabsProps) {
             const response = await fetch('/api/stripe/checkout', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ billing }),
+                body: JSON.stringify({ billing, email: userData?.email || null }),
             });
 
             const text = await response.text();
-            let data: { url?: string; error?: string } = {};
+            let data: { url?: string; error?: string; email?: string } = {};
             try {
                 data = JSON.parse(text);
             } catch (parseError) {
