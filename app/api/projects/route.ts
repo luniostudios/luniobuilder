@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '../../auth/auth';
 import { supabaseServer } from '../../lib/supabaseServer';
+import { normalizeSiteSlug } from '../../lib/tenant';
 
 export async function GET(request: Request) {
   const session = await auth();
@@ -33,7 +34,7 @@ export async function GET(request: Request) {
   if (projectId) {
     let query = supabaseServer
       .from('projects')
-      .select('id, user_id, title, slug, content, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
+      .select('id, user_id, title, slug, site_slug, content, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
       .eq('id', projectId);
 
     // allow admins/owners to fetch any project
@@ -53,7 +54,7 @@ export async function GET(request: Request) {
   // list projects: admins see all projects
   let listQuery = supabaseServer
     .from('projects')
-    .select('id, user_id, title, slug, content, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
+    .select('id, user_id, title, slug, site_slug, content, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
     .order('updated_at', { ascending: false });
 
   if (role !== 'admin' && role !== 'owner') {
@@ -133,12 +134,17 @@ export async function POST(request: Request) {
   const body = await request.json();
   const title = body.title || 'Untitled Project';
   const slug = body.slug || `/project-${Date.now()}`;
+  const siteSlug = normalizeSiteSlug(body.siteSlug || title);
   const content = body.content || { pages: [], currentPageId: '' };
+
+  if (!siteSlug) {
+    return NextResponse.json({ error: 'A valid site subdomain is required.' }, { status: 400 });
+  }
 
   const { data, error } = await supabaseServer
     .from('projects')
-    .insert({ user_id: userId, title, slug, content })
-    .select('id, user_id, title, slug, content, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
+    .insert({ user_id: userId, title, slug, site_slug: siteSlug, content })
+    .select('id, user_id, title, slug, site_slug, content, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
     .single();
 
   if (error) {
@@ -191,12 +197,27 @@ export async function PATCH(request: Request) {
     updates.slug = body.slug || `/project-${Date.now()}`;
   }
 
+  if (body.siteSlug !== undefined) {
+    const siteSlug = normalizeSiteSlug(body.siteSlug);
+    if (!siteSlug) {
+      return NextResponse.json({ error: 'A valid site subdomain is required.' }, { status: 400 });
+    }
+    updates.site_slug = siteSlug;
+  }
+
   if (body.content !== undefined) {
     updates.content = body.content;
   }
 
   if (body.vercel_token !== undefined) {
     updates.vercel_token = body.vercel_token;
+  }
+
+  if (body.status !== undefined) {
+    if (body.status !== 'draft' && body.status !== 'published') {
+      return NextResponse.json({ error: 'Invalid project status.' }, { status: 400 });
+    }
+    updates.status = body.status;
   }
 
   if (Object.keys(updates).length === 1) {
@@ -207,7 +228,7 @@ export async function PATCH(request: Request) {
     .from('projects')
     .update(updates)
     .eq('id', projectId)
-    .select('id, user_id, title, slug, content, created_at, updated_at, vercel_token, vercelUrl, status, socialOg');
+    .select('id, user_id, title, slug, site_slug, content, created_at, updated_at, vercel_token, vercelUrl, status, socialOg');
 
   if (userRole !== 'admin' && userRole !== 'owner') {
     updateQuery = (updateQuery as any).eq('user_id', userId);

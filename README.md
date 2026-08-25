@@ -27,6 +27,12 @@ To run this project, you will need to add the following environment variables to
  
  `SUPABASE_SERVICE_ROLE_KEY`
 
+`NEXT_PUBLIC_ROOT_DOMAIN` (optional, defaults to `luniobuilder.com`)
+
+### Multi-tenant publishing
+
+Apply `supabase/migrations/20260825000000_add_site_slug.sql` to add the unique site subdomain column. Add a wildcard DNS record for `*.luniobuilder.com` pointing to the deployed application, and configure the same wildcard domain in the hosting provider. Users can then choose a subdomain in the editor's **Publish > Publish to LUNIO** menu; published sites are available at `https://projectname.luniobuilder.com`.
+
 
 ## Run Locally
 

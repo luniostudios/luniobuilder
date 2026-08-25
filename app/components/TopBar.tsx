@@ -15,6 +15,7 @@ import {
   Sparkles,
   Laptop,
   RectangleHorizontalIcon,
+  Globe,
 } from 'lucide-react';
 import { useBuilderStore } from '../stores/builderStore';
 import {
@@ -27,6 +28,7 @@ import { useRouter } from 'next/navigation';
 import Editor from '@monaco-editor/react';
 import { useSession } from 'next-auth/react';
 import { AIGeneratorModal } from './canvas/AIGeneratorModal';
+import { normalizeSiteSlug } from '../lib/tenant';
 
 interface UserData {
   id: string;
@@ -372,6 +374,55 @@ export const TopBar: React.FC = () => {
       console.error(error);
       const message = error instanceof Error ? error.message : JSON.stringify(error);
       setPublishMessage(message || 'Publish failed. Check console for details.');
+    } finally {
+      setIsPublishing(false);
+      setTimeout(() => setPublishMessage(''), 5000);
+    }
+  };
+
+  const publishToLunio = async () => {
+    setPublishMessage('');
+    setShowPublishMenu(false);
+
+    if (!projectId) {
+      setPublishMessage('Save the project first, then publish it to LUNIO.');
+      return;
+    }
+
+    const suggestedSlug = normalizeSiteSlug(projectName) || 'my-site';
+    const siteSlug = normalizeSiteSlug(window.prompt('Choose your LUNIO subdomain:', suggestedSlug));
+    if (!siteSlug) {
+      setPublishMessage('Enter a valid subdomain using letters, numbers, or hyphens.');
+      return;
+    }
+
+    setIsPublishing(true);
+    try {
+      const response = await fetch('/api/projects', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId,
+          title: projectName || 'Untitled Project',
+          siteSlug,
+          status: 'published',
+          content: { pages, currentPageId },
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || 'Unable to publish project');
+
+      const hostname = window.location.hostname;
+      const rootDomain = hostname === 'localhost' || hostname.endsWith('.localhost')
+        ? `localhost${window.location.port ? `:${window.location.port}` : ''}`
+        : (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'luniobuilder.com');
+      const publishedUrl = `${window.location.protocol}//${siteSlug}.${rootDomain}`;
+      setPublished(true);
+      setPublishMessage(`Published to ${publishedUrl}`);
+      window.open(publishedUrl, '_blank');
+      setTimeout(() => setPublished(false), 5000);
+    } catch (error) {
+      setPublishMessage(error instanceof Error ? error.message : 'Publish failed.');
     } finally {
       setIsPublishing(false);
       setTimeout(() => setPublishMessage(''), 5000);
@@ -844,6 +895,14 @@ export const TopBar: React.FC = () => {
 
             {showPublishMenu && (
               <div className="absolute top-full right-0 mt-1 w-48 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl py-2 z-50">
+                <button
+                  onClick={publishToLunio}
+                  disabled={!projectId}
+                  className={`w-full flex items-center gap-2 px-4 py-2 text-xs ${projectId ? 'text-gray-300 hover:text-white hover:bg-gray-800' : 'text-gray-600 cursor-not-allowed'} transition-colors`}
+                >
+                  <Globe size={12} />
+                  Publish to LUNIO
+                </button>
                 <button
                   onClick={handlePublish}
                   className="w-full flex items-center gap-2 px-4 py-2 text-xs text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
