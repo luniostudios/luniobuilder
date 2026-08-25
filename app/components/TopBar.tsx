@@ -232,7 +232,9 @@ export const TopBar: React.FC = () => {
   const [codeFiles, setCodeFiles] = useState<Array<{ path: string; content: string }>>([]);
   const [selectedCodePath, setSelectedCodePath] = useState<string>('');
   const saveTimeoutRef = useRef<number | null>(null);
+  const saveAbortControllerRef = useRef<AbortController | null>(null);
   const isSavingRef = useRef(false);
+  const isPublishingRef = useRef(false);
   const isInitialRender = useRef(true);
   const page = getCurrentPage();
   const { status } = useSession();
@@ -397,16 +399,25 @@ export const TopBar: React.FC = () => {
     }
 
     setIsPublishing(true);
+    isPublishingRef.current = true;
+    saveAbortControllerRef.current?.abort();
+    saveAbortControllerRef.current = null;
+    if (saveTimeoutRef.current) {
+      window.clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
+    }
+
+    const latestState = useBuilderStore.getState();
     try {
       const response = await fetch('/api/projects', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           projectId,
-          title: projectName || 'Untitled Project',
+          title: latestState.projectName || 'Untitled Project',
           siteSlug,
           status: 'published',
-          content: { pages, currentPageId },
+          content: { pages: latestState.pages, currentPageId: latestState.currentPageId },
         }),
       });
       const data = await response.json();
@@ -425,6 +436,7 @@ export const TopBar: React.FC = () => {
       setPublishMessage(error instanceof Error ? error.message : 'Publish failed.');
     } finally {
       setIsPublishing(false);
+      isPublishingRef.current = false;
       setTimeout(() => setPublishMessage(''), 5000);
     }
   };
@@ -463,10 +475,12 @@ export const TopBar: React.FC = () => {
   };
 
   const saveProject = useCallback(async (autoSave = false) => {
-    if (isSavingRef.current) return;
+    if (isSavingRef.current || isPublishingRef.current) return;
     setSaveMessage('');
     setIsSaving(true);
     isSavingRef.current = true;
+    const abortController = new AbortController();
+    saveAbortControllerRef.current = abortController;
 
     const payload = {
       projectId,
@@ -484,6 +498,7 @@ export const TopBar: React.FC = () => {
         headers: {
           'Content-Type': 'application/json',
         },
+        signal: abortController.signal,
         body: JSON.stringify(payload),
       });
 
@@ -503,9 +518,13 @@ export const TopBar: React.FC = () => {
       }
       setSaveMessage(autoSave ? 'Auto-saved successfully' : 'Saved successfully');
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
       console.error(error);
       setSaveMessage('Failed to save');
     } finally {
+      if (saveAbortControllerRef.current === abortController) {
+        saveAbortControllerRef.current = null;
+      }
       setIsSaving(false);
       isSavingRef.current = false;
       setTimeout(() => setSaveMessage(''), 2500);
@@ -523,6 +542,7 @@ export const TopBar: React.FC = () => {
     }
 
     if (!projectId) return;
+    if (isPublishingRef.current) return;
 
     if (saveTimeoutRef.current) {
       window.clearTimeout(saveTimeoutRef.current);
@@ -852,6 +872,7 @@ export const TopBar: React.FC = () => {
 
           {/* Save */}
           <button
+            onClick={() => saveProject()}
             disabled={isSaving}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${projectId
               ? 'bg-green-600 text-white hover:bg-green-500'
