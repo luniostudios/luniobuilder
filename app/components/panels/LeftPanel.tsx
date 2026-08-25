@@ -50,11 +50,10 @@ export const LeftPanel: React.FC = () => {
           <button
             key={tab.id}
             onClick={() => setLeftPanelTab(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-medium transition-colors ${
-              leftPanelTab === tab.id
+            className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-medium transition-colors ${leftPanelTab === tab.id
                 ? 'text-white border-b-2 border-blue-300 bg-blue-300/5'
                 : 'text-gray-400 hover:text-gray-200'
-            }`}
+              }`}
           >
             {tab.icon}
             {tab.label}
@@ -232,9 +231,8 @@ const LayerItem: React.FC<{ element: BuilderElement; depth: number; collapseSign
       className={isDragging ? 'opacity-50' : ''}
     >
       <div
-        className={`flex items-center gap-1 px-2 py-1.5 rounded-md mx-1 group transition-colors ${
-          isSelected ? 'bg-blue-600/20 text-blue-300' : 'hover:bg-gray-800/80 text-gray-400 hover:text-gray-200'
-        }`}
+        className={`flex items-center gap-1 px-2 py-1.5 rounded-md mx-1 group transition-colors ${isSelected ? 'bg-blue-600/20 text-blue-300' : 'hover:bg-gray-800/80 text-gray-400 hover:text-gray-200'
+          }`}
         style={{ paddingLeft: `${8 + depth * 12}px` }}
         onClick={() => selectElement(isSelected ? null : element.id)}
       >
@@ -403,11 +401,10 @@ const PagesTab: React.FC = () => {
         {pages.map(page => (
           <div
             key={page.id}
-            className={`group flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
-              page.id === currentPageId
+            className={`group flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors ${page.id === currentPageId
                 ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30'
                 : 'hover:bg-gray-800 text-gray-400 border border-transparent'
-            }`}
+              }`}
             onClick={() => setCurrentPage(page.id)}
           >
             <Globe size={12} className="shrink-0" />

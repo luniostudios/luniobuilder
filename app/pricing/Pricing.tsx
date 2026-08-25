@@ -227,11 +227,11 @@ export default function Pricing({ hasSession }: PricingTabsProps) {
 
                             {plan.name === 'Pro' && (
                                 <button
-                                    onClick={userData?.role === 'admin' ? () => window.location.href = '/dashboard' : handleSubscribe}
+                                    onClick={userData?.role === 'PRO' || userData?.role === 'ADMIN' || userData?.role === 'OWNER' ? () => window.location.href = '/dashboard' : handleSubscribe}
                                     className={`w-full py-4 px-6 rounded-xl font-bold text-lg transition-colors mb-8 bg-lime-400 text-black'
                                         }`}
                                 >
-                                    {!hasSession && userData?.role === 'admin' ? 'Go to Dashboard' : `${plan.cta}`}
+                                    {!hasSession && userData?.role === 'PRO' || userData?.role === 'ADMIN' || userData?.role === 'OWNER' ? 'Go to Dashboard' : `${plan.cta}`}
                                 </button>
                             )}
                             {plan.name == 'Starter' && (
@@ -244,13 +244,13 @@ export default function Pricing({ hasSession }: PricingTabsProps) {
                                 </Link>
                             )}
                             {plan.name == 'Business' && (
-                                <Link
-                                    href='/dashboard'
+                                <button
+                                    onClick={userData?.role === 'BUSINESS' || userData?.role === 'ADMIN' || userData?.role === 'OWNER' ? () => window.location.href = '/dashboard' : handleSubscribe}
                                     className={`w-full py-4 px-6 rounded-xl font-bold text-lg transition-colors mb-8 btn-ghost w-full'
                                         }`}
                                 >
-                                    {!hasSession ? 'Go to Dashboard' : `${plan.cta}`}
-                                </Link>
+                                    {!hasSession && userData?.role === 'BUSINESS' || userData?.role === 'ADMIN' || userData?.role === 'OWNER' ? 'Go to Dashboard' : `${plan.cta}`}
+                                </button>
                             )}
 
                             <ul className="space-y-3">
