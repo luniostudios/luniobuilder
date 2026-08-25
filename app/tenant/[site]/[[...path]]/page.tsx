@@ -46,7 +46,7 @@ export default async function TenantPage({ params }: TenantPageProps) {
 
   if (!page) notFound();
 
-  const markup = page.elements.map(element => renderElementToHtml(element)).join('');
+  const markup = renderElementToHtml(page.elements[0]);
   const css = generateCssForPage(page);
   const navigationScript = `(function(){document.addEventListener('click',function(event){var toggle=event.target.closest('[data-lunio-nav-toggle]');if(!toggle)return;var nav=toggle.closest('nav');var menu=nav&&nav.querySelector('[data-lunio-nav-menu]');if(!menu)return;var open=menu.classList.toggle('lunio-nav-open');toggle.setAttribute('aria-expanded',String(open));if(open){menu.style.display='flex';menu.style.position='absolute';menu.style.top='100%';menu.style.left='0';menu.style.right='0';menu.style.flexDirection='column';menu.style.alignItems='stretch';menu.style.gap='12px';menu.style.padding='16px';menu.style.backgroundColor='#fff';menu.style.zIndex='101';}else{menu.style.display='';}});})();`;
 
