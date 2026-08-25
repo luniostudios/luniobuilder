@@ -19,6 +19,7 @@ import {
     ArrowUpRight,
     Send,
     Users,
+    User,
 } from 'lucide-react';
 
 import { useEffect } from 'react';
@@ -28,6 +29,8 @@ import { redirect, useRouter, useSearchParams } from 'next/navigation';
 import { Page } from '@/app/types/builder';
 import { generateCssForPage, renderElementToHtml } from '@/app/utils/builderUtils';
 import Userss from './users/users';
+import { Popover, PopoverContent, PopoverHeader, PopoverTrigger } from '@/components/ui/popover';
+import { SignOut } from '../components/auth/signOut';
 
 interface NavItemProps {
     icon: React.ComponentType<{ size: number; className?: string }>;
@@ -55,6 +58,12 @@ interface UserData {
     name: string | null;
     email: string;
     role: string;
+}
+
+interface NotificationRecord {
+    id: string;
+    created_at: Date;
+    notification: string;
 }
 
 const buildProjectPreviewDocument = (project: ProjectRecord): string => {
@@ -98,6 +107,7 @@ export default function dashboard() {
     const role = (session?.user as any)?.role || 'free';
     const searchParams = useSearchParams();
     const [projects, setProjects] = useState<ProjectRecord[]>([]);
+    const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
     const [userData, setUserData] = useState<UserData | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -111,6 +121,7 @@ export default function dashboard() {
         if (status === 'authenticated') {
             fetchProjects();
             fetchUserData();
+            fetchNotifications();
         } else if (status === 'unauthenticated') {
             setLoading(false);
         }
@@ -162,6 +173,22 @@ export default function dashboard() {
 
         const data = await response.json();
         setProjects(data || []);
+        setLoading(false);
+    };
+
+    const fetchNotifications = async () => {
+        setLoading(true);
+        setError(null);
+
+        const response = await fetch('/api/notifications');
+        if (!response.ok) {
+            setError('Unable to load notifications.');
+            setLoading(false);
+            return;
+        }
+
+        const data = await response.json();
+        setNotifications(data || []);
         setLoading(false);
     };
 
@@ -404,15 +431,35 @@ export default function dashboard() {
                     </div>
 
                     <div className="flex items-center gap-3 sm:gap-4">
-                        <button className="relative p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-full transition-colors">
-                            <Bell size={20} />
-                            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
-                        </button>
-                        <div className="h-6 w-px bg-gray-200 hidden sm:block"></div>
-                        <button onClick={openCreateProjectModal} className="hidden sm:flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                            <Plus size={16} />
-                            New Project
-                        </button>
+
+                        <Popover>
+                            <PopoverTrigger className='outline-none'>
+                                <button className="relative p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-full transition-colors">
+                                    <Bell size={20} />
+                                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
+                                </button>
+                            </PopoverTrigger>
+                            <PopoverContent className="bg-white text-white border border-white/20 mr-6 mt-4">
+                                <PopoverHeader className="ml-4">
+                                    {notifications.length > 0 ? (
+                                        <ul className="space-y-2">
+                                            {notifications.map((notification) => (
+                                                <li key={notification.id} className="text-sm text-black border-b border-gray-200 p-2 rounded-md hover:bg-gray-100 transition-colors">
+                                                    {notification.notification}
+                                                    {notification.created_at && (
+                                                        <span className="text-xs text-gray-500 block">
+                                                            {new Date(notification.created_at).toLocaleString()}
+                                                        </span>
+                                                    )}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    ) : (
+                                        <p className="text-sm text-gray-500">No new notifications.</p>
+                                    )}
+                                </PopoverHeader>
+                            </PopoverContent>
+                        </Popover>
                     </div>
                 </header>
 
@@ -524,7 +571,7 @@ export default function dashboard() {
                                                             <ExternalLink size={12} className="opacity-0 -translate-y-1 group-hover/link:opacity-100 group-hover/link:translate-y-0 transition-all" />
                                                         </a>
                                                         {userData && (userData.role?.toLowerCase() === 'admin' || userData.role?.toLowerCase() === 'owner') && project.user_id && (
-                                                            <div className="text-xs text-gray-500 mt-1">Owner: {project.user_id}</div>
+                                                            <div className="text-xs text-gray-500 mt-1">Owner: {userData.id === project.user_id ? userData.name : project.user_id}</div>
                                                         )}
                                                     </div>
 
