@@ -3,6 +3,7 @@ import { auth } from './auth/auth'
 import Header from './components/home/Header'
 import Footer from './components/home/Footer'
 import Scroll from './components/home/Scroll'
+import { FileTextIcon } from 'lucide-react'
 
 const page = async () => {
   const session = await auth();
@@ -22,7 +23,8 @@ const page = async () => {
               <Link href={session ? "/dashboard" : "/auth/signin"} className='bg-linear-to-r from-[#2193b0] to-[#6dd5ed] text-black font-medium py-4 px-6 rounded-lg max-md:text-xs'>
                 {session ? 'Go to Dashboard' : 'Start Building Today'}
               </Link>
-              <Link href="/documentation" className='text-white text-lg py-3 px-6 hover:text-gray-300 border-2 rounded-lg border-white/20 transition-colors hover:bg-white/10 font-bold underline-offset-4'>
+              <Link href="/documentation" className='text-white text-lg py-3 px-6 align-middle justify-center hover:text-gray-300 border-2 rounded-lg border-white/20 transition-colors hover:bg-white/10 font-bold underline-offset-4'>
+              <FileTextIcon className='w-5 h-5 mr-2 inline-block' />
                 Documentation
               </Link>
               <a href="https://www.producthunt.com/products/lunio-builder?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-lunio-builder" target="_blank" rel="noopener noreferrer" className="max-lg:hidden">
