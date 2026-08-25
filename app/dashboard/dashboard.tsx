@@ -400,7 +400,7 @@ export default function dashboard() {
                         />
                         <div className="flex-1 overflow-hidden">
                             <p className="text-sm font-medium text-gray-900 truncate">{session?.user?.name}</p>
-                            <p className="text-xs text-gray-500 truncate"><span className={`text-sm font-normal rounded-full px-2 py-1 align-middle  ${role === 'admin' ? 'text-red-500 bg-red-500/20' : role === 'owner' ? 'text-green-500' : role === 'pro' ? 'text-blue-500' : role === 'business' ? 'text-purple-500' : 'text-gray-400'}`}>{role}</span></p>
+                            <p className="text-xs text-gray-500 truncate"><span className={`text-sm font-normal rounded-full px-2 py-1 align-middle  ${role === 'ADMIN' ? 'text-red-500 bg-red-500/20' : role === 'OWNER' ? 'text-green-500' : role === 'PRO' ? 'text-blue-500' : role === 'BUSINESS' ? 'text-purple-500' : 'text-gray-400'}`}>{role.toLowerCase()}</span></p>
                         </div>
                     </button>
                 </div>
@@ -431,13 +431,12 @@ export default function dashboard() {
                     </div>
 
                     <div className="flex items-center gap-3 sm:gap-4">
-
                         <Popover>
                             <PopoverTrigger className='outline-none'>
-                                <button className="relative p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-full transition-colors">
+                                <a className="relative p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-full transition-colors">
                                     <Bell size={20} />
                                     <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
-                                </button>
+                                </a>
                             </PopoverTrigger>
                             <PopoverContent className="bg-white text-white border border-white/20 mr-6 mt-4">
                                 <PopoverHeader className="ml-4">
@@ -487,7 +486,7 @@ export default function dashboard() {
                                     {
                                         // session.user may not have a `role` property on its type, cast to any to safely access it
                                     }
-                                    <h1 className="text-2xl font-bold text-gray-900">🚀 Welcome back, {session?.user?.name || 'User'} <span className={`text-sm font-normal rounded-full px-2 py-1 align-middle  ${role === 'admin' ? 'text-red-500 bg-red-500/20' : role === 'owner' ? 'text-green-500' : role === 'pro' ? 'text-blue-500' : role === 'business' ? 'text-purple-500' : 'text-gray-400'}`}>{role}</span></h1>
+                                    <h1 className="text-2xl font-bold text-gray-900">🚀 Welcome back, {session?.user?.name || 'User'} <span className={`text-sm font-normal rounded-full px-2 py-1 align-middle  ${role === 'ADMIN' ? 'text-red-500 bg-red-500/20' : role === 'OWNER' ? 'text-green-500' : role === 'PRO' ? 'text-blue-500' : role === 'BUSINESS' ? 'text-purple-500' : 'text-gray-400'}`}>{role.toLowerCase()}</span></h1>
                                     <p className="text-gray-500 mt-1">Here's what's happening with your websites today.</p>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -503,7 +502,7 @@ export default function dashboard() {
                             {/* Projects Section */}
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
-                                    <h2 className="text-lg font-bold text-gray-900">{userData && (userData.role?.toLowerCase() === 'admin' || userData.role?.toLowerCase() === 'owner') ? 'All Projects' : 'Your Projects'}</h2>
+                                    <h2 className="text-lg font-bold text-gray-900">All Projects</h2>
                                     <button className="text-sm font-medium text-gray-600 hover:text-gray-500 flex items-center gap-1">
                                         View all templates <ArrowUpRight size={14} />
                                     </button>
@@ -570,7 +569,7 @@ export default function dashboard() {
                                                             {project.vercelUrl}
                                                             <ExternalLink size={12} className="opacity-0 -translate-y-1 group-hover/link:opacity-100 group-hover/link:translate-y-0 transition-all" />
                                                         </a>
-                                                        {userData && (userData.role?.toLowerCase() === 'admin' || userData.role?.toLowerCase() === 'owner') && project.user_id && (
+                                                        {userData && (userData.role == 'ADMIN' || userData.role?.toLowerCase() === 'owner') && project.user_id && (
                                                             <div className="text-xs text-gray-500 mt-1">Owner: {userData.id === project.user_id ? userData.name : project.user_id}</div>
                                                         )}
                                                     </div>

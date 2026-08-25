@@ -875,7 +875,6 @@ export const TopBar: React.FC = () => {
 
           {/* Save */}
           <button
-            onClick={() => saveProject()}
             disabled={isSaving}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${projectId
               ? 'bg-green-600 text-white hover:bg-green-500'
