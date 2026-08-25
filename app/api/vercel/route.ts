@@ -49,7 +49,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Pages are required for deployment' }, { status: 400 });
   }
 
-  const files = generateNextProjectFiles(pages, projectName);
+  const { data: user, error: userError } = await supabaseServer
+    .schema('next_auth')
+    .from('users')
+    .select('role')
+    .eq('id', userId)
+    .single();
+
+  if (userError) {
+    return NextResponse.json({ error: 'Unable to verify subscription status' }, { status: 500 });
+  }
+
+  const role = String(user?.role || 'free').toLowerCase();
+  const proRoles = new Set(['pro', 'premium', 'team', 'business', 'admin', 'owner']);
+  const files = generateNextProjectFiles(pages, projectName, 'desktop', !proRoles.has(role));
   // Sanitize incoming extraCss to remove bundled font URLs that won't work during export
   const extraCss = body?.extraCss;
   const sanitize = (css: any) => {

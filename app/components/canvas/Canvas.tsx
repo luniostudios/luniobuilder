@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useBuilderStore } from '../../stores/builderStore';
 import { ElementRenderer } from './ElementRenderer';
 import { ElementType } from '../../types/builder';
@@ -21,8 +21,40 @@ export const Canvas: React.FC = () => {
   } = useBuilderStore();
 
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
+  const [showWatermark, setShowWatermark] = useState(true);
   const canvasRef = useRef<HTMLDivElement>(null);
   const page = getCurrentPage();
+
+  useEffect(() => {
+    let isMounted = true;
+
+    fetch('/api/users')
+      .then(response => response.ok ? response.json() : null)
+      .then(user => {
+        if (!isMounted) return;
+        const role = String(user?.role || 'free').toLowerCase();
+        setShowWatermark(!['pro', 'premium', 'team', 'business', 'admin', 'owner'].includes(role));
+      })
+      .catch(() => {
+        if (isMounted) setShowWatermark(true);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const watermark = showWatermark ? (
+    <a
+      href="https://www.luniobuilder.com"
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={event => event.stopPropagation()}
+      className="fixed bottom-4 right-4 z-2147483647 rounded-md border border-slate-300/40 bg-slate-900/90 px-3 py-2 text-xs font-semibold text-white shadow-lg transition-colors hover:bg-blue-600"
+    >
+      Built with LUNIO Builder
+    </a>
+  ) : null;
 
   const breakpointWidth = {
     widescreen: '1920px',
@@ -91,6 +123,7 @@ export const Canvas: React.FC = () => {
           {page.elements.map(el => (
             <ElementRenderer key={el.id} element={el} isPreview />
           ))}
+          {watermark}
         </div>
       </div>
     );
@@ -135,6 +168,8 @@ export const Canvas: React.FC = () => {
               <p className="text-sm text-gray-400 mt-1">Double click components from the left panel</p>
             </div>
           )}
+
+          {watermark}
 
         </div>
       </div>
