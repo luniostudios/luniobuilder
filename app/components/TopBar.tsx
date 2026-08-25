@@ -417,7 +417,10 @@ export const TopBar: React.FC = () => {
           title: latestState.projectName || 'Untitled Project',
           siteSlug,
           status: 'published',
-          content: { pages: latestState.pages, currentPageId: latestState.currentPageId },
+          content: {
+            pages: latestState.pages,
+            currentPageId: latestState.currentPageId,
+          },
         }),
       });
       const data = await response.json();
