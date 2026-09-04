@@ -46,8 +46,7 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
-    ],
-    domains: ['avatars.githubusercontent.com', 'lh3.googleusercontent.com', 'discordapp.com', 'cdn.discordapp.com', 's.gravatar.com', 'www.gravatar.com', 'lh6.googleusercontent.com'],
+    ]
   },
 };
 

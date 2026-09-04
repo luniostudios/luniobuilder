@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, Redo2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Redo2, Upload } from 'lucide-react';
 import ColorPicker from 'react-best-gradient-color-picker';
 import { useBuilderStore } from '../../stores/builderStore';
 import { StyleProperties } from '../../types/builder';
@@ -563,8 +563,8 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
 
   const isTextElement = ['heading', 'paragraph', 'button', 'link', 'listItem'].includes(element.type);
   const isImageElement = element.type === 'image';
-  const [backgroundImageTab, setBackgroundImageTab] = useState<'value' | 'unsplash'>('value');
-  const [textClipImageTab, setTextClipImageTab] = useState<'value' | 'unsplash'>('value');
+  const [backgroundImageTab, setBackgroundImageTab] = useState<'value' | 'unsplash' | 'uploads'>('value');
+  const [textClipImageTab, setTextClipImageTab] = useState<'value' | 'unsplash' | 'uploads'>('value');
 
   const update = (key: keyof StyleProperties, value: string) => {
     const animationFields: Array<keyof StyleProperties> = [
@@ -945,6 +945,16 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
               >
                 Unsplash
               </button>
+              <button
+                type="button"
+                onClick={() => setTextClipImageTab('uploads')}
+                className={`flex-1 text-xs px-3 py-2 rounded-lg border transition-colors ${textClipImageTab === 'uploads'
+                  ? 'bg-blue-300/10 text-blue-200 border-blue-300/40'
+                  : 'bg-gray-900 text-gray-400 border-gray-800 hover:text-gray-200'
+                  }`}
+              >
+                My uploads
+              </button>
             </div>
 
             {textClipImageTab === 'unsplash' && (
@@ -953,6 +963,9 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
                   update('textClipImage', toCssBackgroundImageValue(photo.urls.regular));
                 }}
               />
+            )}
+            {textClipImageTab === 'uploads' && (
+              <UserImagePicker onPick={(url) => update('textClipImage', toCssBackgroundImageValue(url))} />
             )}
           </>
         )}
@@ -1008,6 +1021,16 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
           >
             Unsplash
           </button>
+          <button
+            type="button"
+            onClick={() => setBackgroundImageTab('uploads')}
+            className={`flex-1 text-xs px-3 py-2 rounded-lg border transition-colors ${backgroundImageTab === 'uploads'
+              ? 'bg-blue-300/10 text-blue-200 border-blue-300/40'
+              : 'bg-gray-900 text-gray-400 border-gray-800 hover:text-gray-200'
+              }`}
+          >
+            My uploads
+          </button>
         </div>
 
         {backgroundImageTab === 'unsplash' && (
@@ -1016,6 +1039,9 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
               update('backgroundImage', toCssBackgroundImageValue(photo.urls.regular));
             }}
           />
+        )}
+        {backgroundImageTab === 'uploads' && (
+          <UserImagePicker onPick={(url) => update('backgroundImage', toCssBackgroundImageValue(url))} />
         )}
         <InputRow
           label="Size"
@@ -1332,6 +1358,96 @@ type UnsplashPhoto = {
   links: { html: string };
 };
 
+type UserImage = {
+  id: string;
+  name: string;
+  url: string;
+};
+
+const UserImagePicker: React.FC<{ onPick: (url: string) => void }> = ({ onPick }) => {
+  const [images, setImages] = useState<UserImage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadImages = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/assets');
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || 'Unable to load uploads');
+      setImages(Array.isArray(data.assets) ? data.assets : []);
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Unable to load uploads');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadImages();
+  }, []);
+
+  const uploadImage = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      setError('Choose an image file.');
+      return;
+    }
+    setUploading(true);
+    setError(null);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await fetch('/api/assets', { method: 'POST', body: formData });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || 'Upload failed');
+      onPick(data.asset.url);
+      await loadImages();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Upload failed');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="mt-3">
+      <label className="flex items-center justify-center gap-2 w-full cursor-pointer text-xs text-blue-200 border border-dashed border-blue-300/40 rounded-lg px-3 py-3 hover:bg-blue-300/10">
+        <Upload size={14} />
+        {uploading ? 'Uploading...' : 'Upload image'}
+        <input
+          type="file"
+          accept="image/*"
+          className="sr-only"
+          disabled={uploading}
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) uploadImage(file);
+            event.target.value = '';
+          }}
+        />
+      </label>
+      <div className="mt-2 text-[11px] text-gray-600">{loading ? 'Loading your uploads...' : error || `${images.length} saved image${images.length === 1 ? '' : 's'}`}</div>
+      {images.length > 0 && (
+        <div className="mt-2 grid grid-cols-3 gap-2">
+          {images.map((image) => (
+            <button
+              key={image.id}
+              type="button"
+              onClick={() => onPick(image.url)}
+              className="group overflow-hidden rounded-md border border-gray-800 bg-gray-900 hover:border-blue-400/60 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              title={`Use ${image.name}`}
+            >
+              <img src={image.url} alt={image.name} className="w-full h-16 object-cover group-hover:opacity-90" loading="lazy" />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const UnsplashPicker: React.FC<{
   onPick: (photo: UnsplashPhoto) => void;
 }> = ({ onPick }) => {
@@ -1486,7 +1602,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
   };
 
   const isImage = element.type === 'image';
-  const [imageSourceTab, setImageSourceTab] = useState<'url' | 'unsplash'>('url');
+  const [imageSourceTab, setImageSourceTab] = useState<'url' | 'unsplash' | 'uploads'>('url');
   const effectiveImageTab = useMemo(() => (isImage ? imageSourceTab : 'url'), [isImage, imageSourceTab]);
 
   return (
@@ -1575,6 +1691,16 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
             >
               Unsplash
             </button>
+            <button
+              type="button"
+              onClick={() => setImageSourceTab('uploads')}
+              className={`flex-1 text-xs px-3 py-2 rounded-lg border transition-colors ${effectiveImageTab === 'uploads'
+                ? 'bg-blue-300/10 text-blue-200 border-blue-300/40'
+                : 'bg-gray-900 text-gray-400 border-gray-800 hover:text-gray-200'
+                }`}
+            >
+              My uploads
+            </button>
           </div>
 
           {effectiveImageTab === 'unsplash' && (
@@ -1584,6 +1710,14 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
                 if (!element.props.alt) {
                   update('alt', photo.alt_description || photo.description || 'Unsplash photo');
                 }
+              }}
+            />
+          )}
+          {effectiveImageTab === 'uploads' && (
+            <UserImagePicker
+              onPick={(url) => {
+                update('src', url);
+                if (!element.props.alt) update('alt', 'Uploaded image');
               }}
             />
           )}
