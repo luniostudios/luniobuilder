@@ -134,7 +134,11 @@ export async function POST(request: Request) {
   const body = await request.json();
   const title = body.title || 'Untitled Project';
   const slug = body.slug || `/project-${Date.now()}`;
-  const siteSlug = normalizeSiteSlug(body.siteSlug || title);
+  const explicitSiteSlug = body.siteSlug ? normalizeSiteSlug(body.siteSlug) : null;
+  const generatedBaseSlug = normalizeSiteSlug(title) || 'site';
+  const generatedSuffix = Date.now().toString(36);
+  const generatedSiteSlug = `${generatedBaseSlug.slice(0, 63 - generatedSuffix.length - 1)}-${generatedSuffix}`;
+  const siteSlug = explicitSiteSlug || normalizeSiteSlug(generatedSiteSlug);
   const content = body.content || { pages: [], currentPageId: '' };
 
   if (!siteSlug) {

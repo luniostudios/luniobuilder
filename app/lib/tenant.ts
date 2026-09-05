@@ -27,6 +27,12 @@ export const getSiteSlugFromHost = (host: string | null): string | null => {
 
   const hostname = host.split(':')[0].toLowerCase().replace(/\.$/, '');
   const rootDomain = getRootDomain().toLowerCase().replace(/^https?:\/\//, '').split(':')[0].replace(/\.$/, '');
+
+  if (hostname.endsWith('.localhost')) {
+    const subdomain = hostname.slice(0, -'.localhost'.length);
+    return subdomain && !subdomain.includes('.') ? normalizeSiteSlug(subdomain) : null;
+  }
+
   if (!hostname.endsWith(`.${rootDomain}`)) return null;
 
   const subdomain = hostname.slice(0, -(rootDomain.length + 1));

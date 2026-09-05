@@ -3,7 +3,9 @@ import { NextResponse } from "next/server";
 import { getSiteSlugFromHost } from "./lib/tenant";
  
 export const proxy = auth((req) => {
-  const siteSlug = getSiteSlugFromHost(req.headers.get('host'));
+  const siteSlug = getSiteSlugFromHost(
+    req.headers.get('x-forwarded-host') || req.headers.get('host')
+  );
   const isInternalPath = req.nextUrl.pathname.startsWith('/_next') || req.nextUrl.pathname.startsWith('/api');
 
   if (siteSlug && !isInternalPath) {

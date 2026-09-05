@@ -511,7 +511,7 @@ export default function dashboard() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
                                     {/* Create New Card */}
-                                    <button onClick={openCreateProjectModal} disabled={reachedProjectLimit || !userData} className="group flex flex-col items-center justify-center h-70 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 hover:border-gray-400 transition-all">
+                                    <button onClick={openCreateProjectModal} disabled={reachedProjectLimit} className="group flex flex-col items-center justify-center h-70 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 hover:border-gray-400 transition-all">
                                         <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-4 group-hover:scale-110 transition-transform">
                                             <Plus className="text-gray-900 w-6 h-6" />
                                         </div>

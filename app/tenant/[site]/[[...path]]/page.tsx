@@ -39,11 +39,14 @@ export async function generateMetadata({ params }: TenantPageProps) {
   const { site, path } = await params;
   const project = await getPublishedProject(site);
   const pages = project?.content?.pages || [];
-  const page = pages.find(item => item.slug.replace(/^\//, '') === (path || []).join('/')) || pages[0];
 
   return {
-    title: page?.seo?.title || project?.title || 'Published website',
-    description: page?.seo?.description || project?.title || 'Published with LUNIO Builder',
+    title: pages[0].seo?.title || project?.title || 'LUNIO Builder',
+    description: pages[0].seo?.description || '',
+    openGraph: {
+      title: pages[0].seo?.title || project?.title || 'LUNIO Builder',
+      description: pages[0].seo?.description || '',
+    },
   };
 }
 
