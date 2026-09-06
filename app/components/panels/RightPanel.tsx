@@ -70,6 +70,21 @@ const GOOGLE_FONT_OPTIONS = [
   'Courier Prime',
 ];
 
+const BUTTON_ICON_OPTIONS = [
+  ['ArrowRight', 'Arrow right'],
+  ['ArrowLeft', 'Arrow left'],
+  ['ArrowUpRight', 'Arrow up right'],
+  ['Download', 'Download'],
+  ['ExternalLink', 'External link'],
+  ['Heart', 'Heart'],
+  ['Mail', 'Mail'],
+  ['Play', 'Play'],
+  ['Plus', 'Plus'],
+  ['Search', 'Search'],
+  ['ShoppingCart', 'Shopping cart'],
+  ['Star', 'Star'],
+] as const;
+
 const loadedGoogleFonts = new Set<string>();
 
 const normalizeGoogleFontFamily = (fontFamily: string) => {
@@ -805,6 +820,15 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
           onChange={v => update('position', v)}
           options={['static', 'relative', 'absolute', 'fixed', 'sticky']}
         />
+        <label className="flex items-center gap-2 mt-2 text-xs text-gray-400 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={styles.visibility !== 'hidden'}
+            onChange={e => update('visibility', e.target.checked ? 'visible' : 'hidden')}
+            className="accent-blue-500"
+          />
+          Visible
+        </label>
         {(styles.position === 'absolute' || styles.position === 'fixed') && (
           <div className="grid grid-cols-2 gap-2 mt-1">
             {(['top', 'right', 'bottom', 'left'] as const).map(side => (
@@ -1654,6 +1678,22 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
             placeholder="https://..."
             className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
+        </div>
+      )}
+
+      {element.type === 'button' && (
+        <div>
+          <label className="text-xs text-gray-500 block mb-1">Button Icon</label>
+          <select
+            value={element.props.iconName || ''}
+            onChange={e => update('iconName', e.target.value)}
+            className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            <option value="">No icon</option>
+            {BUTTON_ICON_OPTIONS.map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
         </div>
       )}
 

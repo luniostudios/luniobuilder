@@ -533,7 +533,6 @@ export default function dashboard() {
                                                     sandbox="allow-scripts"
                                                     tabIndex={-1}
                                                     aria-hidden="true"
-                                                    scrolling="no"
                                                     className="pointer-events-none w-full h-full border-0 bg-white transition-transform duration-500 group-hover:scale-105"
                                                 />
 

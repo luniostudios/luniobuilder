@@ -104,23 +104,6 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     }
   };
 
-  if (element.hidden && !isPreview) {
-    return (
-      <div
-        style={{ ...safeCssStyles, opacity: 0.3, outline: '1px dashed #d1d5db' }}
-        className="relative"
-      >
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-400 text-xs">
-          Hidden: {element.name}
-        </div>
-      </div>
-    );
-  }
-
-  if (element.hidden && isPreview) {
-    return null;
-  }
-
   const isSelected = selectedElementId === element.id;
   const isHovered = hoveredElementId === element.id;
   const isDropTarget = dropTargetId === element.id;
@@ -199,6 +182,23 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
       setEditingValue(element.props.text || '');
     }
   }, [element.props.text, isEditing]);
+
+  if (element.hidden && !isPreview) {
+    return (
+      <div
+        style={{ ...safeCssStyles, opacity: 0.3, outline: '1px dashed #d1d5db' }}
+        className="relative"
+      >
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-400 text-xs">
+          Hidden: {element.name}
+        </div>
+      </div>
+    );
+  }
+
+  if (element.hidden && isPreview) {
+    return null;
+  }
 
   const isTextEditableType = (type: ElementType) => [
     'heading',
@@ -292,7 +292,12 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
           </p>
         );
 
-      case 'button':
+      case 'button': {
+        const iconName = element.props.iconName as string | undefined;
+        const ButtonIcon = iconName
+          ? (LucideIcons as unknown as Record<string, React.ComponentType<{ 'aria-hidden'?: boolean; style?: React.CSSProperties }>>)[iconName]
+          : null;
+
         return isEditing ? (
           <span
             ref={(node) => setEditingRef(node as HTMLElement | null)}
@@ -321,9 +326,13 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
             onDoubleClick={handleDoubleClick}
             className={isPreview ? 'hover:opacity-90' : 'cursor-pointer'}
           >
-            {element.props.text || 'Button'}
+            <span className="inline-flex items-center gap-2">
+              {ButtonIcon && <ButtonIcon aria-hidden style={{ width: '1em', height: '1em' }} />}
+              {element.props.text || 'Button'}
+            </span>
           </button>
         );
+      }
 
       case 'link':
         return (

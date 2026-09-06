@@ -40,6 +40,7 @@ export interface StyleProperties {
   gridTemplateColumns?: string;
   gridTemplateRows?: string;
   backdropFilter?: string;
+  visibility?: string;
 
   // Spacing
   padding?: string;
