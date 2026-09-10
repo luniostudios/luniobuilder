@@ -430,7 +430,7 @@ const PagesTab: React.FC = () => {
 
             <span className="text-xs text-gray-600">{page.slug}</span>
 
-            {pages.length > 1 && (
+            {pages.length > 1 && page.slug !== '/' && (
               <button
                 onClick={e => { e.stopPropagation(); if (confirm(`Delete page "${page.name}"? This cannot be undone.`)) { deletePage(page.id); } }}
                 aria-label={`Delete page ${page.name}`}

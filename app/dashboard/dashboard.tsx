@@ -435,7 +435,9 @@ export default function dashboard() {
                             <PopoverTrigger className='outline-none'>
                                 <a className="relative p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-full transition-colors">
                                     <Bell size={20} />
-                                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
+                                    <span className="absolute top-3 right-1.5 h-4 w-4 justify-center align-middle items-center bg-red-500 rounded-full text-white text-xs">
+                                        {notifications.length}
+                                    </span>
                                 </a>
                             </PopoverTrigger>
                             <PopoverContent className="bg-white text-white border border-white/20 mr-6 mt-4">

@@ -490,6 +490,9 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
   },
 
   deletePage: (id) => {
+    const page = get().pages.find(page => page.id === id);
+    if (!page || page.slug === '/') return;
+
     set(state => {
       if (state.pages.length <= 1) return state;
       const pages = state.pages.filter(p => p.id !== id);

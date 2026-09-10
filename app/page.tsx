@@ -23,7 +23,7 @@ const page = async () => {
               <Link href={session ? "/dashboard" : "/auth/signin"} className='bg-linear-to-r from-[#2193b0] to-[#6dd5ed] text-black font-medium py-4 px-6 rounded-lg max-md:text-xs'>
                 {session ? 'Go to Dashboard' : 'Start Building Today'}
               </Link>
-              <Link href="/documentation" className='text-white text-lg py-3 px-6 align-middle justify-center hover:text-gray-300 border-2 rounded-lg border-white/20 transition-colors hover:bg-white/10 font-bold underline-offset-4'>
+              <Link href="/documentation" className='text-white text-lg max-md:text-sm py-3 px-6 align-middle justify-center hover:text-gray-300 border-2 rounded-lg border-white/20 transition-colors hover:bg-white/10 font-bold underline-offset-4'>
               <FileTextIcon className='w-5 h-5 mr-2 inline-block' />
                 Documentation
               </Link>
