@@ -27,7 +27,15 @@ To run this project, you will need to add the following environment variables to
  
  `SUPABASE_SERVICE_ROLE_KEY`
 
+`LIVEBLOCKS_SECRET_KEY` (required for realtime editor collaboration)
+
 `NEXT_PUBLIC_ROOT_DOMAIN` (optional, defaults to `luniobuilder.com`)
+
+### Realtime collaboration
+
+Create a Liveblocks project and add its server secret as `LIVEBLOCKS_SECRET_KEY`.
+Authorized project owners and admins opening the same `/editor?projectId=...` URL
+share the builder document in realtime, including active collaborator presence.
 
 ### Multi-tenant publishing
 

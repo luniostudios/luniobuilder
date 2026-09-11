@@ -10,6 +10,7 @@ import { useBuilderStore } from '../stores/builderStore';
 import { useSession } from "next-auth/react"
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { CollaborationRoom, CollaborationStatus } from '../components/collaboration/CollaborationRoom';
 
 export default function App() {
 
@@ -146,31 +147,34 @@ export default function App() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-[#0d1117] overflow-hidden font-sans">
-      <TopBar />
+    <CollaborationRoom projectId={projectQueryId}>
+      <div className="relative h-screen flex flex-col bg-[#0d1117] overflow-hidden font-sans">
+        <TopBar />
+        <CollaborationStatus />
 
-      <div className="flex flex-1 overflow-hidden">
-        {!isPreviewMode && <LeftPanel />}
+        <div className="flex flex-1 overflow-hidden">
+          {!isPreviewMode && <LeftPanel />}
 
-        <Canvas />
+          <Canvas />
 
-        {!isPreviewMode && <RightPanel />}
+          {!isPreviewMode && <RightPanel />}
+        </div>
+
+        {contextMenu && contextElement && (
+          <ContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            elementId={contextMenu.id}
+            onClose={() => setContextMenu(null)}
+            onDelete={deleteElement}
+            onDuplicate={duplicateElement}
+            onToggleVisibility={toggleElementVisibility}
+            onToggleLock={toggleElementLock}
+            isHidden={contextElement.hidden}
+            isLocked={contextElement.locked}
+          />
+        )}
       </div>
-
-      {contextMenu && contextElement && (
-        <ContextMenu
-          x={contextMenu.x}
-          y={contextMenu.y}
-          elementId={contextMenu.id}
-          onClose={() => setContextMenu(null)}
-          onDelete={deleteElement}
-          onDuplicate={duplicateElement}
-          onToggleVisibility={toggleElementVisibility}
-          onToggleLock={toggleElementLock}
-          isHidden={contextElement.hidden}
-          isLocked={contextElement.locked}
-        />
-      )}
-    </div>
+    </CollaborationRoom>
   );
 }
