@@ -4,6 +4,7 @@ import Header from './components/home/Header'
 import Footer from './components/home/Footer'
 import Scroll from './components/home/Scroll'
 import { FileTextIcon } from 'lucide-react'
+import { Banner } from './components/partners/Banner'
 
 const page = async () => {
   const session = await auth();
@@ -13,6 +14,7 @@ const page = async () => {
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl opacity-15 blur-[120px] pointer-events-none">
         <div className="aspect-2/1 w-full bg-linear-to-b from-[#1D976C] to-[#93F9B9] rounded-full"></div>
       </div>
+      <Banner />
       <Header />
       <div className='text-white flex flex-row items-center gap-10 justify-center py-20 align-middle max-md:pt-20 max-md:flex-col max-lg:px-5'>
         <div className='flex flex-col gap-10 max-w-5xl max-lg:w-full'>
