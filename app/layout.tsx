@@ -10,13 +10,6 @@ const geistSans = Roboto({
   display: "swap",
 });
 
-const geistMono = Roboto({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -48,7 +41,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} bg-[#111114]`}>
+    <html lang="en" className={`${geistSans.variable} bg-[#111114]`}>
       <head>
         <meta property="og:image" content="/socials/og.png" />
         <meta property="og:image:alt" content="LUNIO Builder" />

@@ -52,7 +52,20 @@ export async function POST(request: Request) {
   }
 
   const { data: project, error: projectError } = await projectQuery.single();
-  if (projectError || !project) {
+  let memberRole: 'editor' | 'viewer' = 'editor';
+  if ((projectError || !project) && role !== 'admin' && role !== 'owner') {
+    const { data: membership } = await supabaseServer
+      .from('project_members')
+      .select('role')
+      .eq('project_id', projectId)
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (!membership) {
+      return NextResponse.json({ error: 'Project access denied' }, { status: 403 });
+    }
+    memberRole = membership.role === 'viewer' ? 'viewer' : 'editor';
+  } else if (projectError || !project) {
     return NextResponse.json({ error: 'Project access denied' }, { status: 403 });
   }
 
@@ -62,7 +75,7 @@ export async function POST(request: Request) {
       avatar: session.user?.image || undefined,
     },
   });
-  liveblocksSession.allow(room, ['*:write']);
+  liveblocksSession.allow(room, [memberRole === 'viewer' ? '*:read' : '*:write']);
 
   const { body: token, status } = await liveblocksSession.authorize();
   return new Response(token, { status });

@@ -479,6 +479,7 @@ export const TopBar: React.FC = () => {
 
   const saveProject = useCallback(async (autoSave = false) => {
     if (isSavingRef.current || isPublishingRef.current) return;
+    const normalizedProjectId = typeof projectId === 'string' && projectId.trim() ? projectId.trim() : null;
     setSaveMessage('');
     setIsSaving(true);
     isSavingRef.current = true;
@@ -486,7 +487,7 @@ export const TopBar: React.FC = () => {
     saveAbortControllerRef.current = abortController;
 
     const payload = {
-      projectId,
+      ...(normalizedProjectId ? { projectId: normalizedProjectId } : {}),
       title: projectName || 'Untitled Project',
       slug: page.slug || '/untitled',
       content: {
@@ -497,7 +498,7 @@ export const TopBar: React.FC = () => {
 
     try {
       const response = await fetch('/api/projects', {
-        method: projectId ? 'PATCH' : 'POST',
+        method: normalizedProjectId ? 'PATCH' : 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -515,7 +516,7 @@ export const TopBar: React.FC = () => {
         if (data?.title) {
           setProjectName(data.title);
         }
-        if (!projectId) {
+        if (!normalizedProjectId) {
           router.replace(`/editor?projectId=${data.id}`);
         }
       }

@@ -37,6 +37,11 @@ Create a Liveblocks project and add its server secret as `LIVEBLOCKS_SECRET_KEY`
 Authorized project owners and admins opening the same `/editor?projectId=...` URL
 share the builder document in realtime, including active collaborator presence.
 
+Apply `supabase/migrations/20260911000000_add_project_collaboration.sql` to enable
+project invitations and accepted collaborator access. Project owners can invite
+registered users from the project menu; invitees accept or decline from their
+dashboard, and accepted projects then appear in their project list.
+
 ### Multi-tenant publishing
 
 Apply `supabase/migrations/20260825000000_add_site_slug.sql` to add the unique site subdomain column. Add a wildcard DNS record for `*.luniobuilder.com` pointing to the deployed application, and configure the same wildcard domain in the hosting provider. Users can then choose a subdomain in the editor's **Publish > Publish to LUNIO** menu; published sites are available at `https://projectname.luniobuilder.com`.

@@ -66,6 +66,15 @@ interface NotificationRecord {
     notification: string;
 }
 
+interface ProjectInvitation {
+    id: string;
+    project_id: string;
+    invited_email: string;
+    status: string;
+    created_at: string;
+    projects?: { id: string; title: string } | null;
+}
+
 const buildProjectPreviewDocument = (project: ProjectRecord): string => {
     const pages = project.content?.pages || [];
     const currentPage = pages.find(page => page.id === project.content?.currentPageId) || pages[0];
@@ -116,12 +125,18 @@ export default function dashboard() {
     const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; projectId: string | null }>({ isOpen: false, projectId: null });
     const [createProjectModal, setCreateProjectModal] = useState<{ isOpen: boolean; name: string }>({ isOpen: false, name: '' });
     const [roleUpdated, setRoleUpdated] = useState(false);
+    const [invitations, setInvitations] = useState<ProjectInvitation[]>([]);
+    const [inviteModal, setInviteModal] = useState<{ projectId: string; projectTitle: string } | null>(null);
+    const [inviteEmail, setInviteEmail] = useState('');
+    const [inviteMessage, setInviteMessage] = useState<string | null>(null);
+    const [inviteSaving, setInviteSaving] = useState(false);
 
     useEffect(() => {
         if (status === 'authenticated') {
             fetchProjects();
             fetchUserData();
             fetchNotifications();
+            fetchInvitations();
         } else if (status === 'unauthenticated') {
             setLoading(false);
         }
@@ -207,6 +222,42 @@ export default function dashboard() {
         setUserData(data);
         setLoading(false);
     }
+
+    const fetchInvitations = async () => {
+        const response = await fetch('/api/project-invitations');
+        if (response.ok) setInvitations(await response.json());
+    };
+
+    const respondToInvitation = async (invitationId: string, action: 'accept' | 'decline') => {
+        const response = await fetch('/api/project-invitations', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ invitationId, action }),
+        });
+        if (response.ok) {
+            setInvitations(prev => prev.filter(invitation => invitation.id !== invitationId));
+            if (action === 'accept') await fetchProjects();
+        }
+    };
+
+    const inviteCollaborator = async () => {
+        if (!inviteModal || !inviteEmail) return;
+        setInviteSaving(true);
+        setInviteMessage(null);
+        const response = await fetch('/api/project-invitations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ projectId: inviteModal.projectId, email: inviteEmail }),
+        });
+        const data = await response.json().catch(() => null);
+        setInviteSaving(false);
+        if (!response.ok) {
+            setInviteMessage(data?.error || 'Unable to send invitation.');
+            return;
+        }
+        setInviteMessage('Invitation sent.');
+        setInviteEmail('');
+    };
 
     const getProjectLimitForRole = (role?: string) => {
         if (!role) return 3;
@@ -467,6 +518,25 @@ export default function dashboard() {
                 {/* Scrollable Dashboard Area */}
                 <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
 
+                    {invitations.length > 0 && (
+                        <div className="max-w-6xl mx-auto mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4">
+                            <div className="flex items-center gap-2 text-sm font-semibold text-blue-900">
+                                <Users size={16} /> Project invitations
+                            </div>
+                            <div className="mt-3 space-y-2">
+                                {invitations.map(invitation => (
+                                    <div key={invitation.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 text-sm text-gray-700">
+                                        <span>You were invited to collaborate on <strong>{invitation.projects?.title || 'a project'}</strong>.</span>
+                                        <div className="flex gap-2">
+                                            <button onClick={() => respondToInvitation(invitation.id, 'accept')} className="rounded-md bg-[#1D976C] px-3 py-1.5 text-xs font-semibold text-white">Accept</button>
+                                            <button onClick={() => respondToInvitation(invitation.id, 'decline')} className="rounded-md border border-gray-200 px-3 py-1.5 text-xs text-gray-600">Decline</button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {isNav === 'users' ? <Userss /> :
 
                         <div className="max-w-6xl mx-auto space-y-8">
@@ -594,6 +664,18 @@ export default function dashboard() {
                                                                     <Link href={`/editor?projectId=${project.id}`} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
                                                                         <Send size={14} className="text-gray-400" /> Open Builder
                                                                     </Link>
+                                                                    {project.user_id === userData?.id && (
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                setInviteModal({ projectId: project.id, projectTitle: project.title });
+                                                                                setInviteMessage(null);
+                                                                                setOpenDropdown(null);
+                                                                            }}
+                                                                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                                                                        >
+                                                                            <Users size={14} className="text-gray-400" /> Invite collaborator
+                                                                        </button>
+                                                                    )}
                                                                     {project.status === 'Draft' && (
                                                                         <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
                                                                             <Rocket size={14} className="text-gray-400" /> Publish
@@ -707,6 +789,34 @@ export default function dashboard() {
                                     className='px-4 py-2 rounded-lg bg-gray-700 text-sm text-gray-300 transition hover:bg-gray-600 disabled:opacity-80'
                                 >
                                     Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                {inviteModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                        <div className="w-full max-w-md rounded-xl bg-[#111214] p-6">
+                            <h2 className="text-xl font-semibold text-white">Invite to {inviteModal.projectTitle}</h2>
+                            <p className="mt-2 text-sm text-gray-400">Enter the email address of the user you want to invite.</p>
+                            <input
+                                type="email"
+                                autoFocus
+                                placeholder="collaborator@example.com"
+                                value={inviteEmail}
+                                onChange={(event) => setInviteEmail(event.target.value)}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Enter' && inviteEmail && !inviteSaving) {
+                                        inviteCollaborator();
+                                    }
+                                }}
+                                className="mt-4 w-full rounded-lg border border-gray-700 bg-[#1a1d23] px-3 py-2 text-white focus:outline-none focus:border-[#1D976C]"
+                            />
+                            {inviteMessage && <p className="mt-3 text-sm text-gray-300">{inviteMessage}</p>}
+                            <div className="mt-6 flex justify-end gap-3">
+                                <button onClick={() => setInviteModal(null)} className="rounded-lg bg-gray-700 px-4 py-2 text-sm text-gray-300">Close</button>
+                                <button onClick={inviteCollaborator} disabled={!inviteEmail || inviteSaving} className="rounded-lg bg-[#1D976C] px-4 py-2 text-sm font-semibold text-black disabled:opacity-50">
+                                    {inviteSaving ? 'Sending...' : 'Send invite'}
                                 </button>
                             </div>
                         </div>

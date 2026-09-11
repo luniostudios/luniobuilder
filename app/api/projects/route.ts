@@ -3,6 +3,16 @@ import { auth } from '../../auth/auth';
 import { supabaseServer } from '../../lib/supabaseServer';
 import { normalizeSiteSlug } from '../../lib/tenant';
 
+const getMemberProjectIds = async (userId: string) => {
+  const { data, error } = await supabaseServer
+    .from('project_members')
+    .select('project_id')
+    .eq('user_id', userId);
+
+  if (error) throw new Error(error.message);
+  return (data || []).map(member => member.project_id);
+};
+
 export async function GET(request: Request) {
   const session = await auth();
   if (!session?.user) {
@@ -32,6 +42,9 @@ export async function GET(request: Request) {
   const projectId = url.searchParams.get('projectId');
 
   if (projectId) {
+    const memberProjectIds = role !== 'admin' && role !== 'owner'
+      ? await getMemberProjectIds(userId)
+      : [];
     let query = supabaseServer
       .from('projects')
       .select('id, user_id, title, slug, site_slug, content, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
@@ -39,7 +52,10 @@ export async function GET(request: Request) {
 
     // allow admins/owners to fetch any project
     if (role !== 'admin' && role !== 'owner') {
-      query = (query as any).eq('user_id', userId);
+      const isMember = memberProjectIds.includes(projectId);
+      query = isMember
+        ? (query as any)
+        : (query as any).eq('user_id', userId);
     }
 
     const { data, error } = await query.single();
@@ -51,14 +67,31 @@ export async function GET(request: Request) {
     return NextResponse.json(data);
   }
 
-  // list projects: admins see all projects
+  // List owned projects and accepted shared projects for regular users.
   let listQuery = supabaseServer
     .from('projects')
     .select('id, user_id, title, slug, site_slug, content, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
     .order('updated_at', { ascending: false });
 
   if (role !== 'admin' && role !== 'owner') {
-    listQuery = (listQuery as any).eq('user_id', userId);
+    const memberProjectIds = await getMemberProjectIds(userId);
+    const { data: ownedProjects, error: ownedError } = await (listQuery as any).eq('user_id', userId);
+    if (ownedError) return NextResponse.json({ error: ownedError.message }, { status: 500 });
+
+    if (memberProjectIds.length === 0) return NextResponse.json(ownedProjects || []);
+
+    const { data: sharedProjects, error: sharedError } = await supabaseServer
+      .from('projects')
+      .select('id, user_id, title, slug, site_slug, content, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
+      .in('id', memberProjectIds)
+      .order('updated_at', { ascending: false });
+
+    if (sharedError) return NextResponse.json({ error: sharedError.message }, { status: 500 });
+
+    const projectsById = new Map([...(ownedProjects || []), ...(sharedProjects || [])].map(project => [project.id, project]));
+    return NextResponse.json([...projectsById.values()].sort((a, b) =>
+      new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
+    ));
   }
 
   const { data, error } = await listQuery;
@@ -184,7 +217,7 @@ export async function PATCH(request: Request) {
   const userRole = (userRec?.role || '').toString().toLowerCase();
 
   const body = await request.json();
-  const projectId = body.projectId;
+  const projectId = typeof body.projectId === 'string' ? body.projectId.trim() : body.projectId;
   if (!projectId) {
     return NextResponse.json({ error: 'Missing projectId' }, { status: 400 });
   }
@@ -235,7 +268,20 @@ export async function PATCH(request: Request) {
     .select('id, user_id, title, slug, site_slug, content, created_at, updated_at, vercel_token, vercelUrl, status, socialOg');
 
   if (userRole !== 'admin' && userRole !== 'owner') {
-    updateQuery = (updateQuery as any).eq('user_id', userId);
+    const { data: membership } = await supabaseServer
+      .from('project_members')
+      .select('project_id, role')
+      .eq('project_id', projectId)
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (!membership) {
+      updateQuery = (updateQuery as any).eq('user_id', userId);
+    } else if (membership.role === 'viewer') {
+      return NextResponse.json({ error: 'This project is read-only for you.' }, { status: 403 });
+    } else {
+      updateQuery = (updateQuery as any).neq('id', '');
+    }
   }
 
   const { data, error } = await (updateQuery as any).single();
