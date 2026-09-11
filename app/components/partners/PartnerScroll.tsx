@@ -17,7 +17,7 @@ const logos = {
 export default function LogoMarquee() {
     return (
         <section className="flex flex-row py-2 justify-center gap-2 align-middle border-y border-white/5">
-            <h1 className=" text-md font-bold text-white max-md:hidden">Our Partners: </h1>
+            <h1 className=" text-center text-sm text-white uppercase tracking-widest max-md:hidden">Our Partners: </h1>
             <div className="relative overflow-hidden mask-fade-x">
                 <div className="flex gap-8 animate-marquee whitespace-nowrap">
                     {[...Object.values(logos), ...Object.values(logos)].map((logo, i) => (
@@ -27,7 +27,7 @@ export default function LogoMarquee() {
                         >
                             <Link href={logo.href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
                                 <img src={logo.src} alt={logo.name} className="h-5 max-md:h-5" />
-                                <h1>
+                                <h1 className="text-center text-sm text-white uppercase tracking-widest">
                                     {logo.name}
                                 </h1>
                             </Link>
