@@ -203,7 +203,7 @@ Analyze the provided image and generate HTML that matches its design, layout, co
         } else {
             // Use regular text-only generation
             response = await ai.models.generateContent({
-                model: "gemini-2.5-flash",
+                model: "gemini-3.6-flash",
                 contents: systemPrompt,
             });
         }
