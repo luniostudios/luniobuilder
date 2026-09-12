@@ -29,6 +29,7 @@ import { redirect, useRouter, useSearchParams } from 'next/navigation';
 import { Page } from '@/app/types/builder';
 import { generateCssForPage, renderElementToHtml } from '@/app/utils/builderUtils';
 import Userss from './users/users';
+import ProfileSettings from './ProfileSettings';
 import { Popover, PopoverContent, PopoverHeader, PopoverTrigger } from '@/components/ui/popover';
 import { SignOut } from '../components/auth/signOut';
 
@@ -58,6 +59,7 @@ interface UserData {
     name: string | null;
     email: string;
     role: string;
+    image?: string | null;
 }
 
 interface NotificationRecord {
@@ -95,13 +97,6 @@ export default function dashboard() {
     const [activeTab, setActiveTab] = useState('projects');
     const [searchQuery, setSearchQuery] = useState('');
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-
-    const [isNav, setNav] = useState('');
-
-    function settNav(p0: string) {
-        setNav(p0);
-    }
-
 
     const toggleDropdown = (id: string) => {
         if (openDropdown === id) {
@@ -423,20 +418,11 @@ export default function dashboard() {
 
                     {/* Navigation */}
                     <nav className="p-4 space-y-1">
-                        <Link onClick={() => setNav('projects')} href={''}>
-                            <NavItem icon={LayoutDashboard} label="Projects" id="projects" />
-                        </Link>
-                        <Link onClick={() => setNav('analytics')} href={''}>
-                            <NavItem icon={BarChart3} label="Analytics" id="analytics" />
-                        </Link>
-                        <Link onClick={() => setNav('settings')} href={''}>
-                            <NavItem icon={Settings} label="Settings" id="settings" />
-                        </Link>
+                        <NavItem icon={LayoutDashboard} label="Projects" id="projects" />
+                        <NavItem icon={BarChart3} label="Analytics" id="analytics" />
+                        <NavItem icon={Settings} label="Settings" id="settings" />
                         {userData && (userData.role?.toLowerCase() === 'admin' || userData.role?.toLowerCase() === 'owner') && (
-
-                            <Link onClick={() => setNav('users')} href={''}>
-                                <NavItem icon={Users} label="Users" id="users" />
-                            </Link>
+                            <NavItem icon={Users} label="Users" id="users" />
                         )}
                     </nav>
                 </div>
@@ -445,12 +431,12 @@ export default function dashboard() {
                 <div className="p-4 border-t border-gray-100">
                     <button className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-gray-50 transition-colors text-left">
                         <img
-                            src={`${session?.user?.image || 'https://www.gravatar.com/avatar?d=mp&f=y'}`}
+                            src={`${userData?.image || session?.user?.image || 'https://www.gravatar.com/avatar?d=mp&f=y'}`}
                             alt="User Avatar"
                             className="w-9 h-9 rounded-full bg-gray-100 ring-2 ring-white"
                         />
                         <div className="flex-1 overflow-hidden">
-                            <p className="text-sm font-medium text-gray-900 truncate">{session?.user?.name}</p>
+                            <p className="text-sm font-medium text-gray-900 truncate">{userData?.name || session?.user?.name}</p>
                             <p className="text-xs text-gray-500 truncate"><span className={`text-sm font-normal rounded-full px-2 py-1 align-middle  ${role === 'ADMIN' ? 'text-red-500 bg-red-500/20' : role === 'OWNER' ? 'text-green-500' : role === 'PRO' ? 'text-blue-500' : role === 'BUSINESS' ? 'text-purple-500' : 'text-gray-400'}`}>{role.toLowerCase()}</span></p>
                         </div>
                     </button>
@@ -537,7 +523,7 @@ export default function dashboard() {
                         </div>
                     )}
 
-                    {isNav === 'users' ? <Userss /> :
+                    {activeTab === 'users' ? <Userss /> : activeTab === 'settings' && userData ? <ProfileSettings user={userData} onSaved={setUserData} /> :
 
                         <div className="max-w-6xl mx-auto space-y-8">
 
@@ -558,7 +544,7 @@ export default function dashboard() {
                                     {
                                         // session.user may not have a `role` property on its type, cast to any to safely access it
                                     }
-                                    <h1 className="text-2xl font-bold text-gray-900">🚀 Welcome back, {session?.user?.name || 'User'} <span className={`text-sm font-normal rounded-full px-2 py-1 align-middle  ${role === 'ADMIN' ? 'text-red-500 bg-red-500/20' : role === 'OWNER' ? 'text-green-500' : role === 'PRO' ? 'text-blue-500' : role === 'BUSINESS' ? 'text-purple-500' : 'text-gray-400'}`}>{role.toLowerCase()}</span></h1>
+                                    <h1 className="text-2xl font-bold text-gray-900">🚀 Welcome back, {userData?.name || session?.user?.name || 'User'} <span className={`text-sm font-normal rounded-full px-2 py-1 align-middle  ${role === 'ADMIN' ? 'text-red-500 bg-red-500/20' : role === 'OWNER' ? 'text-green-500' : role === 'PRO' ? 'text-blue-500' : role === 'BUSINESS' ? 'text-purple-500' : 'text-gray-400'}`}>{role.toLowerCase()}</span></h1>
                                     <p className="text-gray-500 mt-1">Here's what's happening with your websites today.</p>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

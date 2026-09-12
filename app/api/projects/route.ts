@@ -3,6 +3,13 @@ import { auth } from '../../auth/auth';
 import { supabaseServer } from '../../lib/supabaseServer';
 import { normalizeSiteSlug } from '../../lib/tenant';
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const getAuthenticatedUserId = (session: { user?: { id?: string | null } | null }) => {
+  const userId = session.user?.id?.trim();
+  return userId && UUID_PATTERN.test(userId) ? userId : null;
+};
+
 const getMemberProjectIds = async (userId: string) => {
   const { data, error } = await supabaseServer
     .from('project_members')
@@ -19,7 +26,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const userId = session.user.id || session.user.email;
+  const userId = getAuthenticatedUserId(session);
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -129,7 +136,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const userId = session.user.id || session.user.email;
+  const userId = getAuthenticatedUserId(session);
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -197,7 +204,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const userId = session.user.id || session.user.email;
+  const userId = getAuthenticatedUserId(session);
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -299,7 +306,7 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const userId = session.user.id || session.user.email;
+  const userId = getAuthenticatedUserId(session);
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }

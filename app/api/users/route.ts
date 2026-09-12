@@ -36,12 +36,14 @@ export async function PATCH(request: Request) {
 
     try {
         const body = await request.json();
-        const { name, email, role } = body;
-        const updates: { name?: string; email?: string; role?: string } = {};
+        const { name, image } = body;
+        const updates: { name?: string; image?: string | null } = {};
 
-        if (name) updates.name = name;
-        if (email) updates.email = email;
-        if (role) updates.role = role;
+        if (typeof name === 'string' && name.trim()) updates.name = name.trim();
+        if (image === null || typeof image === 'string') updates.image = image;
+        if (!Object.keys(updates).length) {
+            return NextResponse.json({ error: 'A name or image is required.' }, { status: 400 });
+        }
         const { data, error } = await supabaseServer
             .schema('next_auth')
             .from('users')

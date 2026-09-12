@@ -27,6 +27,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Editor from '@monaco-editor/react';
 import { useSession } from 'next-auth/react';
+import { useOthers } from '@liveblocks/react';
 import { AIGeneratorModal } from './canvas/AIGeneratorModal';
 import { normalizeSiteSlug } from '../lib/tenant';
 
@@ -35,7 +36,10 @@ interface UserData {
   name: string | null;
   email: string;
   role: string;
+  image?: string | null;
 }
+
+const collaboratorColors = ['#27c3f3', '#8bdc2f', '#ffb526', '#ff6868', '#a78bfa'];
 
 const textEncoder = new TextEncoder();
 const crc32Table = new Uint32Array(256);
@@ -237,11 +241,29 @@ export const TopBar: React.FC = () => {
   const isPublishingRef = useRef(false);
   const isInitialRender = useRef(true);
   const page = getCurrentPage();
-  const { status } = useSession();
+  const { data: session, status } = useSession();
+  const others = useOthers();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
+
+  const collaborators = useMemo(() => {
+    const currentUser = {
+      id: 'me',
+      name: userData?.name || session?.user?.name || session?.user?.email || 'You',
+      avatar: userData?.image || session?.user?.image || null,
+    };
+    const otherUsers = others.map(other => {
+      const info = other.info as { name?: string; avatar?: string } | null;
+      return {
+        id: other.connectionId.toString(),
+        name: info?.name || 'Collaborator',
+        avatar: info?.avatar || null,
+      };
+    });
+    return [currentUser, ...otherUsers];
+  }, [others, session, userData]);
 
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
@@ -727,7 +749,7 @@ export const TopBar: React.FC = () => {
     });
   };
 
-  
+
 
   return (
     <>
@@ -746,6 +768,30 @@ export const TopBar: React.FC = () => {
           </div>
         </div>
         <div className='flex flex-row'>
+          <div className="hidden items-center gap-2 rounded-full px-2 py-1 sm:flex" title={`${collaborators.length} user${collaborators.length === 1 ? '' : 's'} online`}>
+            <div className="flex items-center pl-1">
+              {collaborators.slice(0, 5).map((collaborator, index) => (
+                <div className="relative" key={collaborator.id}>
+                  <div
+                    key={collaborator.id}
+                    title={collaborator.name}
+                    className="relative -ml-1 h-7 w-7 overflow-hidden rounded-full border-2 border-[#0d1117] text-center text-[10px] font-semibold leading-5 text-white first:ml-0"
+                    style={{ backgroundColor: collaboratorColors[index % collaboratorColors.length] }}
+                  >
+                    {collaborator.avatar ? (
+                      <img src={collaborator.avatar} alt={collaborator.name} className="h-full w-full object-cover" />
+                    ) : (
+                      collaborator.name.slice(0, 1).toUpperCase()
+                    )}
+                  </div>
+                  <span className="absolute top-0 left-0 h-2 w-2 z-40 rounded-full border border-[#0d1117] bg-emerald-400" />
+                </div>
+              ))}
+              {collaborators.length > 5 && (
+                <span className="ml-1 px-1 text-[10px] font-medium text-gray-400">+{collaborators.length - 5}</span>
+              )}
+            </div>
+          </div>
           {/* History */}
           <div className="flex items-center gap-1 border-r border-gray-800 pr-3">
             <button
@@ -774,7 +820,7 @@ export const TopBar: React.FC = () => {
               { id: 'laptop' as const, icon: <Laptop size={13} />, label: 'Laptop' },
               { id: 'tablet' as const, icon: <Tablet size={13} />, label: 'Tablet' },
               { id: 'mobileLandscape' as const, icon: <Smartphone size={13} className='transform rotate-90' />, label: 'Mobile Landscape' },
-              { id: 'mobile' as const, icon: <Smartphone size={13}/>, label: 'Mobile' },
+              { id: 'mobile' as const, icon: <Smartphone size={13} />, label: 'Mobile' },
             ].map(bp => (
               <button
                 key={bp.id}
