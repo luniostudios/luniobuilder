@@ -21,6 +21,7 @@ export type ElementType =
   | 'list'
   | 'listItem'
   | 'iframe'
+  | 'calendar'
   | 'custom';
 
 export interface StyleProperties {

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, Redo2, Upload } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, Redo2, Trash2, Upload } from 'lucide-react';
 import ColorPicker from 'react-best-gradient-color-picker';
 import { useBuilderStore } from '../../stores/builderStore';
 import { StyleProperties } from '../../types/builder';
@@ -1558,6 +1558,98 @@ function useDebouncedValue<T>(value: T, delayMs: number) {
   return debounced;
 }
 
+interface CalendarEvent {
+  date: string;
+  title: string;
+}
+
+const getCalendarEvents = (value: unknown): CalendarEvent[] => {
+  if (!Array.isArray(value)) return [];
+  return value.filter((event): event is CalendarEvent => (
+    Boolean(event) && typeof event === 'object' &&
+    typeof (event as CalendarEvent).date === 'string' &&
+    typeof (event as CalendarEvent).title === 'string'
+  ));
+};
+
+const CalendarEventEditor: React.FC<{ events: CalendarEvent[]; onChange: (events: CalendarEvent[]) => void }> = ({ events, onChange }) => {
+  const today = new Date();
+  const defaultDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const [newDate, setNewDate] = useState(defaultDate);
+  const [newTitle, setNewTitle] = useState('');
+
+  const addEvent = () => {
+    const title = newTitle.trim();
+    if (!newDate || !title) return;
+    onChange([...events, { date: newDate, title }]);
+    setNewTitle('');
+  };
+
+  const updateEvent = (index: number, changes: Partial<CalendarEvent>) => {
+    onChange(events.map((event, eventIndex) => eventIndex === index ? { ...event, ...changes } : event));
+  };
+
+  return (
+    <div className="space-y-2">
+      <label className="text-xs text-gray-500 block">Events</label>
+      <div className="space-y-2">
+        {events.map((event, index) => (
+          <div key={`${event.date}-${index}`} className="flex items-center gap-1.5">
+            <input
+              type="date"
+              value={event.date}
+              onChange={e => updateEvent(index, { date: e.target.value })}
+              className="w-26.5 shrink-0 bg-gray-800 text-gray-200 text-[11px] rounded-lg px-2 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+            <input
+              type="text"
+              value={event.title}
+              onChange={e => updateEvent(index, { title: e.target.value })}
+              placeholder="Event title"
+              className="min-w-0 flex-1 bg-gray-800 text-gray-200 text-xs rounded-lg px-2 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+            <button
+              type="button"
+              onClick={() => onChange(events.filter((_, eventIndex) => eventIndex !== index))}
+              title="Remove event"
+              aria-label="Remove event"
+              className="text-gray-500 hover:text-red-300 p-1.5 rounded hover:bg-gray-800"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center gap-1.5">
+        <input
+          type="date"
+          value={newDate}
+          onChange={e => setNewDate(e.target.value)}
+          className="w-26.5 shrink-0 bg-gray-800 text-gray-200 text-[11px] rounded-lg px-2 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        />
+        <input
+          type="text"
+          value={newTitle}
+          onChange={e => setNewTitle(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') addEvent(); }}
+          placeholder="Add event"
+          className="min-w-0 flex-1 bg-gray-800 text-gray-200 text-xs rounded-lg px-2 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        />
+        <button
+          type="button"
+          onClick={addEvent}
+          title="Add event"
+          aria-label="Add event"
+          className="text-blue-300 hover:text-white p-1.5 rounded hover:bg-blue-500/20"
+        >
+          <Plus size={16} />
+        </button>
+      </div>
+      <p className="text-[11px] text-gray-500">Choose a date and enter a title, then add it to the calendar.</p>
+    </div>
+  );
+};
+
 const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
   const { updateElementProps, updateElementName } = useBuilderStore();
 
@@ -1801,6 +1893,25 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
             onChange={e => update('src', e.target.value)}
             placeholder="https://..."
             className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+      )}
+
+      {element.type === 'calendar' && (
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">Calendar Title</label>
+            <input
+              type="text"
+              value={String(element.props.title || '')}
+              onChange={e => update('title', e.target.value)}
+              placeholder="Calendar"
+              className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+          <CalendarEventEditor
+            events={getCalendarEvents(element.props.events)}
+            onChange={events => update('events', events)}
           />
         </div>
       )}

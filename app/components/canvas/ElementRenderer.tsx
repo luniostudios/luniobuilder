@@ -19,6 +19,59 @@ interface NavbarMenuContextValue {
 
 const NavbarMenuContext = createContext<NavbarMenuContextValue | null>(null);
 
+interface CalendarEvent {
+  date: string;
+  title: string;
+}
+
+const CalendarElement: React.FC<{ element: BuilderElement; isPreview: boolean; onClick: (event: React.MouseEvent) => void; style: React.CSSProperties }> = ({ element, isPreview, onClick, style }) => {
+  const today = new Date();
+  const [month, setMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
+  const [selectedDate, setSelectedDate] = useState(today.toISOString().slice(0, 10));
+  const events = Array.isArray(element.props.events) ? element.props.events as CalendarEvent[] : [];
+  const firstDay = new Date(month.getFullYear(), month.getMonth(), 1).getDay();
+  const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+  const cells = Array.from({ length: 42 }, (_, index) => {
+    const day = index - firstDay + 1;
+    return day > 0 && day <= daysInMonth ? day : null;
+  });
+  const monthLabel = month.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  const dateKey = (day: number) => `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  const selectedEvents = events.filter(event => event.date === selectedDate);
+  const changeMonth = (offset: number) => setMonth(current => new Date(current.getFullYear(), current.getMonth() + offset, 1));
+
+  return (
+    <div style={{ ...style, width: '100%', minHeight: '420px', height: 'auto', padding: '24px', backgroundColor: '#ffffff', color: '#172033', fontFamily: 'inherit' }} onClick={onClick}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+        <div>
+          <div style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#64748b' }}>{String(element.props.title || 'Calendar')}</div>
+          <div style={{ fontSize: '24px', fontWeight: 700, marginTop: '4px' }}>{monthLabel}</div>
+        </div>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {[-1, 1].map(offset => (
+            <button key={offset} type="button" aria-label={offset < 0 ? 'Previous month' : 'Next month'} onClick={event => { event.stopPropagation(); changeMonth(offset); }} style={{ width: '36px', height: '36px', border: '1px solid #dbe3ef', borderRadius: '8px', background: '#ffffff', color: '#334155', cursor: 'pointer', fontSize: '18px' }}>
+              {offset < 0 ? '<' : '>'}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: '6px' }}>
+        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => <div key={day} style={{ padding: '6px', textAlign: 'center', fontSize: '11px', fontWeight: 700, color: '#94a3b8' }}>{day}</div>)}
+        {cells.map((day, index) => {
+          const key = day ? dateKey(day) : `empty-${index}`;
+          const hasEvent = day ? events.some(event => event.date === key) : false;
+          const isSelected = key === selectedDate;
+          return <button key={key} type="button" disabled={!day} onClick={event => { event.stopPropagation(); if (day) setSelectedDate(key); }} style={{ minHeight: '54px', border: isSelected ? '2px solid #2563eb' : '1px solid #e2e8f0', borderRadius: '8px', background: isSelected ? '#eff6ff' : '#ffffff', color: day ? '#172033' : 'transparent', cursor: day ? 'pointer' : 'default', textAlign: 'left', padding: '8px', fontWeight: isSelected ? 700 : 500 }}>
+            {day && <><span>{day}</span>{hasEvent && <span style={{ display: 'block', width: '6px', height: '6px', borderRadius: '999px', background: '#2563eb', marginTop: '8px' }} />}</>}
+          </button>;
+        })}
+      </div>
+      {selectedEvents.length > 0 && <div style={{ marginTop: '18px', paddingTop: '14px', borderTop: '1px solid #e2e8f0' }}>{selectedEvents.map(event => <div key={`${event.date}-${event.title}`} style={{ fontSize: '14px', color: '#334155' }}>{event.title}</div>)}</div>}
+      {!isPreview && <div style={{ marginTop: '14px', fontSize: '11px', color: '#94a3b8' }}>Select a date to view events</div>}
+    </div>
+  );
+};
+
 export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPreview = false }) => {
   const {
     selectedElementId,
@@ -381,10 +434,15 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
         return (
           <iframe
             src={element.props.src}
+            title={String(element.props.title || 'Embedded content')}
+            loading="lazy"
             style={{ ...safeCssStyles, width: '100%', height: '100%', border: 'none' }}
             onClick={handleClick}
           />
         );
+
+      case 'calendar':
+        return <CalendarElement element={element} isPreview={isPreview} onClick={handleClick} style={safeCssStyles} />;
 
       case 'custom':
         return (

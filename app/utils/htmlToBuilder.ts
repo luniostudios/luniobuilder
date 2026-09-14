@@ -348,6 +348,7 @@ const getElementName = (type: ElementType): string => {
     list: 'List',
     listItem: 'List Item',
     iframe: 'Embedded Content',
+    calendar: 'Calendar',
     custom: ''
   };
 

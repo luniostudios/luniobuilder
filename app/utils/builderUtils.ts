@@ -513,6 +513,18 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
           border: 'none',
         },
       };
+    case 'calendar':
+      return {
+        name: 'Calendar',
+        props: { title: 'Calendar' },
+        styles: {
+          width: '100%',
+          height: '650px',
+          border: 'none',
+          borderRadius: '8px',
+          backgroundColor: '#f8fafc',
+        },
+      };
     case 'custom':
       return {
         name: 'Custom Code',
@@ -697,6 +709,11 @@ const getElementExportStyle = (element: BuilderElement, breakpoint: Breakpoint):
     exportStyle.height = exportStyle.height || '100%';
   }
 
+  if (element.type === 'calendar') {
+    exportStyle.width = exportStyle.width || '100%';
+    exportStyle.height = exportStyle.height || '650px';
+  }
+
   if (['heading', 'paragraph', 'button', 'link', 'listItem'].includes(element.type)) {
     exportStyle.overflowWrap = exportStyle.overflowWrap || 'break-word';
     exportStyle.wordBreak = exportStyle.wordBreak || 'break-word';
@@ -797,6 +814,8 @@ const renderElementToReact = (element: BuilderElement, indent = 2, breakpoint: B
       return `${indentation}<li${attrs}>${text}</li>`;
     case 'iframe':
       return `${indentation}<iframe src="${src}"${attrs}></iframe>`;
+    case 'calendar':
+      return `${indentation}<div${attrs}><div style={{ padding: '24px', backgroundColor: '#ffffff', color: '#172033', borderRadius: '8px', fontFamily: 'inherit' }}>${escapeHtml(String(element.props.title || 'Calendar'))}</div></div>`;
     case 'custom':
       return `${indentation}<iframe srcDoc={'${escapeJsxString(getCustomCodeDocument(element))}'}${attrs} title="Custom code"></iframe>`;
     default:
@@ -886,6 +905,8 @@ export const renderElementToHtml = (element: BuilderElement, breakpoint: Breakpo
       return `<li${attrs}>${text}</li>`;
     case 'iframe':
       return `<iframe src="${src}"${attrs}></iframe>`;
+    case 'calendar':
+      return `<div${attrs}><div style="padding:24px;background-color:#ffffff;color:#172033;border-radius:8px;font-family:inherit">${escapeHtml(String(element.props.title || 'Calendar'))}</div></div>`;
     case 'custom':
       return `<div${attrs}>${getCustomCodeMarkup(element)}</div>`;
     default:
@@ -1026,6 +1047,8 @@ export const renderElementToReactWithComponents = (
       return `${indentation}<li${attrs}>${text}</li>`;
     case 'iframe':
       return `${indentation}<iframe src="${src}"${attrs}></iframe>`;
+    case 'calendar':
+      return `${indentation}<div${attrs}><div style={{ padding: '24px', backgroundColor: '#ffffff', color: '#172033', borderRadius: '8px', fontFamily: 'inherit' }}>${escapeHtml(String(element.props.title || 'Calendar'))}</div></div>`;
     case 'custom':
       return `${indentation}<iframe srcDoc={'${escapeJsxString(getCustomCodeDocument(element))}'}${attrs} title="Custom code"></iframe>`;
     default:
@@ -1318,7 +1341,7 @@ export const canHaveChildren = (type: ElementType): boolean => {
 export const COMPONENT_CATEGORIES = {
   Layout: ['section', 'div', 'hero', 'navbar', 'columns', 'grid', 'card', 'custom'],
   Typography: ['heading', 'paragraph', 'link', 'list', 'listItem'],
-  Media: ['image', 'video', 'icon', 'iframe'],
+  Media: ['image', 'video', 'icon', 'iframe', 'calendar'],
   Forms: ['form', 'input', 'textarea', 'button'],
   Misc: ['divider', 'spacer'],
 } as const;
@@ -1346,6 +1369,7 @@ export const COMPONENT_LABELS: Record<ElementType, string> = {
   list: 'List',
   listItem: 'List Item',
   iframe: 'Iframe',
+  calendar: 'Calendar',
   custom: 'Custom Code',
 };
 
