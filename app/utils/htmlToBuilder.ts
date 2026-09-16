@@ -326,6 +326,7 @@ const extractPropsFromElement = (element: HTMLElement, tagName: string): Record<
  */
 const getElementName = (type: ElementType): string => {
   const names: Record<ElementType, string> = {
+    article: 'Article',
     section: 'Section',
     div: 'Container',
     heading: 'Heading',
