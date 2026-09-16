@@ -7,7 +7,7 @@ type Provider = 'gemini' | 'openai' | 'claude';
 type Credential = { provider: Provider; apiKey: string };
 
 const providerLabels: Record<Provider, string> = {
-  gemini: 'Google Gemini',
+  gemini: 'Gemini 3.6 Flash',
   openai: 'OpenAI',
   claude: 'Anthropic Claude',
 };

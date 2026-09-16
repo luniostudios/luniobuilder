@@ -20,7 +20,7 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
   const [prompt, setPrompt] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [provider, setProvider] = useState<AIProvider>('gemini');
+  const [provider, setProvider] = useState<AIProvider>('gemini-3.6-flash');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { generate, loading, error, clearError } = useAIGeneration();
 
@@ -133,7 +133,8 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
           <div>
             <label className="block text-sm font-medium text-gray-900 mb-2" htmlFor="ai-provider">AI provider</label>
             <select id="ai-provider" value={provider} onChange={event => setProvider(event.target.value as AIProvider)} disabled={loading} className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900">
-              <option value="gemini">Google Gemini</option>
+              <option value="gemini-3.6-flash">Google Gemini 3.6 Flash</option>
+              <option value="gemini-pro">Google Gemini Pro</option>
               <option value="openai">OpenAI</option>
               <option value="claude">Anthropic Claude</option>
             </select>
