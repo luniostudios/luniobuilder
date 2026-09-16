@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '../../auth/auth';
 import { supabaseServer } from '../../lib/supabaseServer';
-import { AIProvider, decryptApiKey } from '../../lib/aiCredentials';
+import { decryptApiKey } from '../../lib/aiCredentials';
+import type { AIProvider } from '../../types/ai';
 import { baseSystemPrompt } from './prompt';
 
 const MAX_FREE_DAILY_AI = 5;
@@ -9,7 +10,7 @@ const UNSPLASH_ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY;
 
 interface GenerateRequest {
     prompt: string;
-    projectId?: string;
+    provider?: AIProvider;
     imageData?: string; // Base64 encoded image
     imageMimeType?: string; // e.g., "image/png", "image/jpeg"
 }
@@ -21,17 +22,16 @@ interface GenerateResponse {
     error?: string;
 }
 
-
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/$provider:generateContent';
 
-const getAccountCredential = async (userId: string) => {
+const getAccountCredential = async (userId: string, provider?: AIProvider) => {
     const { data: credentials } = await supabaseServer
         .from('account_ai_credentials')
         .select('provider, encrypted_api_key')
         .eq('user_id', userId)
         .order('updated_at', { ascending: false });
-    const credential = credentials?.[0];
+    const credential = provider ? credentials?.find(item => item.provider === provider) : credentials?.[0];
     if (!credential) return null;
     return { provider: credential.provider as AIProvider, apiKey: decryptApiKey(credential.encrypted_api_key) };
 };
@@ -59,14 +59,18 @@ const getTextFromProvider = async (provider: AIProvider, apiKey: string, systemP
         return data?.content?.[0]?.text || '';
     }
 
-    const response = await fetch(GEMINI_API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-        body: JSON.stringify({ contents: [{ parts: [{ text: systemPrompt }] }], generationConfig: { temperature: 0.2, top_p: 0.95, max_output_tokens: 8192 } }),
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data?.error?.message || 'Gemini generation failed');
-    return data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    if (provider === 'gemini-3.6-flash' || provider === 'gemini-pro') {
+        const geminiProvider = provider === 'gemini-3.6-flash' ? 'gemini-3.6-flash' : 'gemini-pro';
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiProvider}:generateContent`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+            body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: systemPrompt }] }], generationConfig: { temperature: 0.2, top_p: 0.95, max_output_tokens: 8192 } }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data?.error?.message || 'Gemini generation failed');
+        return data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    }
+
 };
 
 export async function POST(req: NextRequest): Promise<NextResponse<GenerateResponse>> {
@@ -81,7 +85,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<GenerateRespo
         }
 
         const body: GenerateRequest = await req.json();
-        const { prompt, imageData, imageMimeType } = body;
+        const { prompt, imageData, imageMimeType, provider } = body;
 
         if (!prompt && !imageData) {
             return NextResponse.json(
@@ -137,19 +141,31 @@ Analyze the provided image and generate HTML that matches its design, layout, co
             systemPrompt += `\n\nGenerate HTML for: ${prompt}`;
         }
 
-        const accountCredential = await getAccountCredential(session.user.id || '');
-        const provider = accountCredential?.provider || 'gemini';
+        const accountCredential = await getAccountCredential(session.user.id || '', provider);
+        const selectedProvider = provider || accountCredential?.provider || 'gemini-3.6-flash';
         const providerKey = accountCredential?.apiKey || GEMINI_API_KEY;
+        if (provider && !accountCredential && provider !== 'gemini-3.6-flash') {
+            return NextResponse.json(
+                { html: '', success: false, error: `No ${provider} API key is configured for this account.` },
+                { status: 400 }
+            );
+        }
+        if (hasImage && selectedProvider !== 'gemini-3.6-flash') {
+            return NextResponse.json(
+                { html: '', success: false, error: 'Reference images are currently supported with Gemini only.' },
+                { status: 400 }
+            );
+        }
         if (!providerKey) {
             return NextResponse.json(
-                { html: '', success: false, error: 'Add an AI provider API key in Project Settings or configure GEMINI_API_KEY.' },
+                { html: '', success: false, error: 'Add an AI provider API key in Profile Settings or configure GEMINI_API_KEY.' },
                 { status: 500 }
             );
         }
 
         let response: any;
 
-        if (hasImage && imageData && provider === 'gemini') {
+        if (hasImage && imageData && selectedProvider === 'gemini-3.6-flash') {
             // Use vision API with image
             const imageBase64 = imageData;
             response = await fetch(GEMINI_API_URL, {
@@ -194,7 +210,7 @@ Analyze the provided image and generate HTML that matches its design, layout, co
             const jsonResponse = await response.json();
             response = jsonResponse;
         } else {
-            const generatedText = await getTextFromProvider(provider, providerKey, systemPrompt);
+            const generatedText = await getTextFromProvider(selectedProvider, providerKey, systemPrompt);
             response = { candidates: [{ content: { parts: [{ text: generatedText }] } }] };
         }
 

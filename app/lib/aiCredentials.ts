@@ -1,6 +1,6 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'crypto';
 
-export type AIProvider = 'gemini' | 'openai' | 'claude';
+export type { AIProvider } from '../types/ai';
 
 const getEncryptionKey = () => {
   const secret = process.env.AI_CREDENTIALS_ENCRYPTION_KEY || process.env.AUTH_SECRET;

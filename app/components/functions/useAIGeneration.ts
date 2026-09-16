@@ -1,7 +1,9 @@
 import { useState, useCallback } from 'react';
+import type { AIProvider } from '../../types/ai';
 
 interface GenerateOptions {
   prompt: string;
+  provider?: AIProvider;
   projectId?: string | null;
   context?: string;
   imageData?: string; // Base64 encoded image
