@@ -123,11 +123,11 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
 
       <div className='relative z-10 w-full max-w-5xl'>
         <div className='mb-10 flex flex-col items-center text-center'>
-          <h1 className='max-w-4xl text-5xl font-semibold leading-[0.98] tracking-[-0.04em] sm:text-7xl'>
+          <h1 className='max-w-4xl text-4xl font-semibold leading-[0.98] tracking-[-0.04em] sm:text-8xl'>
             Tell us what to build.
             <span className='block text-white/35'>We&apos;ll make it real.</span>
           </h1>
-          <p className='mt-6 max-w-xl text-base leading-7 text-white/55 sm:text-lg'>Describe a site, a feeling, or a business. LUNIO turns your words into an editable website you can shape in the visual editor.</p>
+          <p className='mt-6 max-w-xl text-base leading-7 text-white/55 sm:text-lg'>Describe your website, a feeling, or a business. LUNIO Builder turns your words into an editable website you can shape in the visual editor.</p>
         </div>
 
         <form onSubmit={createWebsite} className='mx-auto max-w-3xl'>
