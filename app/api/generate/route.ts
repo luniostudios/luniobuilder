@@ -23,7 +23,8 @@ interface GenerateResponse {
 }
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/$provider:generateContent';
+const getGeminiApiUrl = (model: 'gemini-3.6-flash' | 'gemini-pro') =>
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
 const getAccountCredential = async (userId: string, provider?: AIProvider) => {
     const { data: credentials } = await supabaseServer
@@ -188,7 +189,7 @@ Analyze the provided image and generate HTML that matches its design, layout, co
         if (hasImage && imageData && selectedProvider === 'gemini-3.6-flash') {
             // Use vision API with image
             const imageBase64 = imageData;
-            response = await fetch(GEMINI_API_URL, {
+            response = await fetch(getGeminiApiUrl(selectedProvider), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

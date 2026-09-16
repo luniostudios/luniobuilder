@@ -2,7 +2,7 @@
 
 import { FormEvent, KeyboardEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowUp, ImagePlus, LoaderCircle, Sparkles, WandSparkles } from 'lucide-react';
+import { ArrowUp, ImagePlus, LoaderCircle, Sparkles, Trash, WandSparkles } from 'lucide-react';
 import { useAIGeneration } from '../functions/useAIGeneration';
 import { htmlToBuilderElements } from '../../utils/htmlToBuilder';
 import { generateId } from '../../utils/builderUtils';
@@ -145,7 +145,7 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
               <div className='mx-2 mb-2 flex items-center gap-3 rounded-xl border border-white/10 bg-white/4 p-2 text-sm text-white/60'>
                 <img src={imagePreview} alt='Reference preview' className='h-12 w-16 rounded-lg object-cover' />
                 <span className='min-w-0 flex-1 truncate'>{imageFile?.name}</span>
-                <button type='button' onClick={() => { setImageFile(null); setImagePreview(null); }} className='text-xs text-white/45 hover:text-white'>Remove</button>
+                <Trash onClick={() => { setImageFile(null); setImagePreview(null); }} className='w-5 text-red-500 hover:text-red-400'/>
               </div>
             )}
             <div className='flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-2 pt-3 sm:px-3'>

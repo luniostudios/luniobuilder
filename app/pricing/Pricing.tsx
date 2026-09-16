@@ -23,7 +23,8 @@ const plans = [
         price: { monthly: 0, yearly: 0 },
         desc: 'Perfect for trying things out and personal projects.',
         features: [
-            '1 published site',
+            '3 published sites',
+            '5 AI generations per day',
             'LUNIO subdomain',
             '100+ components',
             'Community support',
@@ -38,8 +39,10 @@ const plans = [
         desc: 'For freelancers and growing teams shipping regularly.',
         features: [
             'Unlimited sites',
+            '25 AI generations per day',
             'Custom domains',
             '200+ components + AI generation',
+            'Real-time collaboration',
             'Password protection',
             'Priority support',
             'Advanced analytics',
@@ -54,8 +57,8 @@ const plans = [
         desc: 'For agencies and teams that need collaboration at scale.',
         features: [
             'Everything in Pro',
+            'Unlimited AI generations',
             '5 team seats included',
-            'Real-time collaboration',
             'SSO & SAML',
             'Audit logs',
             'White-label client billing',
