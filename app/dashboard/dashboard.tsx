@@ -536,7 +536,7 @@ export default function dashboard() {
                                     <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-center">
                                         <span className="text-sm font-medium text-gray-500">Total Sites</span>
                                         <div className="mt-2 flex flex-row items-baseline gap-2">
-                                            <span className="flex flex-row  items-center text-2xl font-bold text-gray-900">{projects.length}/{projectLimit < 1000 ? projectLimit : "∞"}</span>
+                                            <span className="flex flex-row  items-center text-2xl font-bold text-gray-900">{projects.length}/{projectLimit < 1000000 ? projectLimit : "∞"}</span>
                                         </div>
                                     </div>
                                 </div>

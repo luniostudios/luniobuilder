@@ -2,7 +2,7 @@ export const getProjectLimitForRole = (role?: string) => {
   switch (String(role || 'free').toLowerCase()) {
     case 'admin':
     case 'owner':
-      return null;
+      return 1000000;
     case 'pro':
     case 'premium':
     case 'team':
@@ -20,7 +20,7 @@ export const getAIDailyLimitForRole = (role?: string) => {
   switch (String(role || 'free').toLowerCase()) {
     case 'admin':
     case 'owner':
-      return null;
+      return 1000000;
     case 'business':
       return 100;
     case 'pro':
