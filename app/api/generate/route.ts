@@ -11,6 +11,7 @@ const UNSPLASH_ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY;
 interface GenerateRequest {
     prompt: string;
     provider?: AIProvider;
+    context?: string;
     imageData?: string; // Base64 encoded image
     imageMimeType?: string; // e.g., "image/png", "image/jpeg"
 }
@@ -86,7 +87,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<GenerateRespo
         }
 
         const body: GenerateRequest = await req.json();
-        const { prompt, imageData, imageMimeType, provider } = body;
+        const { prompt, imageData, imageMimeType, provider, context } = body;
 
         if (!prompt && !imageData) {
             return NextResponse.json(
@@ -167,6 +168,9 @@ Analyze the provided image and generate HTML that matches its design, layout, co
             }
         } else if (prompt) {
             systemPrompt += `\n\nGenerate HTML for: ${prompt}`;
+        }
+        if (context) {
+            systemPrompt += `\n\nSELECTED ELEMENT TO EDIT:\n${context}\n\nReturn the edited replacement fragment only. Preserve the selected element's purpose and improve it according to the user's request.`;
         }
 
         const selectedProvider = accountCredential?.provider || 'gemini-3.6-flash';

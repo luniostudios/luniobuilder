@@ -83,6 +83,20 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
           paddingRight: '20px',
         },
       };
+    case 'article':
+      return {
+        name: 'Article',
+        props: {},
+        styles: {
+          display: 'block',
+          flexDirection: 'column',
+          width: '100%',
+          paddingTop: '20px',
+          paddingBottom: '20px',
+          paddingLeft: '20px',
+          paddingRight: '20px',
+        },
+      };
     case 'heading':
       return {
         name: 'Heading',
@@ -810,7 +824,7 @@ const renderElementToReact = (element: BuilderElement, indent = 2, breakpoint: B
     case 'paragraph':
       return `${indentation}<p${attrs}>${text}</p>`;
     case 'button':
-      return element.props.href 
+      return element.props.href
         ? `${indentation}<a href="${href}"${attrs}>${text}</a>`
         : `${indentation}<button type="button"${attrs}>${text}</button>`;
     case 'link':
@@ -906,7 +920,7 @@ export const renderElementToHtml = (element: BuilderElement, breakpoint: Breakpo
     case 'paragraph':
       return `<p${attrs}>${text}</p>`;
     case 'button':
-      return element.props.href 
+      return element.props.href
         ? `<a href="${href}"${attrs}>${text}</a>`
         : `<button type="button"${attrs}>${text}</button>`;
     case 'link':
@@ -1054,7 +1068,7 @@ export const renderElementToReactWithComponents = (
     case 'paragraph':
       return `${indentation}<p${attrs}>${text}</p>`;
     case 'button':
-      return element.props.href 
+      return element.props.href
         ? `${indentation}<a href="${href}"${attrs}>${text}</a>`
         : `${indentation}<button type="button"${attrs}>${text}</button>`;
     case 'link':
@@ -1323,7 +1337,7 @@ export const generateNextProjectFiles = (
     .filter(meta => meta.page.slug && meta.page.slug !== '/')
     .map(meta => `  { slug: '${(meta.page.slug || '').replace(/'/g, "\\'")}', title: '${meta.page.name.replace(/'/g, "\\'")}', Component: ${meta.componentName} }`)
     .join(',\n');
-  
+
   // Create root page (home)
   const homePage = pageMetadata[0];
   const rootPageSource = `${pageMetadata.map(m => `import ${m.componentName} from '../components/${m.fileName}';`).join('\n')}\n\nexport default function Page() {\n  const Component = ${homePage.componentName};\n  return <Component />;\n}\n`;
@@ -1379,6 +1393,7 @@ export const COMPONENT_CATEGORIES = {
 } as const;
 
 export const COMPONENT_LABELS: Record<ElementType, string> = {
+  article: 'Article',
   section: 'Section',
   div: 'Container',
   heading: 'Heading',

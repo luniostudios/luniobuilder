@@ -3,10 +3,12 @@
 import React, { useState, useRef } from 'react';
 import { useAIGeneration } from '../functions/useAIGeneration';
 import type { AIProvider } from '../../types/ai';
+import type { BuilderElement } from '../../types/builder';
 
 interface AIGeneratorModalProps {
   isOpen: boolean;
   projectId?: string | null;
+  editElement?: BuilderElement | null;
   onClose: () => void;
   onGenerate: (html: string) => void;
 }
@@ -14,6 +16,7 @@ interface AIGeneratorModalProps {
 export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
   isOpen,
   projectId,
+  editElement,
   onClose,
   onGenerate,
 }) => {
@@ -72,6 +75,7 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
       prompt: prompt.trim(),
       provider,
       projectId,
+      context: editElement ? JSON.stringify({ type: editElement.type, name: editElement.name, props: editElement.props, styles: editElement.styles, children: editElement.children }, null, 2) : undefined,
       imageData,
       imageMimeType,
     });
@@ -100,9 +104,9 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full border-6 border-slate-500/20 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className=" border-gray-200 p-6">
-          <h2 className="text-2xl font-bold text-gray-900 text-center">Generate with AI</h2>
+          <h2 className="text-2xl font-bold text-gray-900 text-center">{editElement ? 'Edit with AI' : 'Generate with AI'}</h2>
           <p className="text-gray-600 text-sm mt-1 text-center">
-            Describe what you want to create and we'll generate it for you
+            {editElement ? `Describe how you want to change this ${editElement.type}.` : "Describe what you want to create and we'll generate it for you"}
           </p>
         </div>
 
@@ -111,7 +115,7 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
           {/* Prompt Input */}
           <div>
             <label className="block text-sm font-medium text-gray-900 mb-2">
-              What would you like to create?
+              {editElement ? 'How should AI edit this element?' : 'What would you like to create?'}
             </label>
             <textarea
               value={prompt}
@@ -120,7 +124,7 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
                 clearError();
               }}
               onKeyDown={handleKeyDown}
-              placeholder="E.g., A modern hero section with a gradient background and call-to-action button"
+              placeholder={editElement ? 'E.g., Make the heading more concise and change the accent color to green' : 'E.g., A modern hero section with a gradient background and call-to-action button'}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
               rows={4}
               disabled={loading}
@@ -230,7 +234,7 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
             disabled={loading || (!prompt.trim() && !imageFile)}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium"
           >
-            {loading ? 'Generating...' : 'Generate'}
+            {loading ? 'Generating...' : editElement ? 'Apply edit' : 'Generate'}
           </button>
         </div>
       </div>

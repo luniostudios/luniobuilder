@@ -57,6 +57,7 @@ interface BuilderStore extends BuilderState {
 
   // AI Generation
   addGeneratedElements: (html: string, parentId: string | null) => void;
+  replaceElementWithGenerated: (id: string, html: string) => void;
 
   // Helpers
   getCurrentPage: () => Page;
@@ -592,6 +593,47 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
       get().pushHistory();
     } catch (error) {
       console.error('Error adding generated elements:', error);
+    }
+  },
+
+  replaceElementWithGenerated: (id, html) => {
+    try {
+      const generatedElements = htmlToBuilderElements(html, null);
+      if (generatedElements.length === 0) return;
+
+      const setParentIds = (elements: BuilderElement[], parentId: string | null) => {
+        elements.forEach(element => {
+          element.parentId = parentId;
+          setParentIds(element.children, element.id);
+        });
+      };
+
+      set(state => {
+        const pages = deepClone(state.pages);
+        const page = pages.find(currentPage => currentPage.id === state.currentPageId)!;
+        const replaceIn = (elements: BuilderElement[], parentId: string | null): boolean => {
+          const index = elements.findIndex(element => element.id === id);
+          if (index !== -1) {
+            const replacement = generatedElements.length === 1
+              ? generatedElements[0]
+              : {
+                ...createDefaultElement('div', generateId(), parentId),
+                children: generatedElements,
+              };
+            replacement.parentId = parentId;
+            setParentIds(replacement.children, replacement.id);
+            elements.splice(index, 1, replacement);
+            return true;
+          }
+          return elements.some(element => replaceIn(element.children, element.id));
+        };
+
+        replaceIn(page.elements, null);
+        return { pages, selectedElementId: generatedElements.length === 1 ? generatedElements[0].id : null };
+      });
+      get().pushHistory();
+    } catch (error) {
+      console.error('Error replacing element with generated content:', error);
     }
   },
 }));

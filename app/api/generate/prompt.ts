@@ -31,6 +31,7 @@ DESIGN QUALITY
 - Use inline background colors, gradients, borders, shadows, and border radii with restraint. Do not make every section a card. Avoid huge text, excessive gradients, noisy decoration, and low-contrast text.
 - Use real, relevant image URLs from stable Unsplash or Pexels source URLs when imagery is needed. Every img needs a descriptive alt. Use object-fit: cover and a useful aspect ratio or height.
 - Use video only when requested, with src, controls, muted, loop, or autoplay attributes as appropriate. Use iframe only for a requested embed and include a descriptive title.
+- When a SELECTED ELEMENT TO EDIT block is provided, return a replacement in the same semantic category whenever practical: heading stays a heading, paragraph stays a paragraph, button stays a button, link stays a link, image stays an image, and a container stays a container with editable children. Do not wrap a simple text or control edit in a full page section.
 - Do not use placeholder text like Lorem ipsum, fake testimonials with impossible claims, or meaningless button labels. Write concise, realistic copy that fits the layout.
 
 ACCESSIBILITY AND VALIDITY

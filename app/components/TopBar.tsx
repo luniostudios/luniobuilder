@@ -219,9 +219,11 @@ export const TopBar: React.FC = () => {
     setPreviewMode,
     getCurrentPage,
     selectedElementId,
+    getElementById,
     deleteElement,
     duplicateElement,
     addGeneratedElements,
+    replaceElementWithGenerated,
   } = useBuilderStore();
 
   const router = useRouter();
@@ -247,6 +249,7 @@ export const TopBar: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
+  const selectedElement = selectedElementId ? getElementById(selectedElementId) : null;
 
   const collaborators = useMemo(() => {
     const currentUser = {
@@ -868,22 +871,24 @@ export const TopBar: React.FC = () => {
             {isPreviewMode ? 'Editor' : 'Preview'}
           </button>
           {/*Ask AI */}
-          {!isPreviewMode && (
+          {!isPreviewMode && selectedElement && (
             <button
               onClick={() => setIsAIModalOpen(true)}
               className="flex ml-2 items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all bg-green-800 text-green-300 border border-green-700"
             >
               <Sparkles size={13} />
-              Ask AI
+              {selectedElement ? 'Edit with AI' : null}
             </button>)}
         </div>
 
         <AIGeneratorModal
           isOpen={isAIModalOpen}
           projectId={projectId}
+          editElement={selectedElement}
           onClose={() => setIsAIModalOpen(false)}
           onGenerate={(html) => {
-            addGeneratedElements(html, null);
+            if (selectedElementId) replaceElementWithGenerated(selectedElementId, html);
+            else addGeneratedElements(html, null);
           }}
         />
 
