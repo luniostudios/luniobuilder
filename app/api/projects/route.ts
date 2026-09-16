@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '../../auth/auth';
 import { supabaseServer } from '../../lib/supabaseServer';
+import { getProjectLimitForRole } from '../../lib/projectLimits';
 import { normalizeSiteSlug } from '../../lib/tenant';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -109,26 +110,6 @@ export async function GET(request: Request) {
 
   return NextResponse.json(data);
 }
-
-const getProjectLimitForRole = (role?: string) => {
-  if (!role) return 3;
-
-  switch (role.toLowerCase()) {
-    case 'admin':
-    case 'owner':
-      return null;
-    case 'pro':
-    case 'premium':
-    case 'team':
-      return 20;
-    case 'business':
-      return 50;
-    case 'free':
-    case 'basic':
-    default:
-      return 3;
-  }
-};
 
 export async function POST(request: Request) {
   const session = await auth();

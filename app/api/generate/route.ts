@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '../../auth/auth';
 import { supabaseServer } from '../../lib/supabaseServer';
 import { decryptApiKey } from '../../lib/aiCredentials';
+import { getAIDailyLimitForRole, getProjectLimitForRole } from '../../lib/projectLimits';
 import type { AIProvider } from '../../types/ai';
 import { baseSystemPrompt } from './prompt';
 
-const MAX_FREE_DAILY_AI = 5;
 const UNSPLASH_ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY;
 
 interface GenerateRequest {
@@ -115,9 +115,36 @@ export async function POST(req: NextRequest): Promise<NextResponse<GenerateRespo
         const existingUsage = typeof meta.ai_usage === 'object' && meta.ai_usage !== null ? meta.ai_usage : { date: today, count: 0 };
         const currentCount = existingUsage.date === today ? Number(existingUsage.count || 0) : 0;
 
-        if (role === 'free' && currentCount >= MAX_FREE_DAILY_AI) {
+        const accountCredential = await getAccountCredential(session.user.id || '', provider);
+        const usesPlatformCredential = !accountCredential;
+
+        const projectLimit = getProjectLimitForRole(role);
+        if (projectLimit !== null) {
+            const { count, error: projectCountError } = await supabaseServer
+                .from('projects')
+                .select('id', { count: 'exact', head: true })
+                .eq('user_id', session.user.id || session.user.email);
+
+            if (projectCountError) {
+                console.error('Error fetching project count:', projectCountError);
+                return NextResponse.json(
+                    { html: '', success: false, error: 'Unable to verify project limit' },
+                    { status: 500 }
+                );
+            }
+
+            if (typeof count === 'number' && count >= projectLimit) {
+                return NextResponse.json(
+                    { html: '', success: false, error: `You have reached the maximum number of projects (${projectLimit}) for your plan.` },
+                    { status: 403 }
+                );
+            }
+        }
+
+        const aiDailyLimit = usesPlatformCredential ? getAIDailyLimitForRole(role) : null;
+        if (aiDailyLimit !== null && aiDailyLimit !== undefined && currentCount >= aiDailyLimit) {
             return NextResponse.json(
-                { html: '', success: false, error: `Free users are limited to ${MAX_FREE_DAILY_AI} AI-generated elements per day.` },
+                { html: '', success: false, error: `Your ${role} plan is limited to ${aiDailyLimit} AI-generated websites per day when using LUNIO's AI key.` },
                 { status: 403 }
             );
         }
@@ -141,15 +168,8 @@ Analyze the provided image and generate HTML that matches its design, layout, co
             systemPrompt += `\n\nGenerate HTML for: ${prompt}`;
         }
 
-        const accountCredential = await getAccountCredential(session.user.id || '', provider);
-        const selectedProvider = provider || accountCredential?.provider || 'gemini-3.6-flash';
+        const selectedProvider = accountCredential?.provider || 'gemini-3.6-flash';
         const providerKey = accountCredential?.apiKey || GEMINI_API_KEY;
-        if (provider && !accountCredential && provider !== 'gemini-3.6-flash') {
-            return NextResponse.json(
-                { html: '', success: false, error: `No ${provider} API key is configured for this account.` },
-                { status: 400 }
-            );
-        }
         if (hasImage && selectedProvider !== 'gemini-3.6-flash') {
             return NextResponse.json(
                 { html: '', success: false, error: 'Reference images are currently supported with Gemini only.' },
@@ -278,7 +298,7 @@ Analyze the provided image and generate HTML that matches its design, layout, co
             console.warn('Unsplash replacement failed:', err);
         }
 
-        if (role === 'free' && !accountCredential) {
+        if (usesPlatformCredential && aiDailyLimit !== null) {
             const updatedUsage = {
                 ...meta,
                 ai_usage: {

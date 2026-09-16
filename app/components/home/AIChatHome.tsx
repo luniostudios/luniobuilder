@@ -150,16 +150,16 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
             )}
             <div className='flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-2 pt-3 sm:px-3'>
               <div className='flex items-center gap-2'>
-              <label className='inline-flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm text-white/45 transition hover:bg-white/6 hover:text-white'>
-                <ImagePlus size={17} /> Add reference
-                <input type='file' accept='image/*' className='sr-only' onChange={event => selectImage(event.target.files?.[0])} />
-              </label>
-              <select value={provider} onChange={event => setProvider(event.target.value as AIProvider)} disabled={loading} aria-label='AI provider' className='rounded-xl border border-white/10 bg-[#20252d] px-3 py-2 text-sm text-white/70 outline-none focus:border-[#b8f36b]'>
-                <option value='gemini-3.6-flash'>Gemini 3.6 Flash</option>
-                <option value='gemini-pro'>Gemini Pro</option>
-                <option value='openai'>OpenAI</option>
-                <option value='claude'>Claude</option>
-              </select>
+                <label className='inline-flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm text-white/45 transition hover:bg-white/6 hover:text-white'>
+                  <ImagePlus size={17} /> Add reference
+                  <input type='file' accept='image/*' className='sr-only' onChange={event => selectImage(event.target.files?.[0])} />
+                </label>
+                <select value={provider} onChange={event => setProvider(event.target.value as AIProvider)} disabled={loading} aria-label='AI provider' className='rounded-xl border border-white/10 bg-[#20252d] px-3 py-2 text-sm text-white/70 outline-none focus:border-[#b8f36b]'>
+                  <option value='gemini-3.6-flash'>Gemini 3.6 Flash</option>
+                  <option value='gemini-pro'>Gemini Pro</option>
+                  <option value='openai'>OpenAI</option>
+                  <option value='claude'>Claude</option>
+                </select>
               </div>
               <button type='submit' disabled={loading || (!prompt.trim() && !imageFile)} className='inline-flex items-center gap-2 rounded-xl bg-[#b8f36b] px-4 py-2.5 text-sm font-semibold text-[#10150c] transition hover:bg-[#d0ff91] disabled:cursor-not-allowed disabled:opacity-35'>
                 {loading ? <LoaderCircle size={17} className='animate-spin' /> : <ArrowUp size={17} />}

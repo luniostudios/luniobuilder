@@ -27,6 +27,7 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { redirect, useRouter, useSearchParams } from 'next/navigation';
 import { Page } from '@/app/types/builder';
+import { getProjectLimitForRole } from '@/app/lib/projectLimits';
 import { generateCssForPage, renderElementToHtml } from '@/app/utils/builderUtils';
 import Userss from './users/users';
 import ProfileSettings from './ProfileSettings';
@@ -254,24 +255,8 @@ export default function dashboard() {
         setInviteEmail('');
     };
 
-    const getProjectLimitForRole = (role?: string) => {
-        if (!role) return 3;
-
-        switch (role.toLowerCase()) {
-            case 'admin':
-                return 100000;
-            case 'owner':
-                return 100000;
-            case 'pro':
-                return 20;
-            case 'business':
-                return 50;
-            case 'free':
-            default:
-                return 1;
-        }
-    };
-
+    //Get the project limit based on the user's role
+    
     const projectLimit = getProjectLimitForRole(userData?.role);
     const projectCount = projects.length;
     const reachedProjectLimit = projectLimit !== null && projectCount >= projectLimit;
