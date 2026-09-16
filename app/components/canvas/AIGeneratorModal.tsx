@@ -5,12 +5,14 @@ import { useAIGeneration } from '../functions/useAIGeneration';
 
 interface AIGeneratorModalProps {
   isOpen: boolean;
+  projectId?: string | null;
   onClose: () => void;
   onGenerate: (html: string) => void;
 }
 
 export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
   isOpen,
+  projectId,
   onClose,
   onGenerate,
 }) => {
@@ -66,6 +68,7 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
 
     const result = await generate({
       prompt: prompt.trim(),
+      projectId,
       imageData,
       imageMimeType,
     });

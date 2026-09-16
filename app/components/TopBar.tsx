@@ -880,6 +880,7 @@ export const TopBar: React.FC = () => {
 
         <AIGeneratorModal
           isOpen={isAIModalOpen}
+          projectId={projectId}
           onClose={() => setIsAIModalOpen(false)}
           onGenerate={(html) => {
             addGeneratedElements(html, null);

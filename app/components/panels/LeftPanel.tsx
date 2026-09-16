@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { LayoutGrid as Layout, Type, Image, MousePointer, Square, Columns2 as Columns, Grid2x2 as Grid, AlignLeft, Link, Star, Minus, Move, FileText, ChevronRight, ChevronDown, Eye, EyeOff, Lock, Unlock, Trash2, Copy, Plus, Layers, Package, Globe, Monitor, Play, Form, List, ListEnd, Laptop, CalendarDays, LayoutIcon, LayoutPanelTop, IdCard, TextInitialIcon, Code2, ChevronsDownUp } from 'lucide-react';
+import { LayoutGrid as Layout, Type, Image, MousePointer, Square, Columns2 as Columns, Grid2x2 as Grid, AlignLeft, Link, Star, Minus, Move, FileText, ChevronRight, ChevronDown, Eye, EyeOff, Lock, Unlock, Trash2, Copy, Plus, Layers, Package, Globe, Monitor, Play, Form, List, ListEnd, Laptop, CalendarDays, LayoutIcon, LayoutPanelTop, IdCard, TextInitialIcon, Code2, ChevronsDownUp, Table2 } from 'lucide-react';
 import { DndContext, DragEndEvent, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -33,6 +33,7 @@ const COMPONENT_ICONS: Record<string, React.ReactNode> = {
   listItem: <ListEnd size={25} />,
   iframe: <Laptop size={25} />,
   calendar: <CalendarDays size={25} />,
+  table: <Table2 size={25} />,
   custom: <Code2 size={25} />,
 };
 

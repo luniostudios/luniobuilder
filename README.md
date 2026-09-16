@@ -31,6 +31,14 @@ To run this project, you will need to add the following environment variables to
 
 `NEXT_PUBLIC_ROOT_DOMAIN` (optional, defaults to `luniobuilder.com`)
 
+`AI_CREDENTIALS_ENCRYPTION_KEY` (recommended; a stable secret used to encrypt project AI provider keys)
+
+### Account AI provider keys
+
+Users can add Gemini, OpenAI, or Anthropic Claude API keys from any Project Settings page. Keys are account-wide, encrypted server-side, and never sent back to the browser in full. Set `AI_CREDENTIALS_ENCRYPTION_KEY` in every environment and keep it stable; changing it makes previously stored keys unreadable.
+
+Apply `supabase/migrations/20260916000001_add_project_ai_credentials.sql` and then `supabase/migrations/20260916000002_move_ai_credentials_to_accounts.sql` before saving provider keys. The second migration copies existing project keys to their owners and removes the old project-scoped table.
+
 ### Realtime collaboration
 
 Create a Liveblocks project and add its server secret as `LIVEBLOCKS_SECRET_KEY`.

@@ -349,6 +349,7 @@ const getElementName = (type: ElementType): string => {
     listItem: 'List Item',
     iframe: 'Embedded Content',
     calendar: 'Calendar',
+    table: 'CMS Table',
     custom: ''
   };
 

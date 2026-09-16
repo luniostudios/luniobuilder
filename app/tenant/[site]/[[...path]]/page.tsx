@@ -12,7 +12,7 @@ interface TenantPageProps {
 const getPublishedProject = async (site: string) => {
   const { data, error } = await supabaseServer
     .from('projects')
-    .select('title, content, status, site_slug, user_id')
+    .select('id, title, content, status, site_slug, user_id')
     .eq('site_slug', site)
     .eq('status', 'published')
     .single();
@@ -32,7 +32,29 @@ const getPublishedProject = async (site: string) => {
   return {
     ...data,
     showWatermark: !proRoles.has(role),
-  } as { title: string; content: { pages?: Page[] }; status: string; site_slug: string; showWatermark: boolean };
+  } as { id: string; title: string; content: { pages?: Page[] }; status: string; site_slug: string; showWatermark: boolean };
+};
+
+const hydrateCmsElements = async (projectId: string, elements: Page['elements']): Promise<Page['elements']> => {
+  const { data: collections } = await supabaseServer
+    .from('cms_collections')
+    .select('id, fields, cms_records(id, data)')
+    .eq('project_id', projectId);
+  const collectionMap = new Map((collections || []).map(collection => [collection.id, collection]));
+
+  const hydrate = (items: Page['elements']): Page['elements'] => items.map(element => {
+    const collection = element.type === 'table' ? collectionMap.get(String(element.props.collectionId || '')) : null;
+    return {
+      ...element,
+      props: collection ? {
+        ...element.props,
+        columns: Array.isArray(element.props.columns) && element.props.columns.length > 0 ? element.props.columns : collection.fields,
+        rows: (collection.cms_records || []).map(record => record.data),
+      } : element.props,
+      children: hydrate(element.children),
+    };
+  });
+  return hydrate(elements);
 };
 
 export async function generateMetadata({ params }: TenantPageProps) {
@@ -63,7 +85,8 @@ export default async function TenantPage({ params }: TenantPageProps) {
 
   if (!page) notFound();
 
-  const markup = page.elements.map(element => renderElementToHtml(element)).join('');
+  const hydratedElements = await hydrateCmsElements(project.id, page.elements);
+  const markup = hydratedElements.map(element => renderElementToHtml(element)).join('');
   const css = generateCssForPage(page);
   const watermark = project.showWatermark
     ? '<a class="lunio-watermark" href="https://www.luniobuilder.com" target="_blank" rel="noopener noreferrer">Build with LUNIO Builder</a>'

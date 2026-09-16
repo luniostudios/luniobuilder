@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '../../auth/auth';
 import { supabaseServer } from '../../lib/supabaseServer';
-import { GoogleGenAI } from "@google/genai";
+import { AIProvider, decryptApiKey } from '../../lib/aiCredentials';
 import { baseSystemPrompt } from './prompt';
 
-const ai = new GoogleGenAI({});
 const MAX_FREE_DAILY_AI = 5;
 const UNSPLASH_ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY;
 
 interface GenerateRequest {
     prompt: string;
+    projectId?: string;
     imageData?: string; // Base64 encoded image
     imageMimeType?: string; // e.g., "image/png", "image/jpeg"
 }
@@ -25,6 +25,50 @@ interface GenerateResponse {
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
+const getAccountCredential = async (userId: string) => {
+    const { data: credentials } = await supabaseServer
+        .from('account_ai_credentials')
+        .select('provider, encrypted_api_key')
+        .eq('user_id', userId)
+        .order('updated_at', { ascending: false });
+    const credential = credentials?.[0];
+    if (!credential) return null;
+    return { provider: credential.provider as AIProvider, apiKey: decryptApiKey(credential.encrypted_api_key) };
+};
+
+const getTextFromProvider = async (provider: AIProvider, apiKey: string, systemPrompt: string) => {
+    if (provider === 'openai') {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+            body: JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'user', content: systemPrompt }], temperature: 0.2 }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data?.error?.message || 'OpenAI generation failed');
+        return data?.choices?.[0]?.message?.content || '';
+    }
+
+    if (provider === 'claude') {
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+            body: JSON.stringify({ model: 'claude-3-5-sonnet-latest', max_tokens: 8192, system: 'Return only the requested HTML.', messages: [{ role: 'user', content: systemPrompt }] }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data?.error?.message || 'Claude generation failed');
+        return data?.content?.[0]?.text || '';
+    }
+
+    const response = await fetch(GEMINI_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+        body: JSON.stringify({ contents: [{ parts: [{ text: systemPrompt }] }], generationConfig: { temperature: 0.2, top_p: 0.95, max_output_tokens: 8192 } }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data?.error?.message || 'Gemini generation failed');
+    return data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+};
+
 export async function POST(req: NextRequest): Promise<NextResponse<GenerateResponse>> {
     try {
         // Check authentication
@@ -33,14 +77,6 @@ export async function POST(req: NextRequest): Promise<NextResponse<GenerateRespo
             return NextResponse.json(
                 { html: '', success: false, error: 'Unauthorized' },
                 { status: 401 }
-            );
-        }
-
-        // Validate API key
-        if (!GEMINI_API_KEY) {
-            return NextResponse.json(
-                { html: '', success: false, error: 'Gemini API key not configured' },
-                { status: 500 }
             );
         }
 
@@ -101,16 +137,26 @@ Analyze the provided image and generate HTML that matches its design, layout, co
             systemPrompt += `\n\nGenerate HTML for: ${prompt}`;
         }
 
+        const accountCredential = await getAccountCredential(session.user.id || '');
+        const provider = accountCredential?.provider || 'gemini';
+        const providerKey = accountCredential?.apiKey || GEMINI_API_KEY;
+        if (!providerKey) {
+            return NextResponse.json(
+                { html: '', success: false, error: 'Add an AI provider API key in Project Settings or configure GEMINI_API_KEY.' },
+                { status: 500 }
+            );
+        }
+
         let response: any;
 
-        if (hasImage && imageData) {
+        if (hasImage && imageData && provider === 'gemini') {
             // Use vision API with image
             const imageBase64 = imageData;
             response = await fetch(GEMINI_API_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-goog-api-key': GEMINI_API_KEY || '',
+                    'x-goog-api-key': providerKey,
                 },
                 body: JSON.stringify({
                     contents: [
@@ -148,11 +194,8 @@ Analyze the provided image and generate HTML that matches its design, layout, co
             const jsonResponse = await response.json();
             response = jsonResponse;
         } else {
-            // Use regular text-only generation
-            response = await ai.models.generateContent({
-                model: "gemini-3.6-flash",
-                contents: systemPrompt,
-            });
+            const generatedText = await getTextFromProvider(provider, providerKey, systemPrompt);
+            response = { candidates: [{ content: { parts: [{ text: generatedText }] } }] };
         }
 
         const data = response as any;
@@ -219,7 +262,7 @@ Analyze the provided image and generate HTML that matches its design, layout, co
             console.warn('Unsplash replacement failed:', err);
         }
 
-        if (role === 'free') {
+        if (role === 'free' && !accountCredential) {
             const updatedUsage = {
                 ...meta,
                 ai_usage: {

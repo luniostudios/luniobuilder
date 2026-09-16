@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import CmsManager from './CmsManager';
 
 interface ProjectRecord {
   id: string;
@@ -191,6 +192,8 @@ export default function ProjectSettingsPage() {
             </Link>
           </div>
         </div>
+
+        {projectId && <div className='mt-6'><CmsManager projectId={projectId} /></div>}
       </div>
     </div>
   );

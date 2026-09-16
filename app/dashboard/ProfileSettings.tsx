@@ -2,6 +2,7 @@
 
 import { ChangeEvent, FormEvent, useState } from 'react';
 import { Camera, Check, LoaderCircle, Mail, Shield, UserRound, X } from 'lucide-react';
+import AIProviderManager from './settings/[projectId]/AIProviderManager';
 
 interface ProfileData {
   id: string;
@@ -132,6 +133,8 @@ export default function ProfileSettings({ user, onSaved }: ProfileSettingsProps)
           </button>
         </div>
       </form>
+
+      <AIProviderManager />
     </section>
   );
 }

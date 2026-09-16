@@ -20,8 +20,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "LUNIO Builder - Drag-and-Drop No Code Website Builder",
-  description: "LUNIO Builder is a no-code website builder that allows you to create stunning websites with ease. With its intuitive drag-and-drop interface, you can design and publish your website in minutes, without any coding knowledge",
+  title: "LUNIO Builder - Create websites with AI",
+  description: "Describe the website you want and LUNIO Builder generates an editable site in the visual editor.",
   keywords: [
     "LUNIO Builder",
     "no-code website builder",

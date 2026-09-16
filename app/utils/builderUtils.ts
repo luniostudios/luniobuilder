@@ -525,6 +525,17 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
           backgroundColor: '#f8fafc',
         },
       };
+    case 'table':
+      return {
+        name: 'CMS Table',
+        props: { collectionId: '', columns: [], emptyMessage: 'No records yet.' },
+        styles: {
+          display: 'block',
+          width: '100%',
+          color: '#172033',
+          backgroundColor: '#ffffff',
+        },
+      };
     case 'custom':
       return {
         name: 'Custom Code',
@@ -731,6 +742,16 @@ const escapeHtml = (text?: string): string => {
     .replace(/'/g, '&#39;');
 };
 
+const getTableFields = (element: BuilderElement): string[] => {
+  if (Array.isArray(element.props.columns)) return element.props.columns.filter((value): value is string => typeof value === 'string');
+  return [];
+};
+
+const getTableRows = (element: BuilderElement): Array<Record<string, unknown>> => {
+  if (!Array.isArray(element.props.rows)) return [];
+  return element.props.rows.filter((row): row is Record<string, unknown> => Boolean(row) && typeof row === 'object');
+};
+
 const escapeJsxString = (text?: string): string => {
   return String(text || '')
     .replace(/\\/g, '\\\\')
@@ -816,6 +837,11 @@ const renderElementToReact = (element: BuilderElement, indent = 2, breakpoint: B
       return `${indentation}<iframe src="${src}"${attrs}></iframe>`;
     case 'calendar':
       return `${indentation}<div${attrs}><div style={{ padding: '24px', backgroundColor: '#ffffff', color: '#172033', borderRadius: '8px', fontFamily: 'inherit' }}>${escapeHtml(String(element.props.title || 'Calendar'))}</div></div>`;
+    case 'table': {
+      const fields = getTableFields(element);
+      const rows = getTableRows(element);
+      return `${indentation}<table${attrs}><thead><tr>${fields.map(field => `<th>${escapeHtml(field)}</th>`).join('')}</tr></thead><tbody>${rows.map(row => `<tr>${fields.map(field => `<td>${escapeHtml(String(row[field] ?? ''))}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+    }
     case 'custom':
       return `${indentation}<iframe srcDoc={'${escapeJsxString(getCustomCodeDocument(element))}'}${attrs} title="Custom code"></iframe>`;
     default:
@@ -907,6 +933,12 @@ export const renderElementToHtml = (element: BuilderElement, breakpoint: Breakpo
       return `<iframe src="${src}"${attrs}></iframe>`;
     case 'calendar':
       return `<div${attrs}><div style="padding:24px;background-color:#ffffff;color:#172033;border-radius:8px;font-family:inherit">${escapeHtml(String(element.props.title || 'Calendar'))}</div></div>`;
+    case 'table': {
+      const fields = getTableFields(element);
+      const rows = getTableRows(element);
+      const emptyMessage = escapeHtml(String(element.props.emptyMessage || 'No records yet.'));
+      return `<div${attrs} style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;text-align:left"><thead><tr>${fields.map(field => `<th style="padding:12px;border-bottom:2px solid #e2e8f0;font-size:12px;text-transform:uppercase;color:#64748b">${escapeHtml(field)}</th>`).join('')}</tr></thead><tbody>${rows.length > 0 ? rows.map(row => `<tr>${fields.map(field => `<td style="padding:12px;border-bottom:1px solid #e2e8f0">${escapeHtml(String(row[field] ?? ''))}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${Math.max(fields.length, 1)}" style="padding:20px;color:#64748b">${emptyMessage}</td></tr>`}</tbody></table></div>`;
+    }
     case 'custom':
       return `<div${attrs}>${getCustomCodeMarkup(element)}</div>`;
     default:
@@ -1341,7 +1373,7 @@ export const canHaveChildren = (type: ElementType): boolean => {
 export const COMPONENT_CATEGORIES = {
   Layout: ['section', 'div', 'hero', 'navbar', 'columns', 'grid', 'card', 'custom'],
   Typography: ['heading', 'paragraph', 'link', 'list', 'listItem'],
-  Media: ['image', 'video', 'icon', 'iframe', 'calendar'],
+  Media: ['image', 'video', 'icon', 'iframe', 'calendar', 'table'],
   Forms: ['form', 'input', 'textarea', 'button'],
   Misc: ['divider', 'spacer'],
 } as const;
@@ -1370,6 +1402,7 @@ export const COMPONENT_LABELS: Record<ElementType, string> = {
   listItem: 'List Item',
   iframe: 'Iframe',
   calendar: 'Calendar',
+  table: 'CMS Table',
   custom: 'Custom Code',
 };
 

@@ -22,6 +22,7 @@ export type ElementType =
   | 'listItem'
   | 'iframe'
   | 'calendar'
+  | 'table'
   | 'custom';
 
 export interface StyleProperties {
@@ -154,8 +155,8 @@ export interface ElementProps {
   label?: string;
   iconName?: string;
   level?: 1 | 2 | 3 | 4 | 5 | 6;
-  columns?: number;
-  rows?: number;
+  columns?: number | string[];
+  rows?: number | Record<string, unknown>[];
   [key: string]: unknown;
 }
 

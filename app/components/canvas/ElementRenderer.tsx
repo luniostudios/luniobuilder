@@ -24,6 +24,51 @@ interface CalendarEvent {
   title: string;
 }
 
+interface CmsTableRow {
+  id: string;
+  data: Record<string, unknown>;
+}
+
+const CmsTableElement: React.FC<{ element: BuilderElement; projectId: string | null; onClick: (event: React.MouseEvent) => void; style: React.CSSProperties }> = ({ element, projectId, onClick, style }) => {
+  const collectionId = String(element.props.collectionId || '');
+  const [fields, setFields] = useState<string[]>(Array.isArray(element.props.columns) ? element.props.columns.filter((value): value is string => typeof value === 'string') : []);
+  const [rows, setRows] = useState<CmsTableRow[]>([]);
+  const [loading, setLoading] = useState(Boolean(collectionId));
+
+  useEffect(() => {
+    if (!projectId || !collectionId) {
+      setLoading(false);
+      setRows([]);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    fetch(`/api/cms/${encodeURIComponent(projectId)}`)
+      .then(response => response.ok ? response.json() : Promise.reject(new Error('Unable to load CMS data')))
+      .then(collections => {
+        if (cancelled) return;
+        const collection = Array.isArray(collections) ? collections.find((value: { id?: string }) => value.id === collectionId) : null;
+        setFields(Array.isArray(element.props.columns) && element.props.columns.length > 0 ? element.props.columns.filter((value): value is string => typeof value === 'string') : collection?.fields || []);
+        setRows(Array.isArray(collection?.records) ? collection.records : []);
+      })
+      .catch(() => { if (!cancelled) setRows([]); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [projectId, collectionId, element.props.columns]);
+
+  if (!collectionId) return <div style={{ ...style, padding: '24px', border: '1px dashed #94a3b8', color: '#64748b' }} onClick={onClick}>Select a CMS collection in the content panel.</div>;
+  return (
+    <div style={{ ...style, overflowX: 'auto' }} onClick={onClick}>
+      {loading ? <div style={{ padding: '20px', color: '#64748b' }}>Loading CMS data...</div> : fields.length === 0 ? <div style={{ padding: '20px', color: '#64748b' }}>{String(element.props.emptyMessage || 'No fields configured.')}</div> : (
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+          <thead><tr>{fields.map(field => <th key={field} style={{ padding: '12px', borderBottom: '2px solid #e2e8f0', fontSize: '12px', textTransform: 'uppercase', color: '#64748b' }}>{field}</th>)}</tr></thead>
+          <tbody>{rows.map(row => <tr key={row.id}>{fields.map(field => <td key={field} style={{ padding: '12px', borderBottom: '1px solid #e2e8f0' }}>{String(row.data[field] ?? '')}</td>)}</tr>)}</tbody>
+        </table>
+      )}
+    </div>
+  );
+};
+
 const CalendarElement: React.FC<{ element: BuilderElement; isPreview: boolean; onClick: (event: React.MouseEvent) => void; style: React.CSSProperties }> = ({ element, isPreview, onClick, style }) => {
   const today = new Date();
   const [month, setMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
@@ -90,6 +135,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     pushHistory,
     setCurrentPage,
     pages,
+    projectId,
   } = useBuilderStore();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -443,6 +489,9 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
 
       case 'calendar':
         return <CalendarElement element={element} isPreview={isPreview} onClick={handleClick} style={safeCssStyles} />;
+
+      case 'table':
+        return <CmsTableElement element={element} projectId={projectId} onClick={handleClick} style={safeCssStyles} />;
 
       case 'custom':
         return (
