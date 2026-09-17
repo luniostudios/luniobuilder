@@ -323,6 +323,79 @@ export const TopBar: React.FC = () => {
     return projectName || 'LUNIO Project';
   };
 
+  const saveProject = useCallback(async () => {
+    if (!projectId || isPublishingRef.current) return;
+
+    saveAbortControllerRef.current?.abort();
+    const controller = new AbortController();
+    saveAbortControllerRef.current = controller;
+    const latestState = useBuilderStore.getState();
+
+    isSavingRef.current = true;
+    setIsSaving(true);
+    setSaveMessage('');
+
+    try {
+      const response = await fetch('/api/projects', {
+        method: 'PATCH',
+        cache: 'no-store',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({
+          projectId,
+          content: {
+            pages: latestState.pages,
+            currentPageId: latestState.currentPageId,
+          },
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || 'Unable to save project');
+
+      setSaveMessage('Saved');
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+      console.error('Unable to save project:', error);
+      setSaveMessage('Save failed');
+    } finally {
+      if (saveAbortControllerRef.current === controller) {
+        saveAbortControllerRef.current = null;
+        isSavingRef.current = false;
+        setIsSaving(false);
+      }
+    }
+  }, [projectId]);
+
+  useEffect(() => {
+    if (isInitialRender.current) {
+      isInitialRender.current = false;
+      return;
+    }
+
+    if (!projectId || isPublishingRef.current) return;
+
+    if (saveTimeoutRef.current) {
+      window.clearTimeout(saveTimeoutRef.current);
+    }
+    saveTimeoutRef.current = window.setTimeout(() => {
+      saveTimeoutRef.current = null;
+      void saveProject();
+    }, 800);
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        window.clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
+    };
+  }, [pages, currentPageId, projectName, projectId, saveProject]);
+
+  useEffect(() => () => {
+    if (saveTimeoutRef.current) window.clearTimeout(saveTimeoutRef.current);
+    saveAbortControllerRef.current?.abort();
+  }, []);
+
   const publishToVercel = async () => {
     setPublishMessage('');
     setShowPublishMenu(false);
@@ -417,7 +490,7 @@ export const TopBar: React.FC = () => {
     }
 
     const suggestedSlug = normalizeSiteSlug(projectName) || 'my-site';
-    const siteSlug = normalizeSiteSlug(window.prompt('Choose your LUNIO subdomain:', suggestedSlug));
+    const siteSlug = normalizeSiteSlug(window.prompt('Choose your LUNIO subdomain:', ""));
     if (!siteSlug) {
       setPublishMessage('Enter a valid subdomain using letters, numbers, or hyphens.');
       return;
@@ -441,7 +514,7 @@ export const TopBar: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           projectId,
-          title: latestState.projectName || 'Untitled Project',
+          title: projectName || 'Untitled Project',
           siteSlug,
           status: 'published',
           content: {
@@ -503,94 +576,6 @@ export const TopBar: React.FC = () => {
       setTimeout(() => setPublishMessage(''), 3000);
     }
   };
-
-  const saveProject = useCallback(async (autoSave = false) => {
-    if (isSavingRef.current || isPublishingRef.current) return;
-    const normalizedProjectId = typeof projectId === 'string' && projectId.trim() ? projectId.trim() : null;
-    setSaveMessage('');
-    setIsSaving(true);
-    isSavingRef.current = true;
-    const abortController = new AbortController();
-    saveAbortControllerRef.current = abortController;
-
-    const payload = {
-      ...(normalizedProjectId ? { projectId: normalizedProjectId } : {}),
-      title: projectName || 'Untitled Project',
-      slug: page.slug || '/untitled',
-      content: {
-        pages,
-        currentPageId,
-      },
-    };
-
-    try {
-      const response = await fetch('/api/projects', {
-        method: normalizedProjectId ? 'PATCH' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        signal: abortController.signal,
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data?.error || 'Unable to save project');
-      }
-
-      if (data?.id) {
-        setProjectId(data.id);
-        if (data?.title) {
-          setProjectName(data.title);
-        }
-        if (!normalizedProjectId) {
-          router.replace(`/editor?projectId=${data.id}`);
-        }
-      }
-      setSaveMessage(autoSave ? 'Auto-saved successfully' : 'Saved successfully');
-    } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') return;
-      console.error(error);
-      setSaveMessage('Failed to save');
-    } finally {
-      if (saveAbortControllerRef.current === abortController) {
-        saveAbortControllerRef.current = null;
-      }
-      setIsSaving(false);
-      isSavingRef.current = false;
-      setTimeout(() => setSaveMessage(''), 2500);
-    }
-  }, [projectId, projectName, pages, currentPageId, page.slug, router, setProjectId, setProjectName]);
-
-  useEffect(() => {
-    isSavingRef.current = isSaving;
-  }, [isSaving]);
-
-  useEffect(() => {
-    if (isInitialRender.current) {
-      isInitialRender.current = false;
-      return;
-    }
-
-    if (!projectId) return;
-    if (isPublishingRef.current) return;
-
-    if (saveTimeoutRef.current) {
-      window.clearTimeout(saveTimeoutRef.current);
-    }
-
-    saveTimeoutRef.current = window.setTimeout(() => {
-      saveProject(true);
-      saveTimeoutRef.current = null;
-    }, 2000);
-
-    return () => {
-      if (saveTimeoutRef.current) {
-        window.clearTimeout(saveTimeoutRef.current);
-        saveTimeoutRef.current = null;
-      }
-    };
-  }, [pages, currentPageId, projectId, saveProject]);
 
   const zoomIn = () => setCanvasScale(Math.min(canvasScale + 0.1, 2));
   const zoomOut = () => setCanvasScale(Math.max(canvasScale - 0.1, 0.25));
@@ -930,15 +915,18 @@ export const TopBar: React.FC = () => {
 
           {/* Save */}
           <button
-            disabled={isSaving}
+            onClick={() => void saveProject()}
+            disabled={!projectId || isSaving}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${projectId
-              ? 'bg-green-600 text-white hover:bg-green-500'
+              ? saveMessage === 'Save failed'
+                ? 'bg-red-700 text-white'
+                : 'bg-green-600 text-white hover:bg-green-500'
               : 'bg-gray-700 text-gray-300 cursor-not-allowed'
               }`}
             title={projectId ? 'Save Project' : 'Create project from Dashboard first'}
           >
             {isSaving ? <Loader size={13} /> : <Check size={13} />}
-            {isSaving ? 'Saving...' : 'Saved'}
+            {isSaving ? 'Saving...' : saveMessage || 'Saved'}
           </button>
 
           {/* Publish */}
