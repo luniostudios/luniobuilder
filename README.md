@@ -1,7 +1,7 @@
 
-# LUNIO No-Code Drag & Drop Website Builder
+# LUNIO No-Code Drag & Drop AI Website Builder
 
-LUNIO Builder is a NO-CODE drag & drop website builder that allows you to create stunning websites with ease. With its intuitive drag-and-drop interface, you can design and publish your website in minutes, without any coding knowledge.
+LUNIO Builder is a NO-CODE drag & drop AI website builder that allows you to generate and create stunning websites with ease. With its intuitive drag-and-drop interface, you can design and publish your website in minutes, without any coding knowledge. Also, you can generate with AI your first website and then edit in our intuitive editor.
 
 ## Demo
 
@@ -9,7 +9,7 @@ https://www.luniobuilder.com
 
 ## Screenshots
 
-![App Screenshot](https://i.ibb.co/MxncYCXh/luniobui.png)
+![App Screenshot](https://media.licdn.com/dms/image/v2/D4E22AQFbH8xbznDJAA/feedshare-image-high-res/B4EaCscynLIEAU-/0/1789599623973?e=1791417600&v=beta&t=ImtiyBoCytB7S77gGC4cDlWbAsHf4SyYOltvesttjSM)
 ![App Screenshot](https://i.ibb.co/Q3FpjQCP/luniobuil.png)
 ![App Screenshot](https://i.ibb.co/Xrt6T2nd/luniobuild.png)
 
