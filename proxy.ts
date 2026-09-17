@@ -1,6 +1,6 @@
-import { auth } from "./auth/auth";
+import { auth } from "./app/auth/auth";
 import { NextResponse } from "next/server";
-import { getSiteSlugFromHost } from "./lib/tenant";
+import { getSiteSlugFromHost } from "./app/lib/tenant";
  
 export const proxy = auth((req) => {
   const siteSlug = getSiteSlugFromHost(
@@ -14,10 +14,6 @@ export const proxy = auth((req) => {
     return NextResponse.rewrite(rewrittenUrl);
   }
 
-  if (!req.auth && req.nextUrl.pathname !== "/editor") {
-    const newUrl = new URL("/editor", req.nextUrl.origin)
-    return Response.redirect(newUrl)
-  }
 })
 
 export const config = {
