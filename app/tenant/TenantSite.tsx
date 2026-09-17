@@ -32,7 +32,7 @@ export default function TenantSite({ projectId, projectName, pages, currentPageI
   return (
     <main className="min-h-screen bg-white">
       {page.elements.map(element => (
-        <ElementRenderer key={element.id} element={element} isPreview />
+        <ElementRenderer key={element.id} element={element} isPreview isPublishedSite />
       ))}
     </main>
   );

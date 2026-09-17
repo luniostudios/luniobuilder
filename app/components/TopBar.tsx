@@ -436,6 +436,8 @@ export const TopBar: React.FC = () => {
     try {
       const response = await fetch('/api/projects', {
         method: 'PATCH',
+        cache: 'no-store',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           projectId,

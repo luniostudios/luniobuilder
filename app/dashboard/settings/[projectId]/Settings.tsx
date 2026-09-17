@@ -32,6 +32,10 @@ export default function ProjectSettingsPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    if (status === 'unauthenticated') router.replace('/auth/signin');
+  }, [router, status]);
+
+  useEffect(() => {
     if (!projectId) {
       return;
     }
@@ -40,7 +44,10 @@ export default function ProjectSettingsPage() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/projects?projectId=${encodeURIComponent(projectId)}`);
+      const response = await fetch(`/api/projects?projectId=${encodeURIComponent(projectId)}`, {
+        cache: 'no-store',
+        credentials: 'include',
+      });
       if (!response.ok) {
         const data = await response.json().catch(() => null);
         setError(data?.error || 'Unable to load project settings.');
@@ -60,7 +67,6 @@ export default function ProjectSettingsPage() {
     const storedToken = typeof window !== 'undefined'
       ? window.localStorage.getItem(projectKey) || window.localStorage.getItem('vercelToken') || ''
       : '';
-    setVercelKey(storedToken);
 
     fetchProject();
   }, [projectId]);
@@ -77,6 +83,7 @@ export default function ProjectSettingsPage() {
 
     const response = await fetch('/api/projects', {
       method: 'PATCH',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -88,9 +95,14 @@ export default function ProjectSettingsPage() {
       }),
     });
 
-    const data = await response.json().catch(() => null);
+    let data: ProjectRecord | { error?: string } | null = null;
+    try {
+      data = await response.json();
+    } catch {
+      data = null;
+    }
     if (!response.ok) {
-      setError(data?.error || 'Unable to save project settings.');
+      setError(data && 'error' in data ? data.error || 'Unable to save project settings.' : 'Unable to save project settings.');
       setSaving(false);
       return;
     }
@@ -106,7 +118,7 @@ export default function ProjectSettingsPage() {
 
     setSuccessMessage('Project settings saved successfully.');
     setSaving(false);
-    setProject(data);
+    if (data && !('error' in data)) setProject(data as ProjectRecord);
     router.refresh();
   };
 
@@ -119,7 +131,6 @@ export default function ProjectSettingsPage() {
   }
 
   if (!session) {
-    window.location.href = '/auth/signin';
     return null;
   }
 
@@ -151,17 +162,6 @@ export default function ProjectSettingsPage() {
               placeholder='Project title'
               className='w-full rounded-2xl border border-gray-700 bg-[#0f1218] px-4 py-3 text-sm text-white outline-none transition focus:border-blue-500'
             />
-          </div>
-
-          <div>
-            <label className='mb-2 block text-sm font-medium text-gray-300'>Project slug</label>
-            <input
-              value={slug}
-              onChange={event => setSlug(event.target.value)}
-              placeholder='/my-project'
-              className='w-full rounded-2xl border border-gray-700 bg-[#0f1218] px-4 py-3 text-sm text-white outline-none transition focus:border-blue-500'
-            />
-            <p className='mt-2 text-sm text-gray-500'>The slug is used to identify the project and can be changed here.</p>
           </div>
 
           <div>

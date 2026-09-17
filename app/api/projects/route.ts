@@ -272,10 +272,14 @@ export async function PATCH(request: Request) {
     }
   }
 
-  const { data, error } = await (updateQuery as any).single();
+  const { data, error } = await (updateQuery as any).maybeSingle();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  if (!data) {
+    return NextResponse.json({ error: 'Project not found or you do not have permission to update it.' }, { status: 404 });
   }
 
   return NextResponse.json(data);

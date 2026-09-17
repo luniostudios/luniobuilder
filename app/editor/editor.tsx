@@ -29,7 +29,7 @@ export default function App() {
   } = useBuilderStore();
 
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; id: string } | null>(null);
-  const [projectLoading, setProjectLoading] = useState(false);
+  const [projectLoading, setProjectLoading] = useState(true);
   const [projectError, setProjectError] = useState<string | null>(null);
   const [projectLoadedId, setProjectLoadedId] = useState<string | null>(null);
 
@@ -98,7 +98,10 @@ export default function App() {
       setProjectLoading(true);
       setProjectError(null);
 
-      const response = await fetch(`/api/projects?projectId=${projectQueryId}`);
+      const response = await fetch(`/api/projects?projectId=${encodeURIComponent(projectQueryId)}`, {
+        cache: 'no-store',
+        credentials: 'include',
+      });
       const data = await response.json();
 
       if (!response.ok) {
@@ -119,7 +122,7 @@ export default function App() {
     };
 
     loadProjectFromServer();
-  }, [projectQueryId, session, projectLoadedId, loadProject]);
+  }, [projectQueryId, session, projectLoadedId, loadProject, setProjectName]);
 
   const contextElement = contextMenu ? getElementById(contextMenu.id) : null;
 

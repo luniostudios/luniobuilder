@@ -9,6 +9,7 @@ import * as LucideIcons from 'lucide-react';
 interface ElementRendererProps {
   element: BuilderElement;
   isPreview?: boolean;
+  isPublishedSite?: boolean;
 }
 
 interface NavbarMenuContextValue {
@@ -117,7 +118,7 @@ const CalendarElement: React.FC<{ element: BuilderElement; isPreview: boolean; o
   );
 };
 
-export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPreview = false }) => {
+export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPreview = false, isPublishedSite = false }) => {
   const {
     selectedElementId,
     hoveredElementId,
@@ -193,6 +194,11 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
       // Check if href matches an internal page slug
       const targetPage = (pages as any[])?.find((p: any) => p.slug === href || p.slug === href.replace(/^\//, '') || `/${p.slug}` === href);
       if (targetPage) {
+        if (isPublishedSite) {
+          const targetSlug = targetPage.slug === '/' ? '/' : `/${String(targetPage.slug).replace(/^\/+/, '')}`;
+          window.location.assign(targetSlug);
+          return;
+        }
         setCurrentPage(targetPage.id);
         return;
       }

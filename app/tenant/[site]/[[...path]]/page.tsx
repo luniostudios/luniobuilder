@@ -5,6 +5,9 @@ import { normalizeSiteSlug } from '../../../lib/tenant';
 import TenantSite from '../../TenantSite';
 import type { Page } from '../../../types/builder';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 interface TenantRouteProps {
 	params: Promise<{
 		site: string;
