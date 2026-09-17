@@ -20,7 +20,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "LUNIO Builder - Create websites with AI",
+  title: "LUNIO Builder - Create websites fast with AI",
   description: "Describe the website you want and LUNIO Builder generates an editable site in the visual editor.",
   keywords: [
     "LUNIO Builder",
