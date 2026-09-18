@@ -24,6 +24,7 @@ export type ElementType =
   | 'iframe'
   | 'calendar'
   | 'table'
+  | 'cmsMap'
   | 'custom';
 
 export interface StyleProperties {

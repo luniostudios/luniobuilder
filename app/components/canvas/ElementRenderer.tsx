@@ -30,6 +30,13 @@ interface CmsTableRow {
   data: Record<string, unknown>;
 }
 
+interface CmsRecordContextValue {
+  id: string;
+  data: Record<string, unknown>;
+}
+
+const CmsRecordContext = createContext<CmsRecordContextValue | null>(null);
+
 const CmsTableElement: React.FC<{ element: BuilderElement; projectId: string | null; onClick: (event: React.MouseEvent) => void; style: React.CSSProperties }> = ({ element, projectId, onClick, style }) => {
   const collectionId = String(element.props.collectionId || '');
   const [fields, setFields] = useState<string[]>(Array.isArray(element.props.columns) ? element.props.columns.filter((value): value is string => typeof value === 'string') : []);
@@ -57,7 +64,7 @@ const CmsTableElement: React.FC<{ element: BuilderElement; projectId: string | n
     return () => { cancelled = true; };
   }, [projectId, collectionId, element.props.columns]);
 
-  if (!collectionId) return <div style={{ ...style, padding: '24px', border: '1px dashed #94a3b8', color: '#64748b' }} onClick={onClick}>Select a CMS collection in the content panel.</div>;
+  if (!collectionId) return <div style={{ ...style, paddingTop: '24px', paddingRight: '24px', paddingBottom: '24px', paddingLeft: '24px', border: '1px dashed #94a3b8', color: '#64748b' }} onClick={onClick}>Select a CMS collection in the content panel.</div>;
   return (
     <div style={{ ...style, overflowX: 'auto' }} onClick={onClick}>
       {loading ? <div style={{ padding: '20px', color: '#64748b' }}>Loading CMS data...</div> : fields.length === 0 ? <div style={{ padding: '20px', color: '#64748b' }}>{String(element.props.emptyMessage || 'No fields configured.')}</div> : (
@@ -66,6 +73,60 @@ const CmsTableElement: React.FC<{ element: BuilderElement; projectId: string | n
           <tbody>{rows.map(row => <tr key={row.id}>{fields.map(field => <td key={field} style={{ padding: '12px', borderBottom: '1px solid #e2e8f0' }}>{String(row.data[field] ?? '')}</td>)}</tr>)}</tbody>
         </table>
       )}
+    </div>
+  );
+};
+
+const CmsMapElement: React.FC<{ element: BuilderElement; projectId: string | null; isPreview: boolean; onClick: (event: React.MouseEvent) => void; style: React.CSSProperties }> = ({ element, projectId, isPreview, onClick, style }) => {
+  const collectionId = String(element.props.collectionId || '');
+  const [records, setRecords] = useState<CmsTableRow[]>([]);
+  const [loading, setLoading] = useState(Boolean(collectionId));
+
+  useEffect(() => {
+    if (!projectId || !collectionId) {
+      setLoading(false);
+      setRecords([]);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    fetch(`/api/cms/${encodeURIComponent(projectId)}`)
+      .then(response => response.ok ? response.json() : Promise.reject(new Error('Unable to load CMS data')))
+      .then(collections => {
+        if (cancelled) return;
+        const collection = Array.isArray(collections) ? collections.find((value: { id?: string }) => value.id === collectionId) : null;
+        setRecords(Array.isArray(collection?.records) ? collection.records : []);
+      })
+      .catch(() => { if (!cancelled) setRecords([]); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [projectId, collectionId]);
+
+  const renderChildren = (record?: CmsTableRow) => {
+    const children = element.children.map(child => <ElementRenderer key={`${record?.id || 'editor'}-${child.id}`} element={child} isPreview={isPreview} />);
+    if (record) {
+      return <CmsRecordContext.Provider value={record}>{children}</CmsRecordContext.Provider>;
+    }
+    return children;
+  };
+
+  if (!collectionId) {
+    return <div style={{ ...style, paddingTop: '24px', paddingRight: '24px', paddingBottom: '24px', paddingLeft: '24px', border: '1px dashed #94a3b8', color: '#64748b' }} onClick={onClick}>Select a CMS collection, then add components inside this map.</div>;
+  }
+
+  if (loading) return <div style={{ ...style, paddingTop: '24px', paddingRight: '24px', paddingBottom: '24px', paddingLeft: '24px', color: '#64748b' }} onClick={onClick}>Loading CMS records...</div>;
+
+  if (records.length === 0) {
+    return (
+      <div style={style} onClick={onClick}>
+        {!isPreview && element.children.length > 0 ? renderChildren() : <div style={{ paddingTop: '24px', paddingRight: '24px', paddingBottom: '24px', paddingLeft: '24px', color: '#64748b' }}>{String(element.props.emptyMessage || 'No records yet.')}</div>}
+      </div>
+    );
+  }
+
+  return (
+    <div style={style} onClick={onClick}>
+      {records.map(record => <div key={record.id} style={{ minWidth: 0 }}>{renderChildren(record)}</div>)}
     </div>
   );
 };
@@ -87,7 +148,7 @@ const CalendarElement: React.FC<{ element: BuilderElement; isPreview: boolean; o
   const changeMonth = (offset: number) => setMonth(current => new Date(current.getFullYear(), current.getMonth() + offset, 1));
 
   return (
-    <div style={{ ...style, width: '100%', minHeight: '420px', height: 'auto', padding: '24px', backgroundColor: '#ffffff', color: '#172033', fontFamily: 'inherit' }} onClick={onClick}>
+    <div style={{ ...style, width: '100%', minHeight: '420px', height: 'auto', paddingTop: '24px', paddingRight: '24px', paddingBottom: '24px', paddingLeft: '24px', backgroundColor: '#ffffff', color: '#172033', fontFamily: 'inherit' }} onClick={onClick}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
         <div>
           <div style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#64748b' }}>{String(element.props.title || 'Calendar')}</div>
@@ -167,7 +228,34 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     minWidth: 0,
   };
   const navbarMenu = useContext(NavbarMenuContext);
+  const cmsRecord = useContext(CmsRecordContext);
   const isMenuTarget = navbarMenu?.menuIds.has(element.id) ?? false;
+
+  const resolveCmsProp = (propName: 'text' | 'src', fallback: unknown) => {
+    const field = element.props.cmsField;
+    if (!cmsRecord || typeof field !== 'string' || !field) return fallback;
+    const value = cmsRecord.data[field];
+    return value === undefined || value === null ? fallback : String(value);
+  };
+
+  const resolveCmsHref = () => {
+    const field = element.props.cmsHrefField;
+    if (!cmsRecord || typeof field !== 'string' || !field) return element.props.href;
+    const value = cmsRecord.data[field];
+    return value === undefined || value === null ? element.props.href : String(value);
+  };
+
+  const resolveCmsAlt = () => {
+    const field = element.props.cmsAltField;
+    if (!cmsRecord || typeof field !== 'string' || !field) return element.props.alt;
+    const value = cmsRecord.data[field];
+    return value === undefined || value === null ? element.props.alt : String(value);
+  };
+
+  const textValue = resolveCmsProp('text', element.props.text) as string | undefined;
+  const srcValue = resolveCmsProp('src', element.props.src) as string | undefined;
+  const hrefValue = resolveCmsHref() as string | undefined;
+  const altValue = resolveCmsAlt() as string | undefined;
 
   useEffect(() => {
     if (isEditing && editingRef.current) {
@@ -375,7 +463,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
             suppressContentEditableWarning
             className={isPreview ? '' : isEditing ? 'cursor-text' : 'cursor-pointer select-none'}
           >
-            {isEditing ? editingValue : element.props.text || 'Heading'}
+            {isEditing ? editingValue : textValue || 'Heading'}
           </Tag>
         );
       }
@@ -393,7 +481,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
             suppressContentEditableWarning
             className={isPreview ? '' : isEditing ? 'cursor-text' : 'cursor-pointer select-none'}
           >
-            {isEditing ? editingValue : element.props.text || 'Paragraph text'}
+            {isEditing ? editingValue : textValue || 'Paragraph text'}
           </p>
         );
 
@@ -422,8 +510,8 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
             ref={(node) => setEditingRef(node as HTMLElement | null)}
             style={safeCssStyles}
             onClick={(e) => {
-              if (isPreview && element.props.href) {
-                handleButtonClick(e, element.props.href as string);
+              if (isPreview && hrefValue) {
+                handleButtonClick(e, hrefValue);
               } else {
                 handleClick(e);
               }
@@ -433,7 +521,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
           >
             <span className="inline-flex items-center gap-2">
               {ButtonIcon && <ButtonIcon aria-hidden style={{ width: '1em', height: '1em' }} />}
-              {element.props.text || 'Button'}
+              {textValue || 'Button'}
             </span>
           </button>
         );
@@ -443,7 +531,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
         return (
           <a
             ref={(node) => setEditingRef(node as HTMLElement | null)}
-            href={isPreview ? element.props.href : undefined}
+            href={isPreview ? hrefValue : undefined}
             style={isEditing ? editingTextStyles : safeTextStyles}
             onClick={handleClick}
             onDoubleClick={handleDoubleClick}
@@ -453,15 +541,15 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
             suppressContentEditableWarning
             className={isPreview ? '' : isEditing ? 'cursor-text' : 'cursor-pointer select-none'}
           >
-            {isEditing ? editingValue : element.props.text || 'Link'}
+            {isEditing ? editingValue : textValue || 'Link'}
           </a>
         );
 
       case 'image':
         return (
           <img
-            src={element.props.src}
-            alt={element.props.alt || ''}
+            src={srcValue}
+            alt={altValue || ''}
             style={{ ...safeCssStyles, maxWidth: '100%', height: 'auto' }}
             onClick={handleClick}
             className={isPreview ? '' : 'cursor-pointer'}
@@ -472,7 +560,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
       case 'video':
         return (
           <video
-            src={element.props.src}
+            src={srcValue}
             style={{ ...safeCssStyles, maxWidth: '100%', height: 'auto' }}
             controls={element.props.controls}
             onClick={handleClick}
@@ -567,7 +655,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
             type="button"
             aria-label="Toggle navigation menu"
             aria-expanded={navbarMenu.isOpen}
-            style={{ ...safeCssStyles, border: 'none', background: 'transparent', padding: 0 }}
+            style={{ ...safeCssStyles, border: 'none', background: 'transparent', paddingTop: 0, paddingRight: 0, paddingBottom: 0, paddingLeft: 0 }}
             onClick={navbarMenu.toggle}
             onDoubleClick={handleDoubleClick}
           >
@@ -589,7 +677,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
             suppressContentEditableWarning
             className={isPreview ? '' : isEditing ? 'cursor-text' : 'cursor-pointer select-none'}
           >
-            {isEditing ? editingValue : element.props.text || 'List item'}
+            {isEditing ? editingValue : textValue || 'List item'}
           </li>
         );
 
@@ -636,7 +724,10 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     flexDirection: 'column',
     alignItems: 'stretch',
     gap: '12px',
-    padding: '16px',
+    paddingTop: '16px',
+    paddingRight: '16px',
+    paddingBottom: '16px',
+    paddingLeft: '16px',
     backgroundColor: '#ffffff',
     boxShadow: '0 8px 20px rgba(15, 23, 42, 0.12)',
     zIndex: 101,
@@ -663,6 +754,8 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
             {renderChildren()}
           </ul>
         );
+      case 'cmsMap':
+        return <CmsMapElement element={element} projectId={projectId} isPreview={isPreview} onClick={handleClick} style={containerStyle} />;
       case 'navbar':
         {
           const menuIds = new Set(

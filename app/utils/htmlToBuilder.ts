@@ -351,6 +351,7 @@ const getElementName = (type: ElementType): string => {
     iframe: 'Embedded Content',
     calendar: 'Calendar',
     table: 'CMS Table',
+    cmsMap: 'CMS Map',
     custom: ''
   };
 

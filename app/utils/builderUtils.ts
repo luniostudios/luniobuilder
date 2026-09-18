@@ -550,6 +550,21 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
           backgroundColor: '#ffffff',
         },
       };
+    case 'cmsMap':
+      return {
+        name: 'CMS Map',
+        props: { collectionId: '', emptyMessage: 'No records yet.' },
+        styles: {
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+          gap: '20px',
+          width: '100%',
+          paddingTop: '20px',
+          paddingBottom: '20px',
+          paddingLeft: '20px',
+          paddingRight: '20px',
+        },
+      };
     case 'custom':
       return {
         name: 'Custom Code',
@@ -593,8 +608,34 @@ export const getEffectiveStyles = (
   return { ...desktop, ...tablet, ...mobile, ...widescreen, ...laptop, ...mobileLandscape };
 };
 
+const expandBoxShorthand = (
+  computed: StyleProperties,
+  shorthand: 'padding' | 'margin',
+  sides: ['paddingTop' | 'marginTop', 'paddingRight' | 'marginRight', 'paddingBottom' | 'marginBottom', 'paddingLeft' | 'marginLeft']
+) => {
+  const value = computed[shorthand];
+  if (typeof value !== 'string' || !value.trim()) return;
+
+  const values = value.trim().split(/\s+/);
+  const expanded = values.length === 1
+    ? [values[0], values[0], values[0], values[0]]
+    : values.length === 2
+      ? [values[0], values[1], values[0], values[1]]
+      : values.length === 3
+        ? [values[0], values[1], values[2], values[1]]
+        : [values[0], values[1], values[2], values[3]];
+
+  delete computed[shorthand];
+  sides.forEach((side, index) => {
+    if (!computed[side]) computed[side] = expanded[index];
+  });
+};
+
 const buildComputedStyleObject = (styles: StyleProperties): StyleProperties => {
   const computed: StyleProperties = { ...styles };
+
+  expandBoxShorthand(computed, 'padding', ['paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft']);
+  expandBoxShorthand(computed, 'margin', ['marginTop', 'marginRight', 'marginBottom', 'marginLeft']);
 
   if (styles.backgroundGradient) {
     computed.backgroundImage = styles.backgroundGradient;
@@ -1381,11 +1422,11 @@ export const generateNextProjectFiles = (
   return files;
 };
 export const canHaveChildren = (type: ElementType): boolean => {
-  return ['section', 'div', 'navbar', 'hero', 'card', 'grid', 'columns', 'form', 'list'].includes(type);
+  return ['section', 'div', 'navbar', 'hero', 'card', 'grid', 'columns', 'form', 'list', 'cmsMap'].includes(type);
 };
 
 export const COMPONENT_CATEGORIES = {
-  Layout: ['section', 'div', 'hero', 'navbar', 'columns', 'grid', 'card', 'custom'],
+  Layout: ['section', 'div', 'hero', 'navbar', 'columns', 'grid', 'card', 'cmsMap', 'custom'],
   Typography: ['heading', 'paragraph', 'link', 'list', 'listItem'],
   Media: ['image', 'video', 'icon', 'iframe', 'calendar', 'table'],
   Forms: ['form', 'input', 'textarea', 'button'],
@@ -1418,6 +1459,7 @@ export const COMPONENT_LABELS: Record<ElementType, string> = {
   iframe: 'Iframe',
   calendar: 'Calendar',
   table: 'CMS Table',
+  cmsMap: 'CMS Map',
   custom: 'Custom Code',
 };
 

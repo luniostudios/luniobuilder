@@ -1305,6 +1305,15 @@ interface ContentEditorProps {
   element: BuilderElement;
 }
 
+const findCmsMapAncestor = (elements: BuilderElement[], targetId: string, ancestor: BuilderElement | null = null): BuilderElement | null => {
+  for (const element of elements) {
+    if (element.id === targetId) return ancestor;
+    const found = findCmsMapAncestor(element.children || [], targetId, element.type === 'cmsMap' ? element : ancestor);
+    if (found) return found;
+  }
+  return null;
+};
+
 type UnsplashPhoto = {
   id: string;
   width: number;
@@ -1651,7 +1660,7 @@ const CalendarEventEditor: React.FC<{ events: CalendarEvent[]; onChange: (events
 };
 
 const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
-  const { updateElementProps, updateElementName, projectId } = useBuilderStore();
+  const { updateElementProps, updateElementName, projectId, getCurrentPage } = useBuilderStore();
 
   const update = (key: string, value: unknown) => {
     updateElementProps(element.id, { [key]: value });
@@ -1661,14 +1670,20 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
   const [imageSourceTab, setImageSourceTab] = useState<'url' | 'unsplash' | 'uploads'>('url');
   const effectiveImageTab = useMemo(() => (isImage ? imageSourceTab : 'url'), [isImage, imageSourceTab]);
   const [cmsCollections, setCmsCollections] = useState<Array<{ id: string; name: string; fields: string[] }>>([]);
+  const page = getCurrentPage();
+  const cmsMapAncestor = useMemo(() => findCmsMapAncestor(page.elements, element.id), [page.elements, element.id]);
+  const cmsFieldSource = element.type === 'cmsMap' ? element : cmsMapAncestor;
 
   useEffect(() => {
-    if (element.type !== 'table' || !projectId) return;
+    if (!projectId || (!['table', 'cmsMap'].includes(element.type) && !cmsMapAncestor)) {
+      setCmsCollections([]);
+      return;
+    }
     fetch(`/api/cms/${encodeURIComponent(projectId)}`)
       .then(response => response.ok ? response.json() : [])
       .then(data => setCmsCollections(Array.isArray(data) ? data : []))
       .catch(() => setCmsCollections([]));
-  }, [element.type, projectId]);
+  }, [element.type, projectId, cmsMapAncestor?.id]);
 
   return (
     <div className="p-4 space-y-3">
@@ -1952,6 +1967,74 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
           </div>
           {!projectId && <p className="text-[11px] text-amber-300">Save this project before connecting CMS data.</p>}
           {projectId && cmsCollections.length === 0 && <p className="text-[11px] text-gray-500">Create a collection in Project Settings first.</p>}
+        </div>
+      )}
+
+      {element.type === 'cmsMap' && (
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">CMS Collection</label>
+            <select
+              value={String(element.props.collectionId || '')}
+              onChange={event => update('collectionId', event.target.value)}
+              className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="">Select a collection</option>
+              {cmsCollections.map(collection => <option key={collection.id} value={collection.id}>{collection.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">Empty message</label>
+            <input
+              value={String(element.props.emptyMessage || '')}
+              onChange={event => update('emptyMessage', event.target.value)}
+              className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+          {!projectId && <p className="text-[11px] text-amber-300">Save this project before connecting CMS data.</p>}
+          {projectId && cmsCollections.length === 0 && <p className="text-[11px] text-gray-500">Create a collection in Project Settings first.</p>}
+        </div>
+      )}
+
+      {cmsMapAncestor && element.type !== 'cmsMap' && (
+        <div className="space-y-3 border-t border-gray-800 pt-3">
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">CMS content field</label>
+            <select
+              value={String(element.props.cmsField || '')}
+              onChange={event => update('cmsField', event.target.value)}
+              className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="">Use static content</option>
+              {(cmsCollections.find(collection => collection.id === String(cmsFieldSource?.props.collectionId || ''))?.fields || []).map(field => <option key={field} value={field}>{field}</option>)}
+            </select>
+          </div>
+          {(element.type === 'image') && (
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">CMS alt field</label>
+              <select
+                value={String(element.props.cmsAltField || '')}
+                onChange={event => update('cmsAltField', event.target.value)}
+                className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="">Use static alt text</option>
+                {(cmsCollections.find(collection => collection.id === String(cmsFieldSource?.props.collectionId || ''))?.fields || []).map(field => <option key={field} value={field}>{field}</option>)}
+              </select>
+            </div>
+          )}
+          {(element.type === 'button' || element.type === 'link') && (
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">CMS link field</label>
+              <select
+                value={String(element.props.cmsHrefField || '')}
+                onChange={event => update('cmsHrefField', event.target.value)}
+                className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="">Use static link</option>
+                {(cmsCollections.find(collection => collection.id === String(cmsFieldSource?.props.collectionId || ''))?.fields || []).map(field => <option key={field} value={field}>{field}</option>)}
+              </select>
+            </div>
+          )}
         </div>
       )}
 
