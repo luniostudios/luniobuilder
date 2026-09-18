@@ -14,6 +14,7 @@ interface GenerateRequest {
     context?: string;
     imageData?: string; // Base64 encoded image
     imageMimeType?: string; // e.g., "image/png", "image/jpeg"
+    imageReferences?: Array<{ data: string; mimeType: string }>;
 }
 
 interface GenerateResponse {
@@ -98,9 +99,14 @@ export async function POST(req: NextRequest): Promise<NextResponse<GenerateRespo
         }
 
         const body: GenerateRequest = await req.json();
-        const { prompt, imageData, imageMimeType, provider, context } = body;
+        const { prompt, imageData, imageMimeType, imageReferences: requestedImageReferences, provider, context } = body;
+        const imageReferences = requestedImageReferences?.length
+            ? requestedImageReferences
+            : imageData && imageMimeType
+                ? [{ data: imageData, mimeType: imageMimeType }]
+                : [];
 
-        if (!prompt && !imageData) {
+        if (!prompt && imageReferences.length === 0) {
             return NextResponse.json(
                 { html: '', success: false, error: 'Either prompt or image is required' },
                 { status: 400 }
@@ -166,14 +172,13 @@ export async function POST(req: NextRequest): Promise<NextResponse<GenerateRespo
 
 
         let systemPrompt = baseSystemPrompt;
-        let hasImage = false;
+        const hasImage = imageReferences.length > 0;
 
-        if (imageData && imageMimeType) {
-            hasImage = true;
+        if (hasImage) {
             systemPrompt += `
 
-IMAGE REFERENCE:
-Analyze the provided image and generate HTML that matches its design, layout, colors, and style.`;
+    IMAGE REFERENCES:
+    Analyze all provided images together and generate HTML that matches their shared design language, layout patterns, colors, typography, and visual style. Use each image as a reference and do not ignore any of them.`;
             if (prompt) {
                 systemPrompt += `\n\nAlso incorporate this additional requirement: ${prompt}`;
             }
@@ -201,9 +206,8 @@ Analyze the provided image and generate HTML that matches its design, layout, co
 
         let response: any;
 
-        if (hasImage && imageData && selectedProvider === 'gemini-3.6-flash') {
-            // Use vision API with image
-            const imageBase64 = imageData;
+        if (hasImage && selectedProvider === 'gemini-3.6-flash') {
+            // Use vision API with all reference images.
             response = await fetch(getGeminiApiUrl(selectedProvider), {
                 method: 'POST',
                 headers: {
@@ -217,12 +221,12 @@ Analyze the provided image and generate HTML that matches its design, layout, co
                                 {
                                     text: systemPrompt,
                                 },
-                                {
+                                ...imageReferences.map(reference => ({
                                     inline_data: {
-                                        mime_type: imageMimeType,
-                                        data: imageBase64,
+                                        mime_type: reference.mimeType,
+                                        data: reference.data,
                                     },
-                                },
+                                })),
                             ],
                         },
                     ],

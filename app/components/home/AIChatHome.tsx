@@ -20,12 +20,16 @@ interface AIChatHomeProps {
   isAuthenticated: boolean;
 }
 
+interface ImageReference {
+  file: File;
+  preview: string;
+}
+
 export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
   const router = useRouter();
   const { generate, loading, error, clearError } = useAIGeneration();
   const [prompt, setPrompt] = useState('');
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageReferences, setImageReferences] = useState<ImageReference[]>([]);
   const [status, setStatus] = useState('');
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [provider, setProvider] = useState<AIProvider>('gemini-3.6-flash');
@@ -44,18 +48,25 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
     return () => window.clearInterval(timer);
   }, [loading]);
 
-  const selectImage = (file: File | undefined) => {
-    if (!file || !file.type.startsWith('image/')) return;
-    setImageFile(file);
-    const reader = new FileReader();
-    reader.onload = event => setImagePreview(String(event.target?.result || ''));
-    reader.readAsDataURL(file);
+  const selectImages = (files: FileList | null) => {
+    if (!files) return;
+    Array.from(files).filter(file => file.type.startsWith('image/')).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = event => {
+        setImageReferences(current => [...current, { file, preview: String(event.target?.result || '') }]);
+      };
+      reader.readAsDataURL(file);
+    });
     clearError();
+  };
+
+  const removeImage = (index: number) => {
+    setImageReferences(current => current.filter((_, referenceIndex) => referenceIndex !== index));
   };
 
   const createWebsite = async (event?: FormEvent) => {
     event?.preventDefault();
-    if (!prompt.trim() && !imageFile) return;
+    if (!prompt.trim() && imageReferences.length === 0) return;
     if (!isAuthenticated) {
       sessionStorage.setItem('lunio-ai-prompt', prompt.trim());
       router.push('/auth/signin');
@@ -63,18 +74,16 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
     }
 
     setStatus('Designing your first draft...');
-    let imageData: string | undefined;
-    let imageMimeType: string | undefined;
-    if (imageFile) {
-      imageData = await new Promise<string>(resolve => {
+    const imageReferencesData = await Promise.all(imageReferences.map(async ({ file }) => ({
+      data: await new Promise<string>(resolve => {
         const reader = new FileReader();
         reader.onload = event => resolve(String(event.target?.result || '').split(',')[1] || '');
-        reader.readAsDataURL(imageFile);
-      });
-      imageMimeType = imageFile.type;
-    }
+        reader.readAsDataURL(file);
+      }),
+      mimeType: file.type,
+    })));
 
-    const result = await generate({ provider, prompt: prompt.trim(), imageData, imageMimeType });
+    const result = await generate({ provider, prompt: prompt.trim(), imageReferences: imageReferencesData });
     if (!result.success || !result.html) {
       setStatus('');
       return;
@@ -144,11 +153,16 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
               placeholder='Create a refined website for...'
               className='w-full resize-none bg-transparent px-4 py-3 text-lg leading-7 text-white outline-none placeholder:text-white/25 sm:px-5 sm:text-xl'
             />
-            {imagePreview && (
-              <div className='mx-2 mb-2 flex items-center gap-3 rounded-xl border border-white/10 bg-white/4 p-2 text-sm text-white/60'>
-                <img src={imagePreview} alt='Reference preview' className='h-12 w-16 rounded-lg object-cover' />
-                <span className='min-w-0 flex-1 truncate'>{imageFile?.name}</span>
-                <Trash onClick={() => { setImageFile(null); setImagePreview(null); }} className='w-5 text-red-500 hover:text-red-400'/>
+            {imageReferences.length > 0 && (
+              <div className='mx-2 mb-2 flex flex-wrap gap-2 rounded-xlp-2'>
+                {imageReferences.map((reference, index) => (
+                  <div key={`${reference.file.name}-${index}`} className='group border-2 border-red-400/20 rounded-lg relative'>
+                    <img src={reference.preview} alt={`Reference ${index + 1}: ${reference.file.name}`} className='h-16 w-20 rounded-lg object-cover' />
+                    <button type='button' aria-label={`Remove ${reference.file.name}`} onClick={() => removeImage(index)} className='absolute right-1 top-1 rounded-md bg-black/70 p-1 text-red-300 opacity-0 transition group-hover:opacity-100'>
+                      <Trash size={14} />
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
             <div className='flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-2 pt-3 sm:px-3'>
@@ -156,7 +170,7 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
                 <label className='inline-flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm text-white/45 transition hover:bg-white/6 hover:text-white'>
                   <ImagePlus size={17} /> 
                   <h1 className='flex text-sm font-medium max-md:hidden'>Add reference</h1>
-                  <input type='file' accept='image/*' className='sr-only' onChange={event => selectImage(event.target.files?.[0])} />
+                  <input type='file' accept='image/*' multiple className='sr-only' onChange={event => { selectImages(event.target.files); event.currentTarget.value = ''; }} />
                 </label>
                 <select value={provider} onChange={event => setProvider(event.target.value as AIProvider)} disabled={loading} aria-label='AI provider' className='rounded-xl border border-white/10 bg-[#20252d] px-3 py-2 text-sm text-white/70 outline-none max-md:w-20 focus:border-[#b8f36b]'>
                   <option value='gemini-3.6-flash'>Gemini 3.6 Flash</option>
@@ -166,7 +180,7 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
                   <option value='groq'>Groq</option>
                 </select>
               </div>
-              <button type='submit' disabled={loading || (!prompt.trim() && !imageFile)} className='inline-flex items-center gap-2 rounded-xl bg-[#b8f36b] px-4 py-2.5 text-sm font-semibold text-[#10150c] transition hover:bg-[#d0ff91] disabled:cursor-not-allowed disabled:opacity-35'>
+              <button type='submit' disabled={loading || (!prompt.trim() && imageReferences.length === 0)} className='inline-flex items-center gap-2 rounded-xl bg-[#b8f36b] px-4 py-2.5 text-sm font-semibold text-[#10150c] transition hover:bg-[#d0ff91] disabled:cursor-not-allowed disabled:opacity-35'>
                 {loading ? <LoaderCircle size={17} className='animate-spin' /> : <ArrowUp size={17} />}
                 {loading ? `Generating ${elapsedSeconds}s` : 'Generate site'}
               </button>

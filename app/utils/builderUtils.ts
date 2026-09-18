@@ -1426,9 +1426,10 @@ export const canHaveChildren = (type: ElementType): boolean => {
 };
 
 export const COMPONENT_CATEGORIES = {
-  Layout: ['section', 'div', 'hero', 'navbar', 'columns', 'grid', 'card', 'cmsMap', 'custom'],
+  Layout: ['section', 'div', 'hero', 'navbar', 'columns', 'grid', 'card', 'custom'],
   Typography: ['heading', 'paragraph', 'link', 'list', 'listItem'],
-  Media: ['image', 'video', 'icon', 'iframe', 'calendar', 'table'],
+  CMS: ['cmsMap', 'table'],
+  Media: ['image', 'video', 'icon', 'iframe', 'calendar'],
   Forms: ['form', 'input', 'textarea', 'button'],
   Misc: ['divider', 'spacer'],
 } as const;

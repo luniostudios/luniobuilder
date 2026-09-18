@@ -8,6 +8,7 @@ interface GenerateOptions {
   context?: string;
   imageData?: string; // Base64 encoded image
   imageMimeType?: string; // e.g., "image/png", "image/jpeg"
+  imageReferences?: Array<{ data: string; mimeType: string }>;
 }
 
 interface GenerationResult {

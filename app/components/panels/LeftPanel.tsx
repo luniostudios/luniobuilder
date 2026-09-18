@@ -46,7 +46,7 @@ export const LeftPanel: React.FC = () => {
       {/* Tab bar */}
       <div className="flex border-b border-gray-800">
         {[
-          { id: 'components' as const, label: 'Add', icon: <Package size={14} /> },
+          { id: 'components' as const, label: 'Elements', icon: <Package size={14} /> },
           { id: 'layers' as const, label: 'Layers', icon: <Layers size={14} /> },
           { id: 'pages' as const, label: 'Pages', icon: <Globe size={14} /> },
         ].map(tab => (
