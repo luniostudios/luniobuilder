@@ -161,6 +161,7 @@ export async function POST(request: Request) {
   const generatedSiteSlug = `${generatedBaseSlug.slice(0, 63 - generatedSuffix.length - 1)}-${generatedSuffix}`;
   const siteSlug = explicitSiteSlug || normalizeSiteSlug(generatedSiteSlug);
   const content = body.content || { pages: [], currentPageId: '' };
+  const status = body.status === 'published' ? 'published' : 'draft';
 
   if (!siteSlug) {
     return NextResponse.json({ error: 'A valid site subdomain is required.' }, { status: 400 });
@@ -168,7 +169,7 @@ export async function POST(request: Request) {
 
   const { data, error } = await supabaseServer
     .from('projects')
-    .insert({ user_id: userId, title, slug, site_slug: siteSlug, content })
+    .insert({ user_id: userId, title, slug, site_slug: siteSlug, content, status })
     .select('id, user_id, title, slug, site_slug, content, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
     .single();
 

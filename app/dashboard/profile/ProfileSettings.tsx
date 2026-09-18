@@ -2,7 +2,7 @@
 
 import { ChangeEvent, FormEvent, useState } from 'react';
 import { Camera, Check, LoaderCircle, Mail, Shield, UserRound, X } from 'lucide-react';
-import AIProviderManager from './settings/[projectId]/AIProviderManager';
+import AIProviderManager from '../settings/[projectId]/AIProviderManager';
 
 interface ProfileData {
   id: string;

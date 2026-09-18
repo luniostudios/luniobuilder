@@ -30,7 +30,8 @@ import { Page } from '@/app/types/builder';
 import { getProjectLimitForRole } from '@/app/lib/projectLimits';
 import { generateCssForPage, renderElementToHtml } from '@/app/utils/builderUtils';
 import Userss from './users/users';
-import ProfileSettings from './ProfileSettings';
+import ProfileSettings from './profile/ProfileSettings';
+import Analytics from './analytics/Analytics';
 import { Popover, PopoverContent, PopoverHeader, PopoverTrigger } from '@/components/ui/popover';
 import { SignOut } from '../components/auth/signOut';
 
@@ -93,7 +94,7 @@ const buildProjectPreviewDocument = (project: ProjectRecord): string => {
     return `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-serif}*{box-sizing:border-box}img{max-width:100%;display:block}#preview-root{transform-origin:top left;will-change:transform}${css}</style></head><body><div id="preview-root">${safeMarkup}</div><script>(function(){var root=document.getElementById('preview-root');function fit(){if(!root)return;root.style.transform='none';root.style.width='100%';var width=Math.max(root.scrollWidth,1),height=Math.max(root.scrollHeight,1),scale=Math.min(1,window.innerWidth/width,window.innerHeight/height);root.style.width=(100/scale)+'%';root.style.transform='scale('+scale+')';}window.addEventListener('load',fit);window.addEventListener('resize',fit);if(window.ResizeObserver)new ResizeObserver(fit).observe(root);setTimeout(fit,50);})();document.addEventListener('click',function(event){var toggle=event.target.closest('[data-lunio-nav-toggle]');if(!toggle)return;var nav=toggle.closest('nav');var menu=nav&&nav.querySelector('[data-lunio-nav-menu]');if(!menu)return;var open=menu.classList.toggle('lunio-nav-open');toggle.setAttribute('aria-expanded',String(open));if(open){menu.style.display='flex';menu.style.position='absolute';menu.style.top='100%';menu.style.left='0';menu.style.right='0';menu.style.flexDirection='column';menu.style.alignItems='stretch';menu.style.gap='12px';menu.style.padding='16px';menu.style.backgroundColor='#fff';menu.style.boxShadow='0 8px 20px rgba(15,23,42,.12)';menu.style.zIndex='101';}else{menu.style.display='';}});})();</script></body></html>`;
 };
 
-export default function dashboard() {
+export default function Dashboard() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('projects');
     const [searchQuery, setSearchQuery] = useState('');
@@ -533,7 +534,7 @@ export default function dashboard() {
                         </div>
                     )}
 
-                    {activeTab === 'users' ? <Userss /> : activeTab === 'settings' && userData ? <ProfileSettings user={userData} onSaved={setUserData} /> :
+                    {activeTab === 'analytics' ? <div className="max-w-7xl mx-auto"><Analytics projects={projects} /></div> : activeTab === 'users' ? <Userss /> : activeTab === 'settings' && userData ? <ProfileSettings user={userData} onSaved={setUserData} /> :
 
                         <div className="max-w-7xl mx-auto space-y-9">
 
