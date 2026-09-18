@@ -156,7 +156,7 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
             {imageReferences.length > 0 && (
               <div className='mx-2 mb-2 flex flex-wrap gap-2 rounded-xlp-2'>
                 {imageReferences.map((reference, index) => (
-                  <div key={`${reference.file.name}-${index}`} className='group border-2 border-red-400/20 rounded-lg relative'>
+                  <div key={`${reference.file.name}-${index}`} className='group border-2 border-red-400/30 rounded-lg relative'>
                     <img src={reference.preview} alt={`Reference ${index + 1}: ${reference.file.name}`} className='h-16 w-20 rounded-lg object-cover' />
                     <button type='button' aria-label={`Remove ${reference.file.name}`} onClick={() => removeImage(index)} className='absolute right-1 top-1 rounded-md bg-black/70 p-1 text-red-300 opacity-0 transition group-hover:opacity-100'>
                       <Trash size={14} />
