@@ -41,6 +41,7 @@ interface BuilderStore extends BuilderState {
   setCurrentPage: (id: string) => void;
   updatePageSeo: (id: string, seo: Partial<Page['seo']>) => void;
   updatePageName: (id: string, name: string) => void;
+  updatePageSlug: (id: string, slug: string) => void;
 
   // UI state
   setBreakpoint: (breakpoint: Breakpoint) => void;
@@ -519,6 +520,23 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
       const pages = deepClone(state.pages);
       const page = pages.find(p => p.id === id)!;
       page.name = name;
+      return { pages };
+    });
+  },
+
+  updatePageSlug: (id, slug) => {
+    const normalizedSlug = slug.trim().replace(/^\/+/, '').replace(/\/+$/, '').toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '');
+    if (!normalizedSlug) return;
+
+    set(state => {
+      const page = state.pages.find(candidate => candidate.id === id);
+      if (!page || page.slug === '/' || state.pages.some(candidate => candidate.id !== id && candidate.slug === `/${normalizedSlug}`)) {
+        return state;
+      }
+
+      const pages = deepClone(state.pages);
+      const pageToUpdate = pages.find(candidate => candidate.id === id)!;
+      pageToUpdate.slug = `/${normalizedSlug}`;
       return { pages };
     });
   },

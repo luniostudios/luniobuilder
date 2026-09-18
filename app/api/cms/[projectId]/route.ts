@@ -40,8 +40,17 @@ const slugify = (value: string) => value.toLowerCase().trim().replace(/[^a-z0-9]
 
 export async function GET(_request: Request, { params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params;
-  const authResult = await authenticate(projectId);
-  if ('response' in authResult) return authResult.response;
+  const { data: project } = await supabaseServer
+    .from('projects')
+    .select('id, status')
+    .eq('id', projectId)
+    .maybeSingle();
+  if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+
+  if (project.status !== 'published') {
+    const authResult = await authenticate(projectId);
+    if ('response' in authResult) return authResult.response;
+  }
 
   const { data: collections, error } = await supabaseServer
     .from('cms_collections')

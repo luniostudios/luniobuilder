@@ -370,19 +370,22 @@ const LayersTab: React.FC = () => {
 };
 
 const PagesTab: React.FC = () => {
-  const { pages, currentPageId, setCurrentPage, addPage, deletePage, updatePageName } = useBuilderStore();
+  const { pages, currentPageId, setCurrentPage, addPage, deletePage, updatePageName, updatePageSlug } = useBuilderStore();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+  const [editSlug, setEditSlug] = useState('');
 
-  const startEdit = (id: string, name: string) => {
-    setEditingId(id);
-    setEditName(name);
+  const startEdit = (page: Page) => {
+    setEditingId(page.id);
+    setEditName(page.name);
+    setEditSlug(page.slug.replace(/^\/+/, ''));
   };
 
   const commitEdit = () => {
     if (editingId && editName.trim()) {
       updatePageName(editingId, editName.trim());
     }
+    if (editingId && editSlug.trim()) updatePageSlug(editingId, editSlug);
     setEditingId(null);
   };
 
@@ -412,25 +415,45 @@ const PagesTab: React.FC = () => {
             <Globe size={12} className="shrink-0" />
 
             {editingId === page.id ? (
-              <input
-                className="flex-1 bg-gray-800 text-white text-xs px-1 py-0.5 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                value={editName}
-                onChange={e => setEditName(e.target.value)}
-                onBlur={commitEdit}
-                onKeyDown={e => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') setEditingId(null); }}
-                autoFocus
-                onClick={e => e.stopPropagation()}
-              />
+              <div className="flex-1 min-w-0 flex flex-col gap-1" onClick={e => e.stopPropagation()}>
+                <input
+                  className="w-full bg-gray-800 text-white text-xs px-1 py-0.5 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  value={editName}
+                  onChange={e => setEditName(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') setEditingId(null); }}
+                  autoFocus
+                  aria-label="Page name"
+                />
+                {page.slug === '/' ? (
+                  <span className="text-xs text-gray-600" title="The homepage URL cannot be changed">/</span>
+                ) : (
+                  <div className="flex items-center text-xs text-gray-500">
+                    <span>/</span>
+                    <input
+                      className="min-w-0 flex-1 bg-gray-800 text-gray-300 px-1 py-0.5 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      value={editSlug}
+                      onChange={e => setEditSlug(e.target.value)}
+                      onBlur={commitEdit}
+                      onKeyDown={e => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') setEditingId(null); }}
+                      aria-label="Page URL slug"
+                    />
+                  </div>
+                )}
+              </div>
             ) : (
               <span
                 className="flex-1 text-xs truncate"
-                onDoubleClick={e => { e.stopPropagation(); startEdit(page.id, page.name); }}
+                onDoubleClick={e => { e.stopPropagation(); startEdit(page); }}
               >
                 {page.name}
               </span>
             )}
 
-            <span className="text-xs text-gray-600">{page.slug}</span>
+            {editingId !== page.id && <span
+              className={`text-xs ${page.slug === '/' ? 'text-gray-600' : 'text-gray-500 hover:text-gray-300 cursor-text'}`}
+              onDoubleClick={e => { e.stopPropagation(); startEdit(page); }}
+              title={page.slug === '/' ? 'The homepage URL cannot be changed' : 'Double-click to edit the page URL slug'}
+            >{page.slug}</span>}
 
             {pages.length > 1 && page.slug !== '/' && (
               <button

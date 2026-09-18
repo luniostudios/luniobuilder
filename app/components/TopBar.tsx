@@ -39,6 +39,11 @@ interface UserData {
   image?: string | null;
 }
 
+interface ProjectData {
+  id: string;
+  title: string;
+}
+
 const collaboratorColors = ['#27c3f3', '#8bdc2f', '#ffb526', '#ff6868', '#a78bfa'];
 
 const textEncoder = new TextEncoder();
@@ -246,6 +251,7 @@ export const TopBar: React.FC = () => {
   const { data: session, status } = useSession();
   const others = useOthers();
   const [userData, setUserData] = useState<UserData | null>(null);
+  const [projectData, setProjectData] = useState<ProjectData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
@@ -276,6 +282,7 @@ export const TopBar: React.FC = () => {
   useEffect(() => {
     if (status === 'authenticated') {
       fetchUserData();
+      fetchProjectData();
     } else if (status === 'unauthenticated') {
       setLoading(false);
     }
@@ -295,6 +302,23 @@ export const TopBar: React.FC = () => {
     const data = await response.json();
     setUserData(data);
     setLoading(false);
+  }
+
+  const fetchProjectData = async () => {
+    setLoading(true);
+    setError(null);
+
+    const response = await fetch(new URL('/api/projects', window.location.origin));
+    if (!response.ok) {
+      setError('Unable to load project data.');
+      setLoading(false);
+      return;
+    }
+
+    const data = await response.json();
+    setProjectData(data);
+    setLoading(false);
+    console.log('Fetched project data:', data);
   }
 
   const requestVercelToken = (allowPrompt = true) => {
@@ -489,8 +513,8 @@ export const TopBar: React.FC = () => {
       return;
     }
 
-    const suggestedSlug = normalizeSiteSlug(projectName) || 'my-site';
-    const siteSlug = normalizeSiteSlug(window.prompt('Choose your LUNIO subdomain:', ""));
+    const siteSlug = normalizeSiteSlug(window.prompt('Choose your LUNIO subdomain:', projectData?.title));
+    console.log('Normalized siteSlug:', siteSlug);
     if (!siteSlug) {
       setPublishMessage('Enter a valid subdomain using letters, numbers, or hyphens.');
       return;
@@ -514,7 +538,7 @@ export const TopBar: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           projectId,
-          title: projectName || 'Untitled Project',
+          title: projectData?.title || 'Untitled Project',
           siteSlug,
           status: 'published',
           content: {
