@@ -37,11 +37,11 @@ export default async function UserAvatar() {
                                     <p className="text-white text-sm">{session.user.name}</p>
                                     <p className="text-xs text-gray-400 underline">{session.user.email}</p>
                                 </div>
-                                <Link href="/dashboard" className="flex felx-row mt-3">
+                                <Link href="/dashboard?tab=projects" className="flex felx-row mt-3">
                                     <LayoutDashboard size={16} className="inline-block mr-2" />
                                     Dashboard
                                 </Link>
-                                <Link href="/settings" className="mt-3">
+                                <Link href="/dashboard?tab=settings" className="mt-3">
                                     <Settings size={16} className="inline-block mr-2" />
                                     Settings
                                 </Link>

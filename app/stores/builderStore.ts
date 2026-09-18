@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { BuilderState, BuilderElement, Page, ElementType, StyleProperties, Breakpoint, ElementProps, PseudoClassStyles } from '../types/builder';
 import { generateId, createDefaultElement, deepClone } from '../utils/builderUtils';
 import { createStarterPage } from '../utils/starterTemplate';
-import { htmlToBuilderElements } from '../utils/htmlToBuilder';
+import { htmlToBuilderElements, htmlToBuilderPages } from '../utils/htmlToBuilder';
 
 interface BuilderStore extends BuilderState {
   // Auth/project tracking
@@ -58,6 +58,7 @@ interface BuilderStore extends BuilderState {
 
   // AI Generation
   addGeneratedElements: (html: string, parentId: string | null) => void;
+  addGeneratedPages: (html: string) => void;
   replaceElementWithGenerated: (id: string, html: string) => void;
 
   // Helpers
@@ -611,6 +612,46 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
       get().pushHistory();
     } catch (error) {
       console.error('Error adding generated elements:', error);
+    }
+  },
+
+  addGeneratedPages: (html) => {
+    try {
+      const generatedPages = htmlToBuilderPages(html);
+      if (generatedPages.length === 0) return;
+
+      set(state => {
+        const pages = deepClone(state.pages);
+        const currentPage = pages.find(page => page.id === state.currentPageId) || pages[0];
+        const [firstPage, ...additionalPages] = generatedPages;
+
+        if (currentPage && currentPage.elements.length === 0 && generatedPages.length > 0) {
+          currentPage.name = firstPage.name;
+          currentPage.slug = firstPage.slug;
+          currentPage.elements = firstPage.elements;
+          additionalPages.forEach(page => pages.push({
+            id: generateId(),
+            name: page.name,
+            slug: page.slug,
+            elements: page.elements,
+            seo: { title: page.name, description: '', keywords: '' },
+          }));
+          return { pages, selectedElementId: firstPage.elements[0]?.id || null };
+        }
+
+        generatedPages.forEach(page => pages.push({
+          id: generateId(),
+          name: page.name,
+          slug: page.slug,
+          elements: page.elements,
+          seo: { title: page.name, description: '', keywords: '' },
+        }));
+        return { pages, selectedElementId: generatedPages[0].elements[0]?.id || null };
+      });
+
+      get().pushHistory();
+    } catch (error) {
+      console.error('Error adding generated pages:', error);
     }
   },
 

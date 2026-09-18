@@ -72,6 +72,41 @@ export async function POST(request: Request, { params }: { params: Promise<{ pro
   if ('response' in authResult) return authResult.response;
   const body = await request.json();
 
+  if (body.type === 'seed') {
+    const slug = slugify(String(body.slug || body.name || 'collection'));
+    const name = String(body.name || slug).trim();
+    const fields = Array.isArray(body.fields) ? body.fields.filter((field: unknown): field is string => typeof field === 'string' && Boolean(field.trim())).map((field: string) => field.trim()) : [];
+    if (!slug || fields.length === 0) return NextResponse.json({ error: 'CMS collection requires a slug and fields' }, { status: 400 });
+
+    const { data: existing } = await supabaseServer
+      .from('cms_collections')
+      .select('id, fields')
+      .eq('project_id', projectId)
+      .eq('slug', slug)
+      .maybeSingle();
+
+    let collection = existing;
+    if (!collection) {
+      const { data, error } = await supabaseServer.from('cms_collections').insert({ project_id: projectId, name, slug, fields }).select('id, fields').single();
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      collection = data;
+    } else {
+      const mergedFields = Array.from(new Set([...(Array.isArray(collection.fields) ? collection.fields : []), ...fields]));
+      if (mergedFields.length !== (collection.fields || []).length) {
+        await supabaseServer.from('cms_collections').update({ fields: mergedFields, updated_at: new Date().toISOString() }).eq('id', collection.id);
+      }
+    }
+
+    if (body.data && typeof body.data === 'object' && Object.keys(body.data).length > 0) {
+      const { count } = await supabaseServer.from('cms_records').select('id', { count: 'exact', head: true }).eq('collection_id', collection.id);
+      if (!count) {
+        const { error } = await supabaseServer.from('cms_records').insert({ collection_id: collection.id, data: body.data });
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+    }
+    return NextResponse.json({ id: collection.id, slug, fields });
+  }
+
   if (body.type === 'record') {
     const { data: collection } = await supabaseServer.from('cms_collections').select('id').eq('id', body.collectionId).eq('project_id', projectId).single();
     if (!collection) return NextResponse.json({ error: 'Collection not found' }, { status: 404 });

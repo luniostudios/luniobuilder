@@ -4,10 +4,11 @@ import { FormEvent, KeyboardEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowUp, ImagePlus, LoaderCircle, Sparkles, Trash, WandSparkles } from 'lucide-react';
 import { useAIGeneration } from '../functions/useAIGeneration';
-import { htmlToBuilderElements } from '../../utils/htmlToBuilder';
+import { htmlToBuilderPages } from '../../utils/htmlToBuilder';
 import { generateId } from '../../utils/builderUtils';
 import { Page } from '../../types/builder';
 import type { AIProvider } from '../../types/ai';
+import { persistGeneratedCms } from '../../utils/generatedCms';
 
 const promptSuggestions = [
   'A calm portfolio for an architectural studio',
@@ -80,25 +81,26 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
     }
 
     setStatus('Opening your website in the editor...');
-    const elements = htmlToBuilderElements(result.html);
-    const page: Page = {
+    const generatedPages = htmlToBuilderPages(result.html);
+    const pages: Page[] = generatedPages.map(generatedPage => ({
       id: generateId(),
-      name: 'Home',
-      slug: '/',
-      elements,
+      name: generatedPage.name,
+      slug: generatedPage.slug,
+      elements: generatedPage.elements,
       seo: {
-        title: prompt.trim().slice(0, 60) || 'AI generated website',
+        title: generatedPage.name === 'Home' ? prompt.trim().slice(0, 60) || 'AI generated website' : generatedPage.name,
         description: 'A website generated with LUNIO Builder AI.',
         keywords: '',
       },
-    };
+    }));
+    const currentPageId = pages.find(page => page.slug === '/')?.id || pages[0].id;
 
     const response = await fetch('/api/projects', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         title: prompt.trim().slice(0, 48) || 'AI Website',
-        content: { pages: [page], currentPageId: page.id },
+        content: { pages, currentPageId },
       }),
     });
     const data = await response.json().catch(() => null);
@@ -106,6 +108,7 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
       setStatus('');
       return;
     }
+    if (result.html.includes('data-lunio-cms-map')) await persistGeneratedCms(data.id, result.html);
     router.push(`/editor?projectId=${encodeURIComponent(data.id)}`);
   };
 
@@ -160,6 +163,7 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
                   <option value='gemini-pro'>Gemini Pro</option>
                   <option value='openai'>OpenAI</option>
                   <option value='claude'>Claude</option>
+                  <option value='groq'>Groq</option>
                 </select>
               </div>
               <button type='submit' disabled={loading || (!prompt.trim() && !imageFile)} className='inline-flex items-center gap-2 rounded-xl bg-[#b8f36b] px-4 py-2.5 text-sm font-semibold text-[#10150c] transition hover:bg-[#d0ff91] disabled:cursor-not-allowed disabled:opacity-35'>

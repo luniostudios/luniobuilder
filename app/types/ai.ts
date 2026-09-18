@@ -1,1 +1,1 @@
-export type AIProvider = 'gemini-3.6-flash' | 'gemini-pro' | 'openai' | 'claude';
+export type AIProvider = 'gemini-3.6-flash' | 'gemini-pro' | 'openai' | 'claude' | 'groq';

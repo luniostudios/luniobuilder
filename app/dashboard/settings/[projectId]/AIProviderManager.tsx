@@ -11,6 +11,7 @@ const providerLabels: Record<AIProvider, string> = {
   'gemini-pro': 'Gemini Pro',
   openai: 'OpenAI',
   claude: 'Anthropic Claude',
+  groq: 'Groq',
 };
 
 export default function AIProviderManager() {

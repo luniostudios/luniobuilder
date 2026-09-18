@@ -142,6 +142,13 @@ export default function Dashboard() {
     }, [status]);
 
     useEffect(() => {
+        const requestedTab = searchParams.get('tab');
+        if (requestedTab === 'settings' || requestedTab === 'analytics' || requestedTab === 'projects' || requestedTab === 'users') {
+            setActiveTab(requestedTab);
+        }
+    }, [searchParams]);
+
+    useEffect(() => {
         if (status !== 'authenticated' || roleUpdated) {
             return;
         }
@@ -370,9 +377,14 @@ export default function Dashboard() {
         redirect('auth/signin');
     }
 
+    const selectTab = (id: string) => {
+        setActiveTab(id);
+        router.push(`/dashboard?tab=${encodeURIComponent(id)}`);
+    };
+
     const NavItem = ({ icon: Icon, label, id }: NavItemProps) => (
         <button
-            onClick={() => setActiveTab(id)}
+            onClick={() => selectTab(id)}
             className={`w-full flex items-center space-x-3 px-4 py-2.5 transition-all duration-200 ${activeTab === id
                 ? 'bg-emerald-400/20 text-white font-semibold shadow-lg shadow-emerald-950/20'
                 : 'text-white/55 hover:bg-white/10 hover:text-white'

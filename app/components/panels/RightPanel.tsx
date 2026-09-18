@@ -1669,10 +1669,11 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
   const isImage = element.type === 'image';
   const [imageSourceTab, setImageSourceTab] = useState<'url' | 'unsplash' | 'uploads'>('url');
   const effectiveImageTab = useMemo(() => (isImage ? imageSourceTab : 'url'), [isImage, imageSourceTab]);
-  const [cmsCollections, setCmsCollections] = useState<Array<{ id: string; name: string; fields: string[] }>>([]);
+  const [cmsCollections, setCmsCollections] = useState<Array<{ id: string; name: string; slug?: string; fields: string[] }>>([]);
   const page = getCurrentPage();
   const cmsMapAncestor = useMemo(() => findCmsMapAncestor(page.elements, element.id), [page.elements, element.id]);
   const cmsFieldSource = element.type === 'cmsMap' ? element : cmsMapAncestor;
+  const cmsCollectionKey = String(cmsFieldSource?.props.collectionId || cmsFieldSource?.props.collectionSlug || '');
 
   useEffect(() => {
     if (!projectId || (!['table', 'cmsMap'].includes(element.type) && !cmsMapAncestor)) {
@@ -1945,10 +1946,11 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
           <div>
             <label className="text-xs text-gray-500 block mb-1">CMS Collection</label>
             <select
-              value={String(element.props.collectionId || '')}
+              value={String(element.props.collectionId || element.props.collectionSlug || '')}
               onChange={event => {
                 const collection = cmsCollections.find(item => item.id === event.target.value);
                 update('collectionId', event.target.value);
+                update('collectionSlug', '');
                 update('columns', collection?.fields || []);
               }}
               className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -1975,8 +1977,11 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
           <div>
             <label className="text-xs text-gray-500 block mb-1">CMS Collection</label>
             <select
-              value={String(element.props.collectionId || '')}
-              onChange={event => update('collectionId', event.target.value)}
+              value={String(element.props.collectionId || element.props.collectionSlug || '')}
+              onChange={event => {
+                update('collectionId', event.target.value);
+                update('collectionSlug', '');
+              }}
               className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               <option value="">Select a collection</option>
@@ -2006,7 +2011,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
               className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               <option value="">Use static content</option>
-              {(cmsCollections.find(collection => collection.id === String(cmsFieldSource?.props.collectionId || ''))?.fields || []).map(field => <option key={field} value={field}>{field}</option>)}
+              {(cmsCollections.find(collection => collection.id === cmsCollectionKey || collection.slug === cmsCollectionKey)?.fields || []).map(field => <option key={field} value={field}>{field}</option>)}
             </select>
           </div>
           {(element.type === 'image') && (
@@ -2018,7 +2023,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
                 className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
                 <option value="">Use static alt text</option>
-                {(cmsCollections.find(collection => collection.id === String(cmsFieldSource?.props.collectionId || ''))?.fields || []).map(field => <option key={field} value={field}>{field}</option>)}
+                {(cmsCollections.find(collection => collection.id === cmsCollectionKey || collection.slug === cmsCollectionKey)?.fields || []).map(field => <option key={field} value={field}>{field}</option>)}
               </select>
             </div>
           )}
@@ -2031,7 +2036,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
                 className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
                 <option value="">Use static link</option>
-                {(cmsCollections.find(collection => collection.id === String(cmsFieldSource?.props.collectionId || ''))?.fields || []).map(field => <option key={field} value={field}>{field}</option>)}
+                {(cmsCollections.find(collection => collection.id === cmsCollectionKey || collection.slug === cmsCollectionKey)?.fields || []).map(field => <option key={field} value={field}>{field}</option>)}
               </select>
             </div>
           )}

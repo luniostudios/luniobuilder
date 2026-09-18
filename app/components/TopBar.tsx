@@ -30,6 +30,7 @@ import { useSession } from 'next-auth/react';
 import { useOthers } from '@liveblocks/react';
 import { AIGeneratorModal } from './canvas/AIGeneratorModal';
 import { normalizeSiteSlug } from '../lib/tenant';
+import { persistGeneratedCms } from '../utils/generatedCms';
 
 interface UserData {
   id: string;
@@ -228,6 +229,7 @@ export const TopBar: React.FC = () => {
     deleteElement,
     duplicateElement,
     addGeneratedElements,
+    addGeneratedPages,
     replaceElementWithGenerated,
   } = useBuilderStore();
 
@@ -898,7 +900,9 @@ export const TopBar: React.FC = () => {
           onClose={() => setIsAIModalOpen(false)}
           onGenerate={(html) => {
             if (selectedElementId) replaceElementWithGenerated(selectedElementId, html);
+            else if (html.includes('data-lunio-page=')) addGeneratedPages(html);
             else addGeneratedElements(html, null);
+            if (projectId && html.includes('data-lunio-cms-map')) void persistGeneratedCms(projectId, html);
           }}
         />
 

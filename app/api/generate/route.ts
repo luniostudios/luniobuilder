@@ -61,6 +61,17 @@ const getTextFromProvider = async (provider: AIProvider, apiKey: string, systemP
         return data?.content?.[0]?.text || '';
     }
 
+    if (provider === 'groq') {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+            body: JSON.stringify({ model: 'openai/gpt-oss-20b', messages: [{ role: 'user', content: systemPrompt }] }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data?.error?.message || 'Groq generation failed');
+        return data?.choices?.[0]?.message?.content || '';
+    }
+
     if (provider === 'gemini-3.6-flash' || provider === 'gemini-pro') {
         const geminiProvider = provider === 'gemini-3.6-flash' ? 'gemini-3.6-flash' : 'gemini-pro';
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiProvider}:generateContent`, {

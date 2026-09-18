@@ -38,7 +38,7 @@ interface CmsRecordContextValue {
 const CmsRecordContext = createContext<CmsRecordContextValue | null>(null);
 
 const CmsTableElement: React.FC<{ element: BuilderElement; projectId: string | null; onClick: (event: React.MouseEvent) => void; style: React.CSSProperties }> = ({ element, projectId, onClick, style }) => {
-  const collectionId = String(element.props.collectionId || '');
+  const collectionId = String(element.props.collectionId || element.props.collectionSlug || '');
   const [fields, setFields] = useState<string[]>(Array.isArray(element.props.columns) ? element.props.columns.filter((value): value is string => typeof value === 'string') : []);
   const [rows, setRows] = useState<CmsTableRow[]>([]);
   const [loading, setLoading] = useState(Boolean(collectionId));
@@ -55,7 +55,7 @@ const CmsTableElement: React.FC<{ element: BuilderElement; projectId: string | n
       .then(response => response.ok ? response.json() : Promise.reject(new Error('Unable to load CMS data')))
       .then(collections => {
         if (cancelled) return;
-        const collection = Array.isArray(collections) ? collections.find((value: { id?: string }) => value.id === collectionId) : null;
+        const collection = Array.isArray(collections) ? collections.find((value: { id?: string; slug?: string }) => value.id === collectionId || value.slug === collectionId) : null;
         setFields(Array.isArray(element.props.columns) && element.props.columns.length > 0 ? element.props.columns.filter((value): value is string => typeof value === 'string') : collection?.fields || []);
         setRows(Array.isArray(collection?.records) ? collection.records : []);
       })
@@ -78,7 +78,7 @@ const CmsTableElement: React.FC<{ element: BuilderElement; projectId: string | n
 };
 
 const CmsMapElement: React.FC<{ element: BuilderElement; projectId: string | null; isPreview: boolean; onClick: (event: React.MouseEvent) => void; style: React.CSSProperties }> = ({ element, projectId, isPreview, onClick, style }) => {
-  const collectionId = String(element.props.collectionId || '');
+  const collectionId = String(element.props.collectionId || element.props.collectionSlug || '');
   const [records, setRecords] = useState<CmsTableRow[]>([]);
   const [loading, setLoading] = useState(Boolean(collectionId));
 
@@ -94,7 +94,7 @@ const CmsMapElement: React.FC<{ element: BuilderElement; projectId: string | nul
       .then(response => response.ok ? response.json() : Promise.reject(new Error('Unable to load CMS data')))
       .then(collections => {
         if (cancelled) return;
-        const collection = Array.isArray(collections) ? collections.find((value: { id?: string }) => value.id === collectionId) : null;
+        const collection = Array.isArray(collections) ? collections.find((value: { id?: string; slug?: string }) => value.id === collectionId || value.slug === collectionId) : null;
         setRecords(Array.isArray(collection?.records) ? collection.records : []);
       })
       .catch(() => { if (!cancelled) setRecords([]); })
