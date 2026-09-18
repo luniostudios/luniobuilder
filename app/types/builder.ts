@@ -160,16 +160,36 @@ export interface ElementProps {
   level?: 1 | 2 | 3 | 4 | 5 | 6;
   columns?: number | string[];
   rows?: number | Record<string, unknown>[];
+  variant?: 'default' | 'centered' | 'minimal' | string;
+  sticky?: boolean;
+  transparent?: boolean;
+  logo?: { text: string; href: string };
+  mobileMenu?: boolean | { enabled: boolean; breakpoint: Breakpoint; animation: 'none' | 'slide' | 'fade' | string };
+  links?: Array<{ text: string; href: string }>;
+  cta?: { enabled: boolean; text: string; href: string };
   [key: string]: unknown;
 }
 
-export interface ResponsiveStyles {
-  widescreen: StyleProperties;
-  desktop: StyleProperties;
-  laptop: StyleProperties;
-  tablet: StyleProperties;
-  mobileLandscape: StyleProperties;
-  mobile: StyleProperties;
+export type Breakpoint = 'mobile' | 'mobileLandscape' | 'tablet' | 'laptop' | 'desktop' | 'widescreen';
+
+export const BREAKPOINTS: Record<Breakpoint, number> = {
+  mobile: 480,
+  mobileLandscape: 640,
+  tablet: 768,
+  laptop: 1024,
+  desktop: 1280,
+  widescreen: 1536,
+};
+
+export interface ResponsiveStyles extends StyleProperties {
+  responsive?: Partial<Record<Breakpoint, StyleProperties>>;
+  /** Legacy breakpoint fields kept for existing saved projects. */
+  mobile?: StyleProperties;
+  mobileLandscape?: StyleProperties;
+  tablet?: StyleProperties;
+  laptop?: StyleProperties;
+  desktop?: StyleProperties;
+  widescreen?: StyleProperties;
 }
 
 export interface PseudoClassStyles {
@@ -204,8 +224,6 @@ export interface Page {
     keywords: string;
   };
 }
-
-export type Breakpoint = 'widescreen' | 'desktop' | 'tablet' | 'mobile' | 'laptop' | 'mobileLandscape';
 
 export interface BuilderState {
   pages: Page[];

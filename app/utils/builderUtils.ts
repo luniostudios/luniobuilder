@@ -1,5 +1,4 @@
-import { BuilderElement, ElementType, StyleProperties, ResponsiveStyles, Page } from '../types/builder';
-import { Breakpoint } from '../types/builder';
+import { BREAKPOINTS, Breakpoint, BuilderElement, ElementType, StyleProperties, ResponsiveStyles, Page } from '../types/builder';
 
 export const generateId = (): string => {
   return `luniobuilder-${Math.random().toString(36).substr(2, 9)}`;
@@ -10,12 +9,7 @@ export const deepClone = <T>(obj: T): T => {
 };
 
 const emptyStyles = (): ResponsiveStyles => ({
-  widescreen: {},
-  desktop: {},
-  laptop: {},
-  tablet: {},
-  mobileLandscape: {},
-  mobile: {},
+  responsive: {},
 });
 
 export const createDefaultElement = (
@@ -24,19 +18,22 @@ export const createDefaultElement = (
   parentId: string | null
 ): BuilderElement => {
   const defaults = getElementDefaults(type);
+  const defaultStyles = defaults.styles as ResponsiveStyles;
+  const breakpointNames: Breakpoint[] = ['widescreen', 'desktop', 'laptop', 'tablet', 'mobileLandscape', 'mobile'];
+  const baseStyles = Object.fromEntries(Object.entries(defaultStyles).filter(([key]) => !breakpointNames.includes(key as Breakpoint) && key !== 'responsive')) as StyleProperties;
+  const legacyResponsive = Object.fromEntries(breakpointNames
+    .filter(name => defaultStyles[name])
+    .map(name => [name, defaultStyles[name]])) as Partial<Record<Breakpoint, StyleProperties>>;
+  const responsiveStyles: ResponsiveStyles = {
+    ...baseStyles,
+    responsive: { ...legacyResponsive, ...(defaultStyles.responsive || {}) },
+  };
   return {
     id,
     type,
     name: defaults.name,
     props: defaults.props,
-    styles: {
-      widescreen: {},
-      desktop: defaults.styles,
-      tablet: {},
-      mobile: {},
-      laptop: {},
-      mobileLandscape: {},
-    },
+    styles: responsiveStyles,
     children: defaults.children || [],
     parentId,
     locked: false,
@@ -155,111 +152,462 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
           objectFit: 'cover',
         },
       };
-    case 'navbar':
-      return {
+    case 'navbar': {
+      const navbarId = generateId();
+      const containerId = generateId();
+      const logoId = generateId();
+      const linksId = generateId();
+      const ctaId = generateId();
+      const menuId = generateId();
+
+      return ({
         name: 'Navigation',
-        props: {},
+        props: {
+          variant: 'default',
+          sticky: false,
+          transparent: false,
+          maxWidth: '1200px',
+          logo: { text: 'MyLogo', href: '/' },
+          mobileMenu: { enabled: true, breakpoint: 'tablet', animation: 'slide' },
+          links: [
+            { text: 'Home', href: '/' },
+            { text: 'Services', href: '/services' },
+            { text: 'About', href: '/about' },
+            { text: 'Contact', href: '/contact' },
+          ],
+          cta: { enabled: true, text: 'Get Started', href: '#' },
+        },
+
         styles: {
+          width: '100%',
+          minHeight: '72px',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'flex-start',
-          width: '100%',
-          paddingBottom: '16px',
-          paddingTop: '16px',
-          paddingLeft: '20px',
-          paddingRight: '20px',
           backgroundColor: '#ffffff',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+          borderBottom: '1px solid #e5e7eb',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
           position: 'relative',
-          zIndex: '100',
-        },
-        children: [
-          {
-            id: generateId(),
-            type: 'heading',
-            name: 'Nav Logo',
-            props: { text: 'MyLogo', level: 1 },
-            styles: {
-              desktop: { fontSize: '24px', fontWeight: '700', margin: '0' },
-              tablet: {},
-              mobile: {},
-              widescreen: { fontSize: '24px', fontWeight: '700', margin: '0' },
-              laptop: { fontSize: '24px', fontWeight: '700', margin: '0' },
-              mobileLandscape: {},
-            },
-            children: [],
-            parentId: null,
-            locked: false,
-            hidden: false,
+          zIndex: '1000',
+          boxSizing: 'border-box',
+
+          desktop: {
+            padding: '0 32px',
           },
+
+          laptop: {
+            padding: '0 24px',
+          },
+
+          tablet: {
+            padding: '0 20px',
+          },
+
+          mobileLandscape: {
+            padding: '0 16px',
+            minHeight: '64px',
+          },
+
+          mobile: {
+            padding: '0 16px',
+            minHeight: '64px',
+          },
+
+          widescreen: {
+            padding: '0 40px',
+          },
+        },
+
+        children: [
+          // ==========================================
+          // NAVBAR CONTAINER
+          // ==========================================
           {
-            id: generateId(),
-            type: 'list',
-            name: 'Nav Links',
-            props: { isNavMenu: true },
-            styles: {
-              desktop: { display: 'flex', alignItems: 'center', gap: '16px', listStyle: 'none', margin: '0 0 0 auto', padding: '0' },
-              tablet: { display: 'none' },
-              mobile: { display: 'none' },
-              widescreen: { display: 'flex', alignItems: 'center', gap: '16px', listStyle: 'none', margin: '0 0 0 auto', padding: '0' },
-              laptop: { display: 'flex', alignItems: 'center', gap: '16px', listStyle: 'none', margin: '0 0 0 auto', padding: '0' },
-              mobileLandscape: { display: 'none' },
+            id: containerId,
+            type: 'div',
+            name: 'Navbar Container',
+
+            props: {
+              maxWidth: '1200px',
             },
+
+            styles: {
+              width: '100%',
+              maxWidth: '1200px',
+              margin: '0 auto',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '24px',
+              boxSizing: 'border-box',
+
+              desktop: {},
+              laptop: {
+                gap: '20px',
+              },
+              tablet: {
+                gap: '16px',
+              },
+              mobileLandscape: {
+                gap: '12px',
+              },
+              mobile: {
+                gap: '12px',
+              },
+              widescreen: {},
+            },
+
             children: [
+              // ==========================================
+              // LOGO
+              // ==========================================
               {
-                id: generateId(),
-                type: 'listItem',
-                name: 'Nav Item',
-                props: { text: 'Home', href: '#' },
-                styles: { desktop: { margin: '0' }, tablet: {}, mobile: {}, widescreen: { margin: '0' }, laptop: { margin: '0' }, mobileLandscape: { margin: '0' } },
+                id: logoId,
+                type: 'heading',
+                name: 'Nav Logo',
+
+                props: {
+                  text: 'MyLogo',
+                  level: 1,
+                  href: '#',
+                },
+
+                styles: {
+                  flexShrink: '0',
+                  margin: '0',
+                  padding: '0',
+                  lineHeight: '1',
+                  whiteSpace: 'nowrap',
+                  color: '#111827',
+                  fontWeight: '700',
+
+                  desktop: {
+                    fontSize: '24px',
+                  },
+
+                  laptop: {
+                    fontSize: '22px',
+                  },
+
+                  tablet: {
+                    fontSize: '21px',
+                  },
+
+                  mobileLandscape: {
+                    fontSize: '20px',
+                  },
+
+                  mobile: {
+                    fontSize: '20px',
+                  },
+
+                  widescreen: {
+                    fontSize: '26px',
+                  },
+                },
+
                 children: [],
-                parentId: null,
+                parentId: containerId,
                 locked: false,
                 hidden: false,
               },
+
+              // ==========================================
+              // DESKTOP NAVIGATION
+              // ==========================================
               {
-                id: generateId(),
-                type: 'listItem',
-                name: 'Nav Item',
-                props: { text: 'Services', href: '#' },
-                styles: {
-                  desktop: { margin: '0' },
-                  tablet: {},
-                  mobile: {},
-                  widescreen: { margin: '0' },
-                  laptop: { margin: '0' },
-                  mobileLandscape: { margin: '0' }
+                id: linksId,
+                type: 'list',
+                name: 'Nav Links',
+
+                props: {
+                  isNavMenu: true,
+                  ariaLabel: 'Main navigation',
                 },
-                children: [],
-                parentId: null,
+
+                styles: {
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '28px',
+                  listStyle: 'none',
+                  margin: '0 0 0 auto',
+                  padding: '0',
+                  flex: '0 1 auto',
+                  whiteSpace: 'nowrap',
+
+                  desktop: {
+                    display: 'flex',
+                  },
+
+                  laptop: {
+                    display: 'flex',
+                    gap: '20px',
+                  },
+
+                  tablet: {
+                    display: 'none',
+                  },
+
+                  mobileLandscape: {
+                    display: 'none',
+                  },
+
+                  mobile: {
+                    display: 'none',
+                  },
+
+                  widescreen: {
+                    display: 'flex',
+                    gap: '32px',
+                  },
+                },
+
+                children: [
+                  {
+                    id: generateId(),
+                    type: 'listItem',
+                    name: 'Nav Item',
+
+                    props: {
+                      text: 'Home',
+                      href: '#',
+                    },
+
+                    styles: {
+                      margin: '0',
+                      padding: '0',
+                      listStyle: 'none',
+
+                      desktop: {},
+                      laptop: {},
+                      tablet: {},
+                      mobileLandscape: {},
+                      mobile: {},
+                      widescreen: {},
+                    },
+
+                    children: [],
+                    parentId: linksId,
+                    locked: false,
+                    hidden: false,
+                  },
+
+                  {
+                    id: generateId(),
+                    type: 'listItem',
+                    name: 'Nav Item',
+
+                    props: {
+                      text: 'Services',
+                      href: '#',
+                    },
+
+                    styles: {
+                      margin: '0',
+                      padding: '0',
+                      listStyle: 'none',
+
+                      desktop: {},
+                      laptop: {},
+                      tablet: {},
+                      mobileLandscape: {},
+                      mobile: {},
+                      widescreen: {},
+                    },
+
+                    children: [],
+                    parentId: linksId,
+                    locked: false,
+                    hidden: false,
+                  },
+
+                  {
+                    id: generateId(),
+                    type: 'listItem',
+                    name: 'Nav Item',
+
+                    props: {
+                      text: 'About',
+                      href: '#',
+                    },
+
+                    styles: {
+                      margin: '0',
+                      padding: '0',
+                      listStyle: 'none',
+
+                      desktop: {},
+                      laptop: {},
+                      tablet: {},
+                      mobileLandscape: {},
+                      mobile: {},
+                      widescreen: {},
+                    },
+
+                    children: [],
+                    parentId: linksId,
+                    locked: false,
+                    hidden: false,
+                  },
+
+                  {
+                    id: generateId(),
+                    type: 'listItem',
+                    name: 'Nav Item',
+
+                    props: {
+                      text: 'Contact',
+                      href: '#',
+                    },
+
+                    styles: {
+                      margin: '0',
+                      padding: '0',
+                      listStyle: 'none',
+
+                      desktop: {},
+                      laptop: {},
+                      tablet: {},
+                      mobileLandscape: {},
+                      mobile: {},
+                      widescreen: {},
+                    },
+
+                    children: [],
+                    parentId: linksId,
+                    locked: false,
+                    hidden: false,
+                  },
+                ],
+
+                parentId: containerId,
                 locked: false,
                 hidden: false,
-              }
+              },
+
+              // ==========================================
+              // CTA BUTTON
+              // ==========================================
+              {
+                id: ctaId,
+                type: 'button',
+                name: 'Nav CTA',
+
+                props: {
+                  text: 'Get Started',
+                  href: '#',
+                },
+
+                styles: {
+                  flexShrink: '0',
+                  whiteSpace: 'nowrap',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: '#111827',
+                  color: '#ffffff',
+                  padding: '10px 18px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+
+                  desktop: {
+                    display: 'block',
+                  },
+
+                  laptop: {
+                    display: 'block',
+                    padding: '9px 16px',
+                  },
+
+                  tablet: {
+                    display: 'none',
+                  },
+
+                  mobileLandscape: {
+                    display: 'none',
+                  },
+
+                  mobile: {
+                    display: 'none',
+                  },
+
+                  widescreen: {
+                    display: 'block',
+                    padding: '11px 20px',
+                  },
+                },
+
+                children: [],
+                parentId: containerId,
+                locked: false,
+                hidden: false,
+              },
+
+              // ==========================================
+              // MOBILE MENU BUTTON
+              // ==========================================
+              {
+                id: menuId,
+                type: 'icon',
+                name: 'Mobile Menu',
+
+                props: {
+                  iconName: 'Menu',
+                  ariaLabel: 'Open navigation menu',
+                },
+
+                styles: {
+                  flexShrink: '0',
+                  width: '44px',
+                  height: '44px',
+                  display: 'none',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  color: '#111827',
+                  borderRadius: '8px',
+                  transition: 'background-color 0.2s ease',
+
+                  desktop: {
+                    display: 'none',
+                  },
+
+                  laptop: {
+                    display: 'none',
+                  },
+
+                  tablet: {
+                    display: 'flex',
+                  },
+
+                  mobileLandscape: {
+                    display: 'flex',
+                  },
+
+                  mobile: {
+                    display: 'flex',
+                  },
+
+                  widescreen: {
+                    display: 'none',
+                  },
+                },
+
+                children: [],
+                parentId: containerId,
+                locked: false,
+                hidden: false,
+              },
             ],
-            parentId: null,
-            locked: false,
-            hidden: false,
-          },
-          {
-            id: generateId(),
-            type: 'icon',
-            name: 'Hamburger',
-            props: { iconName: 'Menu' },
-            styles: {
-              desktop: { display: 'none', cursor: 'pointer', width: '40px', height: '40px', alignItems: 'center', justifyContent: 'center', color: '#111827' },
-              tablet: { display: 'flex' },
-              mobile: { display: 'flex' },
-              widescreen: { display: 'none' },
-              laptop: { display: 'none' },
-              mobileLandscape: { display: 'flex' },
-            },
-            children: [],
-            parentId: null,
+
+            parentId: navbarId,
             locked: false,
             hidden: false,
           },
         ],
-      };
+      } as unknown as ElementDefaults);
+    }
     case 'hero':
       return {
         name: 'Hero',
@@ -606,22 +954,19 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
 
 export const getEffectiveStyles = (
   element: BuilderElement,
-  breakpoint: 'widescreen' | 'desktop' | 'tablet' | 'mobile' | 'laptop' | 'mobileLandscape'
+  breakpoint: Breakpoint
 ): StyleProperties => {
-  const widescreen = element.styles.widescreen || {};
-  const desktop = element.styles.desktop || {};
-  const tablet = element.styles.tablet || {};
-  const mobile = element.styles.mobile || {};
-  const laptop = element.styles.laptop || {};
-  const mobileLandscape = element.styles.mobileLandscape || {};
-
-  if (breakpoint === 'desktop') return desktop;
-  if (breakpoint === 'widescreen') return { ...desktop, ...widescreen };
-  if (breakpoint === 'tablet') return { ...desktop, ...tablet };
-  if (breakpoint === 'mobile') return { ...desktop, ...mobile }
-  if (breakpoint === 'laptop') return { ...desktop, ...laptop };
-  if (breakpoint === 'mobileLandscape') return { ...desktop, ...mobileLandscape };
-  return { ...desktop, ...tablet, ...mobile, ...widescreen, ...laptop, ...mobileLandscape };
+  const styles = element.styles as ResponsiveStyles;
+  const breakpointNames: Breakpoint[] = ['mobile', 'mobileLandscape', 'tablet', 'laptop', 'desktop', 'widescreen'];
+  const baseStyles = Object.fromEntries(Object.entries(styles).filter(([key]) => !breakpointNames.includes(key as Breakpoint) && key !== 'responsive')) as StyleProperties;
+  const responsive = styles.responsive || {};
+  const legacy = Object.fromEntries(breakpointNames.filter(name => styles[name]).map(name => [name, styles[name]])) as Partial<Record<Breakpoint, StyleProperties>>;
+  const overrides = { ...legacy, ...responsive };
+  const effective = { ...baseStyles };
+  breakpointNames.forEach(name => {
+    if (BREAKPOINTS[name] <= BREAKPOINTS[breakpoint]) Object.assign(effective, overrides[name] || {});
+  });
+  return effective;
 };
 
 const expandBoxShorthand = (
@@ -702,12 +1047,12 @@ export const styleObjectToCssString = (styles: StyleProperties): string => {
 const getElementClassName = (element: BuilderElement): string => `lunio-${element.id}`;
 
 const breakpointQueries: Record<Breakpoint, string | null> = {
-  widescreen: '(min-width: 1920px)',
-  desktop: null,
-  laptop: '(max-width: 1200px)',
-  tablet: '(max-width: 991px)',
-  mobileLandscape: '(max-width: 767px)',
-  mobile: '(max-width: 479px)',
+  mobile: `(max-width: ${BREAKPOINTS.mobile}px)`,
+  mobileLandscape: `(max-width: ${BREAKPOINTS.mobileLandscape}px)`,
+  tablet: `(max-width: ${BREAKPOINTS.tablet}px)`,
+  laptop: `(max-width: ${BREAKPOINTS.laptop}px)`,
+  desktop: `(min-width: ${BREAKPOINTS.desktop}px)`,
+  widescreen: `(min-width: ${BREAKPOINTS.widescreen}px)`,
 };
 
 const buildPseudoClassCssForElement = (element: BuilderElement): string => {
@@ -723,14 +1068,14 @@ const buildPseudoClassCssForElement = (element: BuilderElement): string => {
     if (!pseudoStyles) return;
 
     // Desktop (no media query)
-    const desktopStyle = styleObjectToCssString(pseudoStyles.desktop);
+    const desktopStyle = styleObjectToCssString(pseudoStyles.desktop || {});
     if (desktopStyle) {
       rules.push(`${selector}:${pseudoClass}{${desktopStyle}}`);
     }
 
     // Responsive breakpoints
-    (['widescreen', 'tablet', 'mobile'] as Breakpoint[]).forEach(breakpoint => {
-      const style = styleObjectToCssString(pseudoStyles[breakpoint]);
+    (['widescreen', 'laptop', 'tablet', 'mobileLandscape', 'mobile'] as Breakpoint[]).forEach(breakpoint => {
+      const style = styleObjectToCssString(pseudoStyles[breakpoint] || {});
       if (!style || style === desktopStyle) return;
       const mediaQuery = breakpointQueries[breakpoint];
       if (!mediaQuery) return;
@@ -750,7 +1095,7 @@ const buildResponsiveCssForElement = (element: BuilderElement): string => {
     rules.push(`${selector}{${baseStyle}}`);
   }
 
-  (['widescreen', 'tablet', 'mobile'] as Breakpoint[]).forEach(breakpoint => {
+  (['widescreen', 'laptop', 'tablet', 'mobileLandscape', 'mobile'] as Breakpoint[]).forEach(breakpoint => {
     const style = styleObjectToCssString(getElementExportStyle(element, breakpoint));
     if (!style || style === baseStyle) return;
     const mediaQuery = breakpointQueries[breakpoint];
@@ -996,7 +1341,7 @@ export const renderElementToHtml = (element: BuilderElement, breakpoint: Breakpo
       return `<textarea placeholder="${placeholder}"${attrs}></textarea>`;
     case 'icon':
       return element.props.iconName === 'Menu'
-        ? `<button type="button" aria-label="Toggle navigation menu"${attrs}>${iconName}</button>`
+        ? `<button type="button" aria-label="Toggle navigation menu"${attrs} onclick="this.closest('nav')?.querySelector('[data-lunio-nav-menu]')?.classList.toggle('lunio-nav-open'); this.setAttribute('aria-expanded', this.getAttribute('aria-expanded') !== 'true');">${iconName}</button>`
         : `<span${attrs}>${iconName}</span>`;
     case 'listItem':
       return `<li${attrs}>${text}</li>`;

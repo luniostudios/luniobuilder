@@ -1,9 +1,9 @@
 "use client";
 
 import React, { JSX, createContext, useContext, useEffect, useRef, useState } from 'react';
-import { BuilderElement, ElementType } from '../../types/builder';
+import { BREAKPOINTS, Breakpoint, BuilderElement, ElementType } from '../../types/builder';
 import { useBuilderStore } from '../../stores/builderStore';
-import { canHaveChildren, getEffectiveStyles, stylesToCSS } from '../../utils/builderUtils';
+import { canHaveChildren, createDefaultElement, getEffectiveStyles, stylesToCSS } from '../../utils/builderUtils';
 import * as LucideIcons from 'lucide-react';
 
 interface ElementRendererProps {
@@ -16,6 +16,7 @@ interface NavbarMenuContextValue {
   isOpen: boolean;
   toggle: (event: React.MouseEvent) => void;
   menuIds: Set<string>;
+  collapseAt: Breakpoint;
 }
 
 const NavbarMenuContext = createContext<NavbarMenuContextValue | null>(null);
@@ -238,9 +239,32 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
   const [isEditing, setIsEditing] = useState(false);
   const [editingValue, setEditingValue] = useState(element.props.text || '');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [viewportWidth, setViewportWidth] = useState(() => typeof window === 'undefined' ? 1280 : window.innerWidth);
   const ref = useRef<HTMLDivElement>(null);
 
-  const styles = getEffectiveStyles(element, breakpoint);
+  useEffect(() => {
+    if (!isPreview) return;
+    const updateViewportWidth = () => setViewportWidth(window.innerWidth);
+    window.addEventListener('resize', updateViewportWidth);
+    return () => {
+      window.removeEventListener('resize', updateViewportWidth);
+    };
+  }, [isPreview]);
+
+  const previewBreakpoint: Breakpoint = viewportWidth >= BREAKPOINTS.widescreen
+    ? 'widescreen'
+    : viewportWidth <= BREAKPOINTS.mobile
+      ? 'mobile'
+      : viewportWidth <= BREAKPOINTS.mobileLandscape
+        ? 'mobileLandscape'
+        : viewportWidth <= BREAKPOINTS.tablet
+          ? 'tablet'
+          : viewportWidth <= BREAKPOINTS.laptop
+            ? 'laptop'
+            : 'desktop';
+  const activeBreakpoint = isPreview ? previewBreakpoint : breakpoint;
+
+  const styles = getEffectiveStyles(element, activeBreakpoint);
   const cssStyles = stylesToCSS(styles);
   const safeCssStyles: React.CSSProperties = {
     ...cssStyles,
@@ -265,6 +289,8 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
   const navbarMenu = useContext(NavbarMenuContext);
   const cmsRecord = useContext(CmsRecordContext);
   const isMenuTarget = navbarMenu?.menuIds.has(element.id) ?? false;
+  const menuBreakpoint = navbarMenu?.collapseAt || 'tablet';
+  const menuIsCollapsed = BREAKPOINTS[activeBreakpoint] <= BREAKPOINTS[menuBreakpoint];
 
   const resolveCmsProp = (propName: 'text' | 'src', fallback: unknown) => {
     const field = element.props.cmsField;
@@ -767,11 +793,11 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     backgroundColor: '#ffffff',
     boxShadow: '0 8px 20px rgba(15, 23, 42, 0.12)',
     zIndex: 101,
-  } : containerStyle;
+  } : isMenuTarget && menuIsCollapsed ? { ...containerStyle, display: 'none' } : containerStyle;
 
-  const renderChildren = () => (
+  const renderChildren = (childrenToRender = element.children) => (
     <>
-      {element.children.map(child => (
+      {childrenToRender.map(child => (
         <ElementRenderer key={child.id} element={child} isPreview={isPreview} />
       ))}
       {!isPreview && element.children.length === 0 && (
@@ -796,23 +822,46 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
         return <ShopCheckoutElement element={element} projectId={projectId} isPreview={isPreview || isPublishedSite} onClick={handleClick} style={safeTextStyles} />;
       case 'navbar':
         {
-          const menuIds = new Set(
-            element.children
-              .filter(child => child.props.isNavMenu === true || (
+          const logo = typeof element.props.logo === 'object' && element.props.logo ? element.props.logo as { text?: string; href?: string } : null;
+          const links = Array.isArray(element.props.links) ? element.props.links as Array<{ text?: string; href?: string }> : [];
+          const cta = typeof element.props.cta === 'object' && element.props.cta ? element.props.cta as { enabled?: boolean; text?: string; href?: string } : null;
+          const mobileMenu = typeof element.props.mobileMenu === 'object' && element.props.mobileMenu ? element.props.mobileMenu as { enabled?: boolean; breakpoint?: Breakpoint } : { enabled: element.props.mobileMenu !== false, breakpoint: 'tablet' as Breakpoint };
+          const configureNavbarChildren = (children: BuilderElement[]): BuilderElement[] => children.map(child => {
+            if (child.type === 'heading' && logo) return { ...child, props: { ...child.props, text: logo.text || child.props.text, href: logo.href || child.props.href } };
+            if (child.type === 'list' && links.length > 0) {
+              return { ...child, children: links.map((link, index) => ({ ...(child.children[index] || createDefaultElement('listItem', `navbar-link-${index}`, child.id)), props: { ...(child.children[index]?.props || {}), text: link.text || '', href: link.href || '#' } })) };
+            }
+            if (child.type === 'button' && cta) return { ...child, hidden: cta.enabled === false, props: { ...child.props, text: cta.text || child.props.text, href: cta.href || child.props.href } };
+            if (child.type === 'icon' && child.props.iconName === 'Menu' && mobileMenu.enabled === false) return { ...child, styles: { ...child.styles, display: 'none', responsive: { ...(child.styles.responsive || {}), tablet: { display: 'none' }, mobileLandscape: { display: 'none' }, mobile: { display: 'none' } } } };
+            return child.children.length > 0 ? { ...child, children: configureNavbarChildren(child.children) } : child;
+          });
+          const configuredChildren = configureNavbarChildren(element.children);
+          const menuIds = new Set<string>();
+          const collectMenuIds = (children: BuilderElement[]) => {
+            children.forEach(child => {
+              if (child.props.isNavMenu === true || (
                 ['list', 'div'].includes(child.type) &&
-                getEffectiveStyles(child, breakpoint).display === 'none'
-              ))
-              .map(child => child.id)
-          );
+                getEffectiveStyles(child, activeBreakpoint).display === 'none'
+              )) menuIds.add(child.id);
+              if (child.children.length > 0) collectMenuIds(child.children);
+            });
+          };
+          collectMenuIds(configuredChildren);
+              const collapseAt = mobileMenu.breakpoint || 'tablet';
+              const navbarStyle: React.CSSProperties = {
+                ...containerStyle,
+                ...(element.props.sticky ? { position: 'sticky', top: 0 } : {}),
+                ...(element.props.transparent ? { backgroundColor: 'transparent', boxShadow: 'none' } : {}),
+              };
           const toggleMenu = (event: React.MouseEvent) => {
             event.preventDefault();
             event.stopPropagation();
             setIsMenuOpen(open => !open);
           };
           return (
-            <NavbarMenuContext.Provider value={{ isOpen: isMenuOpen, toggle: toggleMenu, menuIds }}>
-              <nav style={containerStyle} onClick={handleClick} className={isPreview ? '' : 'cursor-pointer'}>
-                {renderChildren()}
+            <NavbarMenuContext.Provider value={{ isOpen: isMenuOpen, toggle: toggleMenu, menuIds, collapseAt }}>
+              <nav style={navbarStyle} onClick={handleClick} className={isPreview ? '' : 'cursor-pointer'}>
+                {renderChildren(configuredChildren)}
               </nav>
             </NavbarMenuContext.Provider>
           );

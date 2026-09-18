@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useBuilderStore } from '../../stores/builderStore';
 import { ElementRenderer } from './ElementRenderer';
 import { ElementType } from '../../types/builder';
+import { BREAKPOINTS } from '../../types/builder';
 
 export const Canvas: React.FC = () => {
   const {
@@ -57,12 +58,12 @@ export const Canvas: React.FC = () => {
   ) : null;
 
   const breakpointWidth = {
-    widescreen: '1920px',
-    desktop: '1600px',
-    laptop: '1200px',
-    tablet: '991px',
-    mobileLandscape: '767px',
-    mobile: '479px',
+    widescreen: `${BREAKPOINTS.widescreen}px`,
+    desktop: `${BREAKPOINTS.desktop}px`,
+    laptop: `${BREAKPOINTS.laptop}px`,
+    tablet: `${BREAKPOINTS.tablet}px`,
+    mobileLandscape: `${BREAKPOINTS.mobileLandscape}px`,
+    mobile: `${BREAKPOINTS.mobile}px`,
   }[breakpoint];
 
   const handleCanvasClick = (e: React.MouseEvent) => {
@@ -119,7 +120,7 @@ export const Canvas: React.FC = () => {
   if (isPreviewMode) {
     return (
       <div className="flex-1 overflow-auto bg-gray-100 flex justify-center">
-        <div style={{ width: breakpointWidth }} className="bg-white min-h-screen pb-10 relative">
+        <div style={{ width: '100%', maxWidth: breakpointWidth }} className="bg-white min-h-screen pb-10 relative">
           {page.elements.map(el => (
             <ElementRenderer key={el.id} element={el} isPreview />
           ))}
