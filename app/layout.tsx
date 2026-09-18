@@ -22,8 +22,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "LUNIO Builder - Create websites fast with AI",
-  description: "Describe the website you want and LUNIO Builder generates an editable site in the visual editor.",
+  title: "LUNIO Builder - Create and Edit Websites Fast with AI",
+  description: "Describe the website you want and LUNIO Builder generates with AI an editable site in the visual editor.",
   keywords: [
     "LUNIO Builder",
     "no-code website builder",
@@ -31,6 +31,14 @@ export const metadata: Metadata = {
     "website builder",
     "create websites without coding",
     "visual editor",
+    "AI website generator",
+    "AI website builder",
+    "AI website design",
+    "AI web design",
+    "AI web development",
+    "AI web generator",
+    "AI web creation",
+    "AI web editor",
   ],
   alternates: {
     canonical: "https://www.luniobuilder.com",

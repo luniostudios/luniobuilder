@@ -144,53 +144,6 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
             </select>
           </div>
 
-          {/* Image Upload */}
-          <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
-              Reference Image (Optional)
-            </label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 transition">
-              {imagePreview ? (
-                <div className="space-y-3">
-                  <img 
-                    src={imagePreview} 
-                    alt="Preview" 
-                    className="max-h-48 mx-auto rounded object-contain"
-                  />
-                  <p className="text-sm text-gray-600 truncate">{imageFile?.name}</p>
-                  <button
-                    onClick={removeImage}
-                    disabled={loading}
-                    className="text-xs text-red-600 hover:text-red-700 font-medium"
-                  >
-                    Remove Image
-                  </button>
-                </div>
-              ) : (
-                <div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageSelect}
-                    disabled={loading}
-                    className="hidden"
-                  />
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={loading}
-                    className="text-blue-600 hover:text-blue-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Upload Image
-                  </button>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Upload an image for the AI to reference when generating
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-
           {/* Error Message */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">

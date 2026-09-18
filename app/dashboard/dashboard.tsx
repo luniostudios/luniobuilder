@@ -422,7 +422,7 @@ export default function dashboard() {
                         />
                         <div className="flex-1 overflow-hidden">
                             <p className="text-sm font-medium text-gray-900 truncate">{userData?.name || session?.user?.name}</p>
-                            <p className="text-xs text-gray-500 truncate"><span className={`text-sm font-normal rounded-full px-2 py-1 align-middle  ${role === 'ADMIN' ? 'text-red-500 bg-red-500/20' : role === 'OWNER' ? 'text-green-500' : role === 'PRO' ? 'text-blue-500' : role === 'BUSINESS' ? 'text-purple-500' : 'text-gray-400'}`}>{role.toLowerCase()}</span></p>
+                            <p className="text-xs text-gray-500 truncate"><span className={`text-sm font-normal rounded-full px-2 py-1 align-middle  ${role === 'ADMIN' ? 'text-red-500 bg-red-500/20' : role === 'OWNER' ? 'text-green-500 bg-green-500/20' : role === 'PRO' ? 'text-blue-500' : role === 'BUSINESS' ? 'text-purple-500' : 'text-gray-400'}`}>{role.toLowerCase()}</span></p>
                         </div>
                     </button>
                 </div>
@@ -529,7 +529,7 @@ export default function dashboard() {
                                     {
                                         // session.user may not have a `role` property on its type, cast to any to safely access it
                                     }
-                                    <h1 className="text-2xl font-bold text-gray-900">🚀 Welcome back, {userData?.name || session?.user?.name || 'User'} <span className={`text-sm font-normal rounded-full px-2 py-1 align-middle  ${role === 'ADMIN' ? 'text-red-500 bg-red-500/20' : role === 'OWNER' ? 'text-green-500' : role === 'PRO' ? 'text-blue-500' : role === 'BUSINESS' ? 'text-purple-500' : 'text-gray-400'}`}>{role.toLowerCase()}</span></h1>
+                                    <h1 className="text-2xl font-bold text-gray-900">🚀 Welcome back, {userData?.name || session?.user?.name || 'User'} <span className={`text-sm font-normal rounded-full px-2 py-1 align-middle  ${role === 'ADMIN' ? 'text-red-500 bg-red-500/20' : role === 'OWNER' ? 'text-green-500 bg-green-500/20' : role === 'PRO' ? 'text-blue-500' : role === 'BUSINESS' ? 'text-purple-500 bg-purple-500/20' : 'text-gray-400'}`}>{role.toLowerCase()}</span></h1>
                                     <p className="text-gray-500 mt-1">Here's what's happening with your websites today.</p>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

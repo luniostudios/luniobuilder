@@ -21,7 +21,7 @@ export const createStarterPage = (): Page => {
         desktop: {
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
+          justifyContent: 'flex-start',
           width: '100%',
           padding: '20px 60px',
           backgroundColor: '#ffffff',
@@ -30,12 +30,12 @@ export const createStarterPage = (): Page => {
           top: '0',
           zIndex: '100',
         },
-        tablet: { padding: '16px 32px' },
-        mobile: { padding: '12px 16px' },
+        tablet: { padding: '16px 32px', justifyContent: 'space-between' },
+        mobile: { padding: '12px 16px', justifyContent: 'space-between' },
         widescreen: {
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
+          justifyContent: 'flex-start',
           width: '100%',
           padding: '20px 80px',
           backgroundColor: '#ffffff',
@@ -47,7 +47,7 @@ export const createStarterPage = (): Page => {
         laptop: {
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
+          justifyContent: 'flex-start',
           width: '100%',
           padding: '20px 60px',
           backgroundColor: '#ffffff',
@@ -83,11 +83,11 @@ export const createStarterPage = (): Page => {
           name: 'Nav Links',
           props: { isNavMenu: true },
           styles: {
-            desktop: { display: 'flex', alignItems: 'center', gap: '32px' },
+            desktop: { display: 'flex', alignItems: 'center', gap: '32px', marginLeft: 'auto' },
             tablet: { display: 'none' },
             mobile: { display: 'none' },
-            widescreen: { display: 'flex', alignItems: 'center', gap: '32px' },
-            laptop: { display: 'flex', alignItems: 'center', gap: '32px' },
+            widescreen: { display: 'flex', alignItems: 'center', gap: '32px', marginLeft: 'auto' },
+            laptop: { display: 'flex', alignItems: 'center', gap: '32px', marginLeft: 'auto' },
             mobileLandscape: { display: 'none' },
           },
           children: [

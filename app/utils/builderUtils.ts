@@ -162,7 +162,7 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
         styles: {
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
+          justifyContent: 'flex-start',
           width: '100%',
           paddingBottom: '16px',
           paddingTop: '16px',
@@ -198,11 +198,11 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
             name: 'Nav Links',
             props: { isNavMenu: true },
             styles: {
-              desktop: { display: 'flex', alignItems: 'center', gap: '16px', listStyle: 'none', margin: '0', padding: '0' },
+              desktop: { display: 'flex', alignItems: 'center', gap: '16px', listStyle: 'none', margin: '0 0 0 auto', padding: '0' },
               tablet: { display: 'none' },
               mobile: { display: 'none' },
-              widescreen: { display: 'flex', alignItems: 'center', gap: '16px', listStyle: 'none', margin: '0', padding: '0' },
-              laptop: { display: 'flex', alignItems: 'center', gap: '16px', listStyle: 'none', margin: '0', padding: '0' },
+              widescreen: { display: 'flex', alignItems: 'center', gap: '16px', listStyle: 'none', margin: '0 0 0 auto', padding: '0' },
+              laptop: { display: 'flex', alignItems: 'center', gap: '16px', listStyle: 'none', margin: '0 0 0 auto', padding: '0' },
               mobileLandscape: { display: 'none' },
             },
             children: [

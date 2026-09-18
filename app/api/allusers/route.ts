@@ -8,10 +8,8 @@ export async function GET() {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userId = session.user.id || session.user.email;
-
-
     const { data, error } = await supabaseServer
+        .schema('next_auth')
         .from('users')
         .select('*')
 
