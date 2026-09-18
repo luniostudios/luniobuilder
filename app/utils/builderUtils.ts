@@ -565,6 +565,22 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
           paddingRight: '20px',
         },
       };
+    case 'shopCheckout':
+      return {
+        name: 'Shop Checkout',
+        props: { text: 'Buy now', buttonText: 'Buy now', nameField: 'name', priceField: 'price', imageField: 'image' },
+        styles: {
+          display: 'inline-block',
+          paddingTop: '12px',
+          paddingBottom: '12px',
+          paddingLeft: '20px',
+          paddingRight: '20px',
+          borderRadius: '8px',
+          backgroundColor: '#111827',
+          color: '#ffffff',
+          cursor: 'pointer',
+        },
+      };
     case 'custom':
       return {
         name: 'Custom Code',
@@ -1428,7 +1444,7 @@ export const canHaveChildren = (type: ElementType): boolean => {
 export const COMPONENT_CATEGORIES = {
   Layout: ['section', 'div', 'hero', 'navbar', 'columns', 'grid', 'card', 'custom'],
   Typography: ['heading', 'paragraph', 'link', 'list', 'listItem'],
-  CMS: ['cmsMap', 'table'],
+  CMS: ['cmsMap', 'table', 'shopCheckout'],
   Media: ['image', 'video', 'icon', 'iframe', 'calendar'],
   Forms: ['form', 'input', 'textarea', 'button'],
   Misc: ['divider', 'spacer'],
@@ -1461,6 +1477,7 @@ export const COMPONENT_LABELS: Record<ElementType, string> = {
   calendar: 'Calendar',
   table: 'CMS Table',
   cmsMap: 'CMS Map',
+  shopCheckout: 'Shop Checkout',
   custom: 'Custom Code',
 };
 

@@ -25,6 +25,7 @@ export type ElementType =
   | 'calendar'
   | 'table'
   | 'cmsMap'
+  | 'shopCheckout'
   | 'custom';
 
 export interface StyleProperties {

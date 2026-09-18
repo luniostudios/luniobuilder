@@ -383,6 +383,7 @@ const getElementName = (type: ElementType): string => {
     calendar: 'Calendar',
     table: 'CMS Table',
     cmsMap: 'CMS Map',
+    shopCheckout: 'Shop Checkout',
     custom: ''
   };
 

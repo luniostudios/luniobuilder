@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import CmsManager from './CmsManager';
+import ShopManager from './ShopManager';
 
 interface ProjectRecord {
   id: string;
@@ -194,6 +195,7 @@ export default function ProjectSettingsPage() {
         </div>
 
         {projectId && <div className='mt-6'><CmsManager projectId={projectId} /></div>}
+        {projectId && <ShopManager projectId={projectId} />}
       </div>
     </div>
   );

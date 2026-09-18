@@ -37,6 +37,41 @@ interface CmsRecordContextValue {
 
 const CmsRecordContext = createContext<CmsRecordContextValue | null>(null);
 
+const ShopCheckoutElement: React.FC<{ element: BuilderElement; projectId: string | null; isPreview: boolean; onClick: (event: React.MouseEvent) => void; style: React.CSSProperties }> = ({ element, projectId, isPreview, onClick, style }) => {
+  const record = useContext(CmsRecordContext);
+  const name = String(record?.data[String(element.props.nameField || 'name')] || element.props.text || 'Product');
+  const price = record?.data[String(element.props.priceField || 'price')];
+  const buttonText = String(element.props.buttonText || 'Buy now');
+  const [error, setError] = useState('');
+
+  const checkout = async (event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (!isPreview) {
+      onClick(event);
+      return;
+    }
+    if (!projectId || !record) return;
+    setError('');
+    const response = await fetch(`/api/shop/${encodeURIComponent(projectId)}/checkout`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recordId: record.id }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.url) {
+      setError(data.error || 'Unable to start checkout.');
+      return;
+    }
+    window.location.assign(data.url);
+  };
+
+  return <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }} onClick={onClick}>
+    <button type="button" style={style} onClick={checkout}>{buttonText}</button>
+    {record && <span style={{ fontSize: '12px', color: '#64748b' }}>{name}{price !== undefined ? ` - ${String(price)}` : ''}</span>}
+    {error && <span style={{ fontSize: '12px', color: '#dc2626' }}>{error}</span>}
+  </div>;
+};
+
 const CmsTableElement: React.FC<{ element: BuilderElement; projectId: string | null; onClick: (event: React.MouseEvent) => void; style: React.CSSProperties }> = ({ element, projectId, onClick, style }) => {
   const collectionId = String(element.props.collectionId || element.props.collectionSlug || '');
   const [fields, setFields] = useState<string[]>(Array.isArray(element.props.columns) ? element.props.columns.filter((value): value is string => typeof value === 'string') : []);
@@ -77,7 +112,7 @@ const CmsTableElement: React.FC<{ element: BuilderElement; projectId: string | n
   );
 };
 
-const CmsMapElement: React.FC<{ element: BuilderElement; projectId: string | null; isPreview: boolean; onClick: (event: React.MouseEvent) => void; style: React.CSSProperties }> = ({ element, projectId, isPreview, onClick, style }) => {
+const CmsMapElement: React.FC<{ element: BuilderElement; projectId: string | null; isPreview: boolean; isPublishedSite: boolean; onClick: (event: React.MouseEvent) => void; style: React.CSSProperties }> = ({ element, projectId, isPreview, isPublishedSite, onClick, style }) => {
   const collectionId = String(element.props.collectionId || element.props.collectionSlug || '');
   const [records, setRecords] = useState<CmsTableRow[]>([]);
   const [loading, setLoading] = useState(Boolean(collectionId));
@@ -103,7 +138,7 @@ const CmsMapElement: React.FC<{ element: BuilderElement; projectId: string | nul
   }, [projectId, collectionId]);
 
   const renderChildren = (record?: CmsTableRow) => {
-    const children = element.children.map(child => <ElementRenderer key={`${record?.id || 'editor'}-${child.id}`} element={child} isPreview={isPreview} />);
+    const children = element.children.map(child => <ElementRenderer key={`${record?.id || 'editor'}-${child.id}`} element={child} isPreview={isPreview} isPublishedSite={isPublishedSite} />);
     if (record) {
       return <CmsRecordContext.Provider value={record}>{children}</CmsRecordContext.Provider>;
     }
@@ -338,7 +373,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     const y = e.clientY - rect.top;
     const height = rect.height;
 
-    if (canHaveChildren(element.type) && y > height * 0.25 && y < height * 0.75) {
+    if (element.type === 'cmsMap' || (canHaveChildren(element.type) && y > height * 0.25 && y < height * 0.75)) {
       setDropTarget(element.id, 'inside');
     } else if (y < height / 2) {
       setDropTarget(element.id, 'before');
@@ -354,11 +389,12 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
 
     const elementId = e.dataTransfer.getData('elementId');
     const elementType = e.dataTransfer.getData('elementType') as ElementType;
+    const targetPosition = element.type === 'cmsMap' ? 'inside' : (dropPosition || 'after');
 
     if (elementId && elementId !== element.id) {
-      moveElement(elementId, element.id, dropPosition || 'after');
+      moveElement(elementId, element.id, targetPosition);
     } else if (elementType) {
-      addElementFromPalette(elementType, element.id, dropPosition || 'after');
+      addElementFromPalette(elementType, element.id, targetPosition);
     }
 
     setDropTarget(null, null);
@@ -755,7 +791,9 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
           </ul>
         );
       case 'cmsMap':
-        return <CmsMapElement element={element} projectId={projectId} isPreview={isPreview} onClick={handleClick} style={containerStyle} />;
+        return <CmsMapElement element={element} projectId={projectId} isPreview={isPreview} isPublishedSite={isPublishedSite} onClick={handleClick} style={containerStyle} />;
+      case 'shopCheckout':
+        return <ShopCheckoutElement element={element} projectId={projectId} isPreview={isPreview || isPublishedSite} onClick={handleClick} style={safeTextStyles} />;
       case 'navbar':
         {
           const menuIds = new Set(

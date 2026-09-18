@@ -734,7 +734,7 @@ export default function Dashboard() {
                                                         )}
                                                     </div>
                                                     {deleteModal.isOpen && deleteModal.projectId === project.id && (
-                                                        <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50'>
+                                                        <div className='absolute inset-0 flex items-center justify-center z-50'>
                                                             <div className='bg-[#111214] rounded-xl p-6 w-full max-w-sm'>
                                                                 <h2 className='text-xl font-semibold text-white'>Confirm Deletion</h2>
                                                                 <p className='mt-2 text-sm text-gray-400'>Are you sure you want to delete this project? This action cannot be undone.</p>

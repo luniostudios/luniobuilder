@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { LayoutGrid as Layout, Type, Image, MousePointer, Square, Columns2 as Columns, Grid2x2 as Grid, AlignLeft, Link, Star, Minus, Move, FileText, ChevronRight, ChevronDown, Eye, EyeOff, Lock, Unlock, Trash2, Copy, Plus, Layers, Package, Globe, Monitor, Play, Form, List, ListEnd, Laptop, CalendarDays, LayoutIcon, LayoutPanelTop, IdCard, TextInitialIcon, Code2, ChevronsDownUp, Table2, ListTree } from 'lucide-react';
+import { LayoutGrid as Layout, Type, Image, MousePointer, Square, Columns2 as Columns, Grid2x2 as Grid, AlignLeft, Link, Star, Minus, Move, FileText, ChevronRight, ChevronDown, Eye, EyeOff, Lock, Unlock, Trash2, Copy, Plus, Layers, Package, Globe, Monitor, Play, Form, List, ListEnd, Laptop, CalendarDays, LayoutIcon, LayoutPanelTop, IdCard, TextInitialIcon, Code2, ChevronsDownUp, Table2, ListTree, ShoppingCart } from 'lucide-react';
 import { DndContext, DragEndEvent, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -35,6 +35,7 @@ const COMPONENT_ICONS: Record<string, React.ReactNode> = {
   calendar: <CalendarDays size={25} />,
   table: <Table2 size={25} />,
   cmsMap: <ListTree size={25} />,
+  shopCheckout: <ShoppingCart size={25} />,
   custom: <Code2 size={25} />,
 };
 
@@ -74,7 +75,7 @@ export const LeftPanel: React.FC = () => {
 };
 
 const ComponentsTab: React.FC = () => {
-  const { setDraggedElementType, addElementFromPalette } = useBuilderStore();
+  const { setDraggedElementType, addElementFromPalette, selectedElementId, getElementById } = useBuilderStore();
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set(Object.keys(COMPONENT_CATEGORIES))
   );
@@ -101,7 +102,8 @@ const ComponentsTab: React.FC = () => {
   };
 
   const handleDoubleClick = (type: ElementType) => {
-    addElementFromPalette(type, 'canvas-root', 'inside');
+    const selectedElement = selectedElementId ? getElementById(selectedElementId) : null;
+    addElementFromPalette(type, selectedElement?.type === 'cmsMap' ? selectedElement.id : 'canvas-root', 'inside');
   };
 
   const filteredCategories = Object.entries(COMPONENT_CATEGORIES).map(([cat, types]) => ({

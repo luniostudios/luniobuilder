@@ -2001,6 +2001,25 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
         </div>
       )}
 
+      {element.type === 'shopCheckout' && (
+        <div className="space-y-3">
+          {(['nameField', 'priceField', 'imageField'] as const).map(field => (
+            <div key={field}>
+              <label className="text-xs text-gray-500 block mb-1">{field.replace('Field', '')} CMS field</label>
+              <select value={String(element.props[field] || '')} onChange={event => update(field, event.target.value)} className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                <option value="">Use default field</option>
+                {(cmsCollections.find(collection => collection.id === cmsCollectionKey || collection.slug === cmsCollectionKey)?.fields || []).map(fieldName => <option key={fieldName} value={fieldName}>{fieldName}</option>)}
+              </select>
+            </div>
+          ))}
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">Button text</label>
+            <input value={String(element.props.buttonText || 'Buy now')} onChange={event => update('buttonText', event.target.value)} className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+          </div>
+          <p className="text-[11px] text-gray-500">Place this element inside a CMS Map connected to the Products collection.</p>
+        </div>
+      )}
+
       {cmsMapAncestor && element.type !== 'cmsMap' && (
         <div className="space-y-3 border-t border-gray-800 pt-3">
           <div>

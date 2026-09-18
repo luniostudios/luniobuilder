@@ -181,16 +181,17 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
     set(state => {
       const pages = deepClone(state.pages);
       const page = pages.find(p => p.id === state.currentPageId)!;
+      const insertPosition = position;
 
       const findAndInsert = (elements: BuilderElement[], parentId: string | null): boolean => {
         for (let i = 0; i < elements.length; i++) {
           if (elements[i].id === targetId) {
-            if (position === 'inside') {
+            if (insertPosition === 'inside') {
               const newEl = createDefaultElement(type, id, targetId);
               elements[i].children.push(newEl);
             } else {
               const newEl = createDefaultElement(type, id, parentId);
-              const insertIdx = position === 'after' ? i + 1 : i;
+              const insertIdx = insertPosition === 'after' ? i + 1 : i;
               elements.splice(insertIdx, 0, newEl);
             }
             return true;
@@ -217,6 +218,15 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
     set(state => {
       const pages = deepClone(state.pages);
       const page = pages.find(p => p.id === state.currentPageId)!;
+      const findTarget = (elements: BuilderElement[]): BuilderElement | null => {
+        for (const element of elements) {
+          if (element.id === targetId) return element;
+          const found = findTarget(element.children);
+          if (found) return found;
+        }
+        return null;
+      };
+      const targetPosition = findTarget(page.elements)?.type === 'cmsMap' ? 'inside' : position;
 
       const removeElement = (elements: BuilderElement[]): BuilderElement | null => {
         for (let i = 0; i < elements.length; i++) {
@@ -235,12 +245,12 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
       const insertElement = (elements: BuilderElement[], parentId: string | null): boolean => {
         for (let i = 0; i < elements.length; i++) {
           if (elements[i].id === targetId) {
-            if (position === 'inside') {
+            if (targetPosition === 'inside') {
               movedElement.parentId = targetId;
               elements[i].children.push(movedElement);
             } else {
               movedElement.parentId = parentId;
-              const insertIdx = position === 'after' ? i + 1 : i;
+              const insertIdx = targetPosition === 'after' ? i + 1 : i;
               elements.splice(insertIdx, 0, movedElement);
             }
             return true;
