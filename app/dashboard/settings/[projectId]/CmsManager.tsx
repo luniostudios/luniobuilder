@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Check, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { CmsCollection, CmsRecord } from '@/app/types/cms';
 
 type CollectionWithRecords = CmsCollection & { records: CmsRecord[] };
@@ -13,6 +13,8 @@ export default function CmsManager({ projectId }: { projectId: string }) {
   const [selectedId, setSelectedId] = useState('');
   const [collectionForm, setCollectionForm] = useState(emptyCollection);
   const [recordDraft, setRecordDraft] = useState<Record<string, string>>({});
+  const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
+  const [editingRecordDraft, setEditingRecordDraft] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -39,6 +41,8 @@ export default function CmsManager({ projectId }: { projectId: string }) {
   useEffect(() => {
     const fields = selected?.fields || [];
     setRecordDraft(Object.fromEntries(fields.map(field => [field, ''])));
+    setEditingRecordId(null);
+    setEditingRecordDraft({});
   }, [selected?.id]);
 
   const createCollection = async () => {
@@ -92,6 +96,38 @@ export default function CmsManager({ projectId }: { projectId: string }) {
     setCollections(current => current.map(collection => collection.id === selected.id ? { ...collection, records: collection.records.filter(record => record.id !== recordId) } : collection));
   };
 
+  const startEditingRecord = (record: CmsRecord) => {
+    setEditingRecordId(record.id);
+    setEditingRecordDraft(Object.fromEntries(selected?.fields.map(field => [field, String(record.data[field] ?? '')]) || []));
+    setError('');
+  };
+
+  const cancelEditingRecord = () => {
+    setEditingRecordId(null);
+    setEditingRecordDraft({});
+  };
+
+  const saveRecord = async (recordId: string) => {
+    if (!selected) return;
+    setSaving(true);
+    setError('');
+    try {
+      const response = await fetch(`/api/cms/${encodeURIComponent(projectId)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'record', id: recordId, collectionId: selected.id, data: editingRecordDraft }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || 'Unable to update record');
+      setCollections(current => current.map(collection => collection.id === selected.id
+        ? { ...collection, records: collection.records.map(record => record.id === recordId ? data : record) }
+        : collection));
+      cancelEditingRecord();
+    } catch (value) {
+      setError(value instanceof Error ? value.message : 'Unable to update record');
+    } finally { setSaving(false); }
+  };
+
   return (
     <section className='rounded-3xl border border-gray-800 bg-[#111214] p-6 space-y-5'>
       <div>
@@ -113,9 +149,19 @@ export default function CmsManager({ projectId }: { projectId: string }) {
             <div className='grid gap-2 border-b border-gray-800 bg-gray-900/60 p-3' style={{ gridTemplateColumns: `repeat(${selected.fields.length}, minmax(140px, 1fr)) 40px` }}>
               {selected.fields.map(field => <span key={field} className='text-xs font-semibold uppercase tracking-wide text-gray-500'>{field}</span>)}<span />
             </div>
-            {selected.records.map(record => <div key={record.id} className='grid gap-2 border-b border-gray-800 p-3' style={{ gridTemplateColumns: `repeat(${selected.fields.length}, minmax(140px, 1fr)) 40px` }}>
-              {selected.fields.map(field => <span key={field} className='truncate text-sm text-gray-200'>{String(record.data[field] ?? '')}</span>)}
-              <button type='button' onClick={() => deleteRecord(record.id)} title='Delete record' className='text-gray-500 hover:text-red-300'><Trash2 size={15} /></button>
+            {selected.records.map(record => <div key={record.id} className='grid gap-2 border-b border-gray-800 p-3' style={{ gridTemplateColumns: `repeat(${selected.fields.length}, minmax(140px, 1fr)) 72px` }}>
+              {selected.fields.map(field => editingRecordId === record.id
+                ? <input key={field} value={editingRecordDraft[field] || ''} onChange={event => setEditingRecordDraft(current => ({ ...current, [field]: event.target.value }))} className='min-w-0 rounded-lg border border-gray-700 bg-[#0f1218] px-2 py-2 text-sm text-gray-200 outline-none focus:border-blue-400' aria-label={`${field} for ${record.id}`} />
+                : <span key={field} className='truncate text-sm text-gray-200' title={String(record.data[field] ?? '')}>{String(record.data[field] ?? '')}</span>)}
+              <div className='flex items-center justify-end gap-2'>
+                {editingRecordId === record.id ? <>
+                  <button type='button' onClick={() => saveRecord(record.id)} disabled={saving} title='Save record' className='text-emerald-300 hover:text-emerald-200 disabled:opacity-50'><Check size={15} /></button>
+                  <button type='button' onClick={cancelEditingRecord} disabled={saving} title='Cancel editing' className='text-gray-500 hover:text-gray-200 disabled:opacity-50'><X size={15} /></button>
+                </> : <>
+                  <button type='button' onClick={() => startEditingRecord(record)} title='Edit record' className='text-gray-500 hover:text-blue-300'><Pencil size={15} /></button>
+                  <button type='button' onClick={() => deleteRecord(record.id)} title='Delete record' className='text-gray-500 hover:text-red-300'><Trash2 size={15} /></button>
+                </>}
+              </div>
             </div>)}
             <div className='grid gap-2 bg-gray-950/40 p-3' style={{ gridTemplateColumns: `repeat(${selected.fields.length}, minmax(140px, 1fr)) 40px` }}>
               {selected.fields.map(field => <input key={field} value={recordDraft[field] || ''} onChange={event => setRecordDraft({ ...recordDraft, [field]: event.target.value })} placeholder={field} className='rounded-lg border border-gray-700 bg-[#0f1218] px-2 py-2 text-sm' />)}
