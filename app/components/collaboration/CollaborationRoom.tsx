@@ -31,9 +31,11 @@ export function CollaborationRoom({
   );
 
   return (
-    <LiveblocksProvider authEndpoint="/api/liveblocks-auth" throttle={100}>
+    <LiveblocksProvider key={`liveblocks:${projectId}`} authEndpoint="/api/liveblocks-auth" throttle={100}>
       <RoomProvider
+        key={`room:${projectId}`}
         id={`project:${projectId}`}
+        autoConnect={Boolean(projectId)}
         initialPresence={{ selectedElementId: null }}
         initialStorage={initialStorage}
       >

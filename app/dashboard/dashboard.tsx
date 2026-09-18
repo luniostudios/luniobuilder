@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
     LayoutDashboard,
     Globe,
@@ -16,10 +16,10 @@ import {
     Menu,
     X,
     Rocket,
-    ArrowUpRight,
     Send,
     Users,
-    User,
+    SearchX,
+    SlidersHorizontal,
 } from 'lucide-react';
 
 import { useEffect } from 'react';
@@ -97,6 +97,8 @@ export default function dashboard() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('projects');
     const [searchQuery, setSearchQuery] = useState('');
+    const [projectFilter, setProjectFilter] = useState<'all' | 'published' | 'draft'>('all');
+    const [projectSort, setProjectSort] = useState<'recent' | 'oldest' | 'name'>('recent');
     const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
     const toggleDropdown = (id: string) => {
@@ -256,10 +258,29 @@ export default function dashboard() {
     };
 
     //Get the project limit based on the user's role
-    
+
     const projectLimit = getProjectLimitForRole(userData?.role);
     const projectCount = projects.length;
     const reachedProjectLimit = projectLimit !== null && projectCount >= projectLimit;
+    const publishedProjectCount = projects.filter(project => project.status?.toLowerCase() === 'published').length;
+    const draftProjectCount = projectCount - publishedProjectCount;
+    const filteredProjects = useMemo(() => {
+        const query = searchQuery.trim().toLowerCase();
+        return projects
+            .filter(project => {
+                const matchesQuery = !query || [project.title, project.slug, project.vercelUrl]
+                    .filter(Boolean)
+                    .some(value => value.toLowerCase().includes(query));
+                const matchesStatus = projectFilter === 'all' || project.status?.toLowerCase() === projectFilter;
+                return matchesQuery && matchesStatus;
+            })
+            .sort((first, second) => {
+                if (projectSort === 'name') return first.title.localeCompare(second.title);
+                const firstDate = new Date(first.updated_at).getTime();
+                const secondDate = new Date(second.updated_at).getTime();
+                return projectSort === 'oldest' ? firstDate - secondDate : secondDate - firstDate;
+            });
+    }, [projects, projectFilter, projectSort, searchQuery]);
 
     const openCreateProjectModal = () => {
         setCreateProjectModal({ isOpen: true, name: '' });
@@ -351,9 +372,9 @@ export default function dashboard() {
     const NavItem = ({ icon: Icon, label, id }: NavItemProps) => (
         <button
             onClick={() => setActiveTab(id)}
-            className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${activeTab === id
-                ? 'bg-gray-900 text-white font-medium'
-                : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
+            className={`w-full flex items-center space-x-3 px-4 py-2.5 transition-all duration-200 ${activeTab === id
+                ? 'bg-emerald-400/20 text-white font-semibold shadow-lg shadow-emerald-950/20'
+                : 'text-white/55 hover:bg-white/10 hover:text-white'
                 }`}
         >
             <Icon size={18} className={activeTab === id ? 'text-white' : 'text-gray-400'} />
@@ -362,7 +383,7 @@ export default function dashboard() {
     );
 
     return (
-        <div className="flex h-screen bg-[#F8FAFC] text-gray-900 font-sans selection:bg-blue-100 selection:text-blue-900">
+        <div className="flex h-screen bg-[#f5f7fb] text-gray-900 font-sans selection:bg-emerald-100 selection:text-emerald-900">
 
             {/* Mobile Sidebar Overlay */}
             {isMobileMenuOpen && (
@@ -374,16 +395,16 @@ export default function dashboard() {
 
             {/* Sidebar */}
             <aside className={`
-        fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 flex flex-col justify-between transition-transform duration-300 ease-in-out
+        fixed lg:static inset-y-0 left-0 z-50 w-64 bg-[#101a1b] text-white border-r border-[#203033] flex flex-col justify-between transition-transform duration-300 ease-in-out
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
                 <div>
                     {/* Logo */}
-                    <div className="h-16 flex items-center px-6 border-b border-gray-100">
-                        <div className="flex items-center gap-2 text-xl font-bold tracking-tight text-gray-900">
+                    <div className="h-16 flex items-center px-6 border-b border-white/10">
+                        <div className="flex items-center gap-2 text-xl font-bold tracking-tight text-white">
                             <div className='flex'>
                                 <Link href={"/"}>
-                                    <div className="flex items-center text-black gap-2 cursor-pointer font-bold uppercase text-lg">
+                                    <div className="flex items-center text-white gap-2 cursor-pointer font-bold uppercase text-lg">
                                         <div className='flex flex-row text-2xl align-middle items-center'>
                                             <h1>LUNI</h1>
                                             <Rocket width={20} className="text-bold" />
@@ -394,7 +415,7 @@ export default function dashboard() {
                             </div>
                         </div>
                         <button
-                            className="ml-auto lg:hidden text-gray-500"
+                            className="ml-auto lg:hidden text-white/60"
                             onClick={() => setIsMobileMenuOpen(false)}
                         >
                             <X size={20} />
@@ -402,27 +423,31 @@ export default function dashboard() {
                     </div>
 
                     {/* Navigation */}
-                    <nav className="p-4 space-y-1">
+                    <nav className="space-y-1">
                         <NavItem icon={LayoutDashboard} label="Projects" id="projects" />
                         <NavItem icon={BarChart3} label="Analytics" id="analytics" />
                         <NavItem icon={Settings} label="Settings" id="settings" />
                         {userData && (userData.role?.toLowerCase() === 'admin' || userData.role?.toLowerCase() === 'owner') && (
                             <NavItem icon={Users} label="Users" id="users" />
                         )}
+                        <div className="px-4">
+
+                        <SignOut />
+                        </div>
                     </nav>
                 </div>
 
                 {/* User Footer */}
-                <div className="p-4 border-t border-gray-100">
-                    <button className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-gray-50 transition-colors text-left">
+                <div className="p-4 border-t border-white/10">
+                    <button className="flex items-center gap-3 w-full p-2 rounded-xl hover:bg-white/10 transition-colors text-left">
                         <img
                             src={`${userData?.image || session?.user?.image || 'https://www.gravatar.com/avatar?d=mp&f=y'}`}
                             alt="User Avatar"
-                            className="w-9 h-9 rounded-full bg-gray-100 ring-2 ring-white"
+                            className="w-9 h-9 rounded-full bg-white/10 ring-2 ring-white/10"
                         />
                         <div className="flex-1 overflow-hidden">
-                            <p className="text-sm font-medium text-gray-900 truncate">{userData?.name || session?.user?.name}</p>
-                            <p className="text-xs text-gray-500 truncate"><span className={`text-sm font-normal rounded-full px-2 py-1 align-middle  ${role === 'ADMIN' ? 'text-red-500 bg-red-500/20' : role === 'OWNER' ? 'text-green-500 bg-green-500/20' : role === 'PRO' ? 'text-blue-500' : role === 'BUSINESS' ? 'text-purple-500' : 'text-gray-400'}`}>{role.toLowerCase()}</span></p>
+                            <p className="text-sm font-medium text-white truncate">{userData?.name || session?.user?.name}</p>
+                            <p className="text-xs text-white/50 truncate"><span className={`text-[10px] font-semibold uppercase tracking-wider rounded-full px-2 py-1 align-middle  ${role === 'ADMIN' ? 'text-red-300 bg-red-500/20' : role === 'OWNER' ? 'text-emerald-300 bg-emerald-500/20' : role === 'PRO' ? 'text-sky-300 bg-sky-500/20' : role === 'BUSINESS' ? 'text-violet-300 bg-violet-500/20' : 'text-white/60 bg-white/10'}`}>{role.toLowerCase()}</span></p>
                         </div>
                     </button>
                 </div>
@@ -432,7 +457,7 @@ export default function dashboard() {
             <main className="flex-1 flex flex-col h-screen overflow-hidden">
 
                 {/* Header */}
-                <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 z-10 shrink-0">
+                <header className="h-16 bg-white/90 backdrop-blur border-b border-gray-200/80 flex items-center justify-between px-4 sm:px-8 z-10 shrink-0">
                     <div className="flex items-center flex-1">
                         <button
                             className="mr-4 lg:hidden text-gray-500 hover:text-gray-900"
@@ -447,7 +472,7 @@ export default function dashboard() {
                                 placeholder="Search projects or domains..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:bg-white transition-all"
+                                className="w-full pl-9 pr-4 py-2.5 bg-[#f5f7fb] border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 focus:bg-white transition-all"
                             />
                         </div>
                     </div>
@@ -487,7 +512,7 @@ export default function dashboard() {
                 </header>
 
                 {/* Scrollable Dashboard Area */}
-                <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
+                <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-10">
 
                     {invitations.length > 0 && (
                         <div className="max-w-6xl mx-auto mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4">
@@ -510,7 +535,7 @@ export default function dashboard() {
 
                     {activeTab === 'users' ? <Userss /> : activeTab === 'settings' && userData ? <ProfileSettings user={userData} onSaved={setUserData} /> :
 
-                        <div className="max-w-6xl mx-auto space-y-8">
+                        <div className="max-w-7xl mx-auto space-y-9">
 
                             {/* Greeting & Stats */}
                             <div className="space-y-6">
@@ -529,26 +554,58 @@ export default function dashboard() {
                                     {
                                         // session.user may not have a `role` property on its type, cast to any to safely access it
                                     }
-                                    <h1 className="text-2xl font-bold text-gray-900">🚀 Welcome back, {userData?.name || session?.user?.name || 'User'} <span className={`text-sm font-normal rounded-full px-2 py-1 align-middle  ${role === 'ADMIN' ? 'text-red-500 bg-red-500/20' : role === 'OWNER' ? 'text-green-500 bg-green-500/20' : role === 'PRO' ? 'text-blue-500' : role === 'BUSINESS' ? 'text-purple-500 bg-purple-500/20' : 'text-gray-400'}`}>{role.toLowerCase()}</span></h1>
-                                    <p className="text-gray-500 mt-1">Here's what's happening with your websites today.</p>
+                                    <div className="flex flex-wrap items-center gap-3">
+                                        <h1 className="text-3xl font-semibold tracking-tight text-[#102022]">Welcome back, {userData?.name || session?.user?.name || 'User'}</h1>
+                                        <span className="text-[10px] font-bold uppercase tracking-[0.16em] rounded-full px-2.5 py-1 text-emerald-700 bg-emerald-100">{role.toLowerCase()}</span>
+                                    </div>
+                                    <p className="text-gray-500 mt-2">A clear view of your websites, activity, and next steps.</p>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                    <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-center">
-                                        <span className="text-sm font-medium text-gray-500">Total Sites</span>
-                                        <div className="mt-2 flex flex-row items-baseline gap-2">
-                                            <span className="flex flex-row  items-center text-2xl font-bold text-gray-900">{projects.length}/{projectLimit < 1000000 ? projectLimit : "∞"}</span>
+                                    {[
+                                        { label: 'Total projects', value: `${projects.length}/${projectLimit < 1000000 ? projectLimit : '∞'}`, icon: '/icons/globe.gif', tone: 'bg-sky-50 text-sky-600' },
+                                        { label: 'Published', value: publishedProjectCount, icon: '/icons/check.gif', tone: 'bg-emerald-50 text-emerald-600' },
+                                        { label: 'Drafts', value: draftProjectCount, icon: '/icons/clock.gif', tone: 'bg-amber-50 text-amber-600' },
+                                    ].map(stat => (
+                                        <div key={stat.label} className="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-sm flex items-center justify-between">
+                                            <div><span className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-400">{stat.label}</span><div className="mt-2 text-2xl font-semibold tracking-tight text-[#102022]">{stat.value}</div></div>
+                                            <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${stat.tone}`}><img src={stat.icon} alt={stat.label} height="20" width="20" /></div>
                                         </div>
-                                    </div>
+                                    ))}
                                 </div>
                             </div>
 
                             {/* Projects Section */}
                             <div className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <h2 className="text-lg font-bold text-gray-900">All Projects</h2>
-                                    <button className="text-sm font-medium text-gray-600 hover:text-gray-500 flex items-center gap-1">
-                                        View all templates <ArrowUpRight size={14} />
-                                    </button>
+                                <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <h2 className="text-xl font-semibold tracking-tight text-[#102022]">Your projects</h2>
+                                            <span className="rounded-full bg-gray-200/70 px-2 py-0.5 text-xs font-semibold text-gray-500">{filteredProjects.length}</span>
+                                        </div>
+                                        <p className="mt-1 text-sm text-gray-500">Manage, edit, and publish your digital spaces.</p>
+                                    </div>
+                                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                        <div className="flex items-center gap-1 rounded-xl border border-gray-200 bg-white p-1 shadow-sm">
+                                            {(['all', 'published', 'draft'] as const).map(filter => (
+                                                <button
+                                                    key={filter}
+                                                    onClick={() => setProjectFilter(filter)}
+                                                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition-colors ${projectFilter === filter ? 'bg-[#102022] text-white' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'}`}
+                                                >
+                                                    {filter}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <label className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs text-gray-500 shadow-sm">
+                                            <SlidersHorizontal size={14} />
+                                            <span className="sr-only">Sort projects</span>
+                                            <select value={projectSort} onChange={event => setProjectSort(event.target.value as typeof projectSort)} className="bg-transparent font-semibold text-gray-700 outline-none">
+                                                <option value="recent">Recently edited</option>
+                                                <option value="oldest">Oldest first</option>
+                                                <option value="name">Name A-Z</option>
+                                            </select>
+                                        </label>
+                                    </div>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -565,11 +622,11 @@ export default function dashboard() {
                                     </button>
 
                                     {/* Project Cards */}
-                                    {projects.map((project) => (
-                                        <div key={project.id} className="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all overflow-visible relative flex flex-col h-full">
+                                    {filteredProjects.map((project) => (
+                                        <div key={project.id} className="group bg-white rounded-2xl border border-gray-200/80 shadow-sm hover:-translate-y-0.5 hover:shadow-xl hover:shadow-gray-200/60 transition-all overflow-visible relative flex flex-col h-full">
 
                                             {/* Image / Thumbnail Container */}
-                                            <div className="relative w-full h-40 overflow-hidden rounded-t-xl bg-gray-100 shrink-0">
+                                            <div className="relative w-full h-44 overflow-hidden rounded-t-2xl bg-gray-100 shrink-0">
                                                 <iframe
                                                     srcDoc={buildProjectPreviewDocument(project)}
                                                     title={`${project.title} website preview`}
@@ -587,7 +644,7 @@ export default function dashboard() {
                                                 </div>
 
                                                 {/* Status Badge */}
-                                                <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 bg-white/90 backdrop-blur text-xs font-medium rounded-md shadow-sm text-gray-700">
+                                                <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1.5 bg-white/90 backdrop-blur text-[10px] font-bold uppercase tracking-wider rounded-lg shadow-sm text-gray-700">
                                                     {project.status === 'published' ? (
                                                         <>
                                                             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
@@ -603,10 +660,10 @@ export default function dashboard() {
                                             </div>
 
                                             {/* Card Content */}
-                                            <div className="p-4 flex flex-col flex-1 justify-between">
+                                            <div className="p-5 flex flex-col flex-1 justify-between">
                                                 <div className="flex items-start justify-between">
                                                     <div className="overflow-hidden pr-2">
-                                                        <h3 className="font-semibold text-gray-900 truncate">{project.title}</h3>
+                                                        <h3 className="font-semibold text-[#102022] truncate">{project.title}</h3>
                                                         <a href={project.vercelUrl} target="_blank" rel="noreferrer" className="text-sm text-gray-500 hover:text-gray-600 truncate flex items-center gap-1 mt-0.5 group/link">
                                                             {project.vercelUrl}
                                                             <ExternalLink size={12} className="opacity-0 -translate-y-1 group-hover/link:opacity-100 group-hover/link:translate-y-0 transition-all" />
@@ -717,11 +774,12 @@ export default function dashboard() {
                                     ))}
                                 </div>
 
-                                {projects.length === 0 && (
-                                    <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
-                                        <Globe className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                                        <h3 className="text-gray-900 font-medium">No projects found</h3>
-                                        <p className="text-gray-500 text-sm mt-1">Try adjusting your search query.</p>
+                                {filteredProjects.length === 0 && (
+                                    <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-300">
+                                        {projects.length === 0 ? <Globe className="w-12 h-12 text-gray-300 mx-auto mb-3" /> : <SearchX className="w-12 h-12 text-gray-300 mx-auto mb-3" />}
+                                        <h3 className="text-gray-900 font-semibold">{projects.length === 0 ? 'Create your first project' : 'No matching projects'}</h3>
+                                        <p className="text-gray-500 text-sm mt-1">{projects.length === 0 ? 'Your next great site starts with a blank canvas.' : 'Try a different search term or clear the active filters.'}</p>
+                                        {projects.length > 0 && (searchQuery || projectFilter !== 'all') && <button onClick={() => { setSearchQuery(''); setProjectFilter('all'); }} className="mt-4 rounded-lg bg-gray-100 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-200">Clear filters</button>}
                                     </div>
                                 )}
                             </div>

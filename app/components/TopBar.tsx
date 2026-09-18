@@ -538,7 +538,6 @@ export const TopBar: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           projectId,
-          title: projectData?.title || 'Untitled Project',
           siteSlug,
           status: 'published',
           content: {
