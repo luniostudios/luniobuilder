@@ -373,7 +373,7 @@ const LayersTab: React.FC = () => {
 };
 
 const PagesTab: React.FC = () => {
-  const { pages, currentPageId, setCurrentPage, addPage, deletePage, updatePageName, updatePageSlug } = useBuilderStore();
+  const { pages, currentPageId, setCurrentPage, addPage, deletePage, updatePageName, updatePageSlug, updatePageCmsDetail } = useBuilderStore();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editSlug, setEditSlug] = useState('');
@@ -457,6 +457,14 @@ const PagesTab: React.FC = () => {
               onDoubleClick={e => { e.stopPropagation(); startEdit(page); }}
               title={page.slug === '/' ? 'The homepage URL cannot be changed' : 'Double-click to edit the page URL slug'}
             >{page.slug}</span>}
+
+            {page.slug !== '/' && <button
+              type="button"
+              onClick={e => { e.stopPropagation(); updatePageCmsDetail(page.id, { enabled: !page.cmsDetail?.enabled }); }}
+              aria-label={`${page.cmsDetail?.enabled ? 'Disable' : 'Enable'} single post page for ${page.name}`}
+              title={page.cmsDetail?.enabled ? 'Single post page enabled' : 'Enable single post page'}
+              className={`shrink-0 text-[10px] ${page.cmsDetail?.enabled ? 'text-emerald-300' : 'text-gray-600 hover:text-gray-300'}`}
+            >SP</button>}
 
             {pages.length > 1 && page.slug !== '/' && (
               <button

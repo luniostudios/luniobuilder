@@ -1,18 +1,20 @@
 "use client";
 
 import { useEffect } from 'react';
-import { ElementRenderer } from '../components/canvas/ElementRenderer';
+import { CmsRecordProvider, ElementRenderer } from '../components/canvas/ElementRenderer';
 import { useBuilderStore } from '../stores/builderStore';
 import type { Breakpoint, Page } from '../types/builder';
+import type { CmsRecord } from '../types/cms';
 
 interface TenantSiteProps {
   projectId: string;
   projectName: string;
   pages: Page[];
   currentPageId: string;
+  cmsRecord?: Pick<CmsRecord, 'id' | 'data'> | null;
 }
 
-export default function TenantSite({ projectId, projectName, pages, currentPageId }: TenantSiteProps) {
+export default function TenantSite({ projectId, projectName, pages, currentPageId, cmsRecord = null }: TenantSiteProps) {
   const loadProject = useBuilderStore(state => state.loadProject);
   const setPreviewMode = useBuilderStore(state => state.setPreviewMode);
   const setBreakpoint = useBuilderStore(state => state.setBreakpoint);
@@ -45,12 +47,19 @@ export default function TenantSite({ projectId, projectName, pages, currentPageI
 
   const page = storePages.find(candidate => candidate.id === storeCurrentPageId) || storePages[0];
   if (!page) return null;
+  const detailPage = storePages.find(candidate => candidate.cmsDetail?.enabled && candidate.slug !== '/');
+  const detailRoutePrefix = detailPage?.slug;
+  const detailSettings = detailPage?.cmsDetail
+    ? { ...detailPage.cmsDetail, routePrefix: detailRoutePrefix }
+    : undefined;
 
   return (
     <main className="min-h-screen bg-white">
-      {page.elements.map(element => (
-        <ElementRenderer key={element.id} element={element} isPreview isPublishedSite />
-      ))}
+      <CmsRecordProvider record={cmsRecord} detailSettings={detailSettings}>
+        {page.elements.map(element => (
+          <ElementRenderer key={element.id} element={element} isPreview isPublishedSite />
+        ))}
+      </CmsRecordProvider>
     </main>
   );
 }

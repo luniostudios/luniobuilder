@@ -2,6 +2,7 @@
 
 import React, { JSX, createContext, useContext, useEffect, useRef, useState } from 'react';
 import { BuilderElement, ElementType } from '../../types/builder';
+import type { CmsDetailSettings } from '../../types/cms';
 import { useBuilderStore } from '../../stores/builderStore';
 import { canHaveChildren, getEffectiveStyles, stylesToCSS } from '../../utils/builderUtils';
 import * as LucideIcons from 'lucide-react';
@@ -33,9 +34,19 @@ interface CmsTableRow {
 interface CmsRecordContextValue {
   id: string;
   data: Record<string, unknown>;
+  detailSettings?: CmsDetailSettings;
 }
 
 const CmsRecordContext = createContext<CmsRecordContextValue | null>(null);
+
+export const CmsRecordProvider: React.FC<{ record: CmsRecordContextValue | null; detailSettings?: CmsDetailSettings; children: React.ReactNode }> = ({ record, detailSettings, children }) => {
+  const parentRecord = useContext(CmsRecordContext);
+  const contextValue = record
+    ? { ...record, detailSettings: detailSettings || parentRecord?.detailSettings }
+    : parentRecord;
+
+  return <CmsRecordContext.Provider value={contextValue}>{children}</CmsRecordContext.Provider>;
+};
 
 const evaluateCondition = (element: BuilderElement, record: CmsRecordContextValue | null) => {
   const field = String(element.props.conditionField || '').trim();
@@ -342,7 +353,14 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     const field = element.props.cmsHrefField;
     if (!cmsRecord || typeof field !== 'string' || !field) return element.props.href;
     const value = cmsRecord.data[field];
-    return value === undefined || value === null ? element.props.href : String(value);
+    if (value === undefined || value === null) return element.props.href;
+    if (isPublishedSite && field === cmsRecord.detailSettings?.slugField) {
+      const detailPage = pages.find(candidate => candidate.cmsDetail?.enabled && candidate.slug !== '/');
+      const prefix = String(detailPage?.slug || cmsRecord.detailSettings?.routePrefix || '').replace(/^\/+|\/+$/g, '');
+      const recordValue = String(value).replace(/^\/+/, '').replace(new RegExp(`^${prefix}/`, 'i'), '');
+      return prefix ? `/${prefix}/${encodeURIComponent(recordValue)}` : `/${encodeURIComponent(recordValue)}`;
+    }
+    return String(value);
   };
 
   const resolveCmsAlt = () => {
@@ -388,6 +406,10 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
           return;
         }
         setCurrentPage(targetPage.id);
+        return;
+      }
+      if (isPublishedSite && href.startsWith('/')) {
+        window.location.assign(href);
         return;
       }
       // Otherwise, if it's an external link, open it

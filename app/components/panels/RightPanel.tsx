@@ -1673,10 +1673,11 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
   const page = getCurrentPage();
   const cmsMapAncestor = useMemo(() => findCmsMapAncestor(page.elements, element.id), [page.elements, element.id]);
   const cmsFieldSource = element.type === 'cmsMap' ? element : cmsMapAncestor;
-  const cmsCollectionKey = String(cmsFieldSource?.props.collectionId || cmsFieldSource?.props.collectionSlug || '');
+  const cmsCollectionKey = String(cmsFieldSource?.props.collectionId || cmsFieldSource?.props.collectionSlug || (page.cmsDetail?.enabled ? page.cmsDetail.collectionId : '') || '');
+  const isCmsDetailPage = page.cmsDetail?.enabled === true;
 
   useEffect(() => {
-    if (!projectId || (!['table', 'cmsMap'].includes(element.type) && !cmsMapAncestor)) {
+    if (!projectId || (!['table', 'cmsMap'].includes(element.type) && !cmsMapAncestor && !isCmsDetailPage)) {
       setCmsCollections([]);
       return;
     }
@@ -1684,7 +1685,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
       .then(response => response.ok ? response.json() : [])
       .then(data => setCmsCollections(Array.isArray(data) ? data : []))
       .catch(() => setCmsCollections([]));
-  }, [element.type, projectId, cmsMapAncestor?.id]);
+  }, [element.type, projectId, cmsMapAncestor?.id, isCmsDetailPage, page.cmsDetail?.collectionId]);
 
   return (
     <div className="p-4 space-y-3">
@@ -1721,7 +1722,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
             className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />}
         </>}
-        {!cmsMapAncestor && element.type !== 'cmsMap' && <p className="text-[11px] text-amber-300 mt-2">Connect this element to a CMS Map to choose fields.</p>}
+        {!cmsMapAncestor && !isCmsDetailPage && element.type !== 'cmsMap' && <p className="text-[11px] text-amber-300 mt-2">Connect this element to a CMS Map to choose fields.</p>}
       </div>
       {/* Name */}
       <div>
@@ -2092,7 +2093,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
         </div>
       )}
 
-      {cmsMapAncestor && element.type !== 'cmsMap' && (
+      {(cmsMapAncestor || isCmsDetailPage) && element.type !== 'cmsMap' && (
         <div className="space-y-3 border-t border-gray-800 pt-3">
           <div>
             <label className="text-xs text-gray-500 block mb-1">CMS content field</label>
@@ -2183,8 +2184,20 @@ interface SeoEditorProps {
 }
 
 const SeoEditor: React.FC<SeoEditorProps> = ({ pageId }) => {
-  const { pages, updatePageSeo, updatePageName } = useBuilderStore();
+  const { pages, projectId, updatePageSeo, updatePageName, updatePageCmsDetail } = useBuilderStore();
+  const [cmsCollections, setCmsCollections] = useState<Array<{ id: string; name: string; fields: string[] }>>([]);
   const page = pages.find(p => p.id === pageId)!;
+
+  useEffect(() => {
+    if (!projectId) return;
+    fetch(`/api/cms/${encodeURIComponent(projectId)}`)
+      .then(response => response.ok ? response.json() : [])
+      .then(data => setCmsCollections(Array.isArray(data) ? data : []))
+      .catch(() => setCmsCollections([]));
+  }, [projectId]);
+
+  const cmsDetail = { enabled: false, collectionId: '', slugField: 'slug', ...page?.cmsDetail };
+  const selectedCollection = cmsCollections.find(collection => collection.id === cmsDetail.collectionId);
   if (!page) return null;
 
   return (
@@ -2207,6 +2220,34 @@ const SeoEditor: React.FC<SeoEditorProps> = ({ pageId }) => {
           readOnly
         />
       </div>
+
+      {page.slug !== '/' && <div className="border-t border-gray-800 pt-4">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <div>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">CMS single post</p>
+            <p className="text-[11px] text-gray-600 mt-1">Use this page for URLs like {page.slug}/post-slug.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => updatePageCmsDetail(page.id, { enabled: !cmsDetail.enabled })}
+            className={`rounded-full px-3 py-1 text-[11px] font-semibold ${cmsDetail.enabled ? 'bg-emerald-500/20 text-emerald-300' : 'bg-gray-800 text-gray-400'}`}
+          >{cmsDetail.enabled ? 'Enabled' : 'Disabled'}</button>
+        </div>
+        {cmsDetail.enabled && <div className="space-y-3">
+          <label className="text-xs text-gray-500 block">Collection
+            <select value={cmsDetail.collectionId} onChange={event => updatePageCmsDetail(page.id, { collectionId: event.target.value, slugField: 'slug' })} className="mt-1 w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700">
+              <option value="">Select a collection</option>
+              {cmsCollections.map(collection => <option key={collection.id} value={collection.id}>{collection.name}</option>)}
+            </select>
+          </label>
+          <label className="text-xs text-gray-500 block">Record URL field
+            <select value={cmsDetail.slugField} onChange={event => updatePageCmsDetail(page.id, { slugField: event.target.value })} disabled={!selectedCollection} className="mt-1 w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 disabled:opacity-50">
+              <option value="">Select a field</option>
+              {selectedCollection?.fields.map(field => <option key={field} value={field}>{field}</option>)}
+            </select>
+          </label>
+        </div>}
+      </div>}
 
       <div className="border-t border-gray-800 pt-4">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">SEO</p>

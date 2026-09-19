@@ -4,6 +4,7 @@ import { supabaseServer } from '../../../lib/supabaseServer';
 import { normalizeSiteSlug } from '../../../lib/tenant';
 import TenantSite from '../../TenantSite';
 import type { Page } from '../../../types/builder';
+import type { CmsRecord } from '../../../types/cms';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -41,6 +42,33 @@ const findPage = (pages: Page[], requestedSlug: string) => {
 	return matchingPage || (normalizedRequestedSlug === '/' ? pages[0] : undefined);
 };
 
+const normalizeRoutePart = (value: string) => value.toLowerCase().replace(/^\/+|\/+$/g, '');
+
+async function findCmsDetail(projectId: string, pages: Page[], requestedSlug: string) {
+	const routeParts = normalizeRoutePart(requestedSlug).split('/').filter(Boolean);
+	if (routeParts.length !== 2) return null;
+	const page = pages.find(candidate => candidate.cmsDetail?.enabled && candidate.slug !== '/' && normalizeRoutePart(candidate.slug) === routeParts[0]);
+	const settings = page?.cmsDetail;
+	if (!page || !settings?.collectionId || !settings.slugField) return null;
+
+	const { data: collection } = await supabaseServer
+		.from('cms_collections')
+		.select('id, slug')
+		.eq('id', settings.collectionId)
+		.eq('project_id', projectId)
+		.maybeSingle();
+	if (!collection) return null;
+	const { data: records } = await supabaseServer
+		.from('cms_records')
+		.select('id, data')
+		.eq('collection_id', collection.id);
+	const record = (records || []).find(candidate => {
+		const storedSlug = normalizeRoutePart(String(candidate.data?.[settings.slugField] || ''));
+		return storedSlug === routeParts[1] || storedSlug === routeParts.join('/');
+	});
+	return record ? { page, record: record as Pick<CmsRecord, 'id' | 'data'> } : null;
+}
+
 async function getTenantProject(site: string) {
 	const siteSlug = normalizeSiteSlug(site);
 	if (!siteSlug) return null;
@@ -60,7 +88,8 @@ export async function generateMetadata({ params }: TenantRouteProps): Promise<Me
 	const { site, path } = await params;
 	const project = await getTenantProject(site);
 	const pages = project?.content?.pages || [];
-	const page = findPage(pages, getRequestedSlug(path));
+	const requestedSlug = getRequestedSlug(path);
+	const page = findPage(pages, requestedSlug) || (project ? (await findCmsDetail(project.id, pages, requestedSlug))?.page : undefined);
 
 	if (!project || !page) return {};
 
@@ -75,7 +104,9 @@ export default async function TenantPage({ params }: TenantRouteProps) {
 	const { site, path } = await params;
 	const project = await getTenantProject(site);
 	const pages = project?.content?.pages || [];
-	const page = findPage(pages, getRequestedSlug(path));
+	const requestedSlug = getRequestedSlug(path);
+	const detail = project ? await findCmsDetail(project.id, pages, requestedSlug) : null;
+	const page = findPage(pages, requestedSlug) || detail?.page;
 
 	if (!project || !page) notFound();
 
@@ -85,6 +116,7 @@ export default async function TenantPage({ params }: TenantRouteProps) {
 			projectName={project.title}
 			pages={pages}
 			currentPageId={page.id}
+			cmsRecord={detail?.record}
 		/>
 	);
 }

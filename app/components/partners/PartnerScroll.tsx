@@ -16,7 +16,7 @@ const logos = {
 
 export default function LogoMarquee() {
     return (
-        <section className="flex flex-row py-2 justify-center gap-2 align-middle border-y border-white/5">
+        <section className="hidden flex-row py-2 justify-center gap-2 align-middle border-y border-white/5">
             <h1 className=" text-center text-sm text-white uppercase tracking-widest max-md:hidden">Our Partners: </h1>
             <div className="relative overflow-hidden mask-fade-x">
                 <div className="flex gap-8 animate-marquee whitespace-nowrap">

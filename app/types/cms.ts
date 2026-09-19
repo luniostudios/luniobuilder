@@ -19,3 +19,10 @@ export interface CmsRecord {
 export interface CmsCollectionWithRecords extends CmsCollection {
   records: CmsRecord[];
 }
+
+export interface CmsDetailSettings {
+  enabled: boolean;
+  collectionId: string;
+  slugField: string;
+  routePrefix?: string;
+}

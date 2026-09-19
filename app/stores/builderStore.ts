@@ -42,6 +42,7 @@ interface BuilderStore extends BuilderState {
   updatePageSeo: (id: string, seo: Partial<Page['seo']>) => void;
   updatePageName: (id: string, name: string) => void;
   updatePageSlug: (id: string, slug: string) => void;
+  updatePageCmsDetail: (id: string, settings: Partial<NonNullable<Page['cmsDetail']>>) => void;
 
   // UI state
   setBreakpoint: (breakpoint: Breakpoint) => void;
@@ -76,6 +77,7 @@ const defaultPage: Page = {
     description: '',
     keywords: '',
   },
+  cmsDetail: { enabled: false, collectionId: '', slugField: 'slug' },
 };
 
 export const useBuilderStore = create<BuilderStore>((set, get) => ({
@@ -548,6 +550,17 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
       const pages = deepClone(state.pages);
       const pageToUpdate = pages.find(candidate => candidate.id === id)!;
       pageToUpdate.slug = `/${normalizedSlug}`;
+      return { pages };
+    });
+  },
+
+  updatePageCmsDetail: (id, settings) => {
+    set(state => {
+      const pages = deepClone(state.pages);
+      const page = pages.find(candidate => candidate.id === id);
+      if (!page) return state;
+      if (page.slug === '/') return state;
+      page.cmsDetail = { enabled: false, collectionId: '', slugField: 'slug', ...page.cmsDetail, ...settings };
       return { pages };
     });
   },

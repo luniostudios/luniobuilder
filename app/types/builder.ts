@@ -203,6 +203,7 @@ export interface Page {
     description: string;
     keywords: string;
   };
+  cmsDetail?: import('./cms').CmsDetailSettings;
 }
 
 export type Breakpoint = 'widescreen' | 'desktop' | 'tablet' | 'mobile' | 'laptop' | 'mobileLandscape';
