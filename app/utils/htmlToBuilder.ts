@@ -146,44 +146,6 @@ const nodeToBuilderElement = (
     }
   });
 
-  if (elementType === 'navbar') {
-    const menu = children.find(child => child.type === 'list');
-    if (menu) {
-      menu.props = { ...menu.props, isNavMenu: true };
-      menu.styles = {
-        ...menu.styles,
-        widescreen: { ...menu.styles.widescreen, display: 'flex', alignItems: 'center', gap: '16px', listStyle: 'none', margin: '0 0 0 auto', padding: '0' },
-        desktop: { ...menu.styles.desktop, display: 'flex', alignItems: 'center', gap: '16px', listStyle: 'none', margin: '0 0 0 auto', padding: '0' },
-        laptop: { ...menu.styles.laptop, display: 'flex', alignItems: 'center', gap: '16px', listStyle: 'none', margin: '0 0 0 auto', padding: '0' },
-        tablet: { ...menu.styles.tablet, display: 'none' },
-        mobileLandscape: { ...menu.styles.mobileLandscape, display: 'none' },
-        mobile: { ...menu.styles.mobile, display: 'none' },
-      };
-    }
-
-    const hasMenuToggle = children.some(child => child.type === 'icon' && child.props.iconName === 'Menu');
-    if (!hasMenuToggle) {
-      children.push({
-        id: generateId(),
-        type: 'icon',
-        name: 'Hamburger',
-        props: { iconName: 'Menu' },
-        styles: {
-          widescreen: { display: 'none' },
-          desktop: { display: 'none' },
-          laptop: { display: 'none' },
-          tablet: { display: 'flex', cursor: 'pointer', width: '40px', height: '40px', alignItems: 'center', justifyContent: 'center', color: '#111827', margin: '0 0 0 auto' },
-          mobileLandscape: { display: 'flex', cursor: 'pointer', width: '40px', height: '40px', alignItems: 'center', justifyContent: 'center', color: '#111827', margin: '0 0 0 auto' },
-          mobile: { display: 'flex', cursor: 'pointer', width: '40px', height: '40px', alignItems: 'center', justifyContent: 'center', color: '#111827', margin: '0 0 0 auto' },
-        },
-        children: [],
-        parentId: builderId,
-        locked: false,
-        hidden: false,
-      });
-    }
-  }
-
   return {
     id: builderId,
     type: elementType,

@@ -4,7 +4,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useBuilderStore } from '../../stores/builderStore';
 import { ElementRenderer } from './ElementRenderer';
 import { ElementType } from '../../types/builder';
-import { BREAKPOINTS } from '../../types/builder';
 
 export const Canvas: React.FC = () => {
   const {
@@ -58,12 +57,12 @@ export const Canvas: React.FC = () => {
   ) : null;
 
   const breakpointWidth = {
-    widescreen: `${BREAKPOINTS.widescreen}px`,
-    desktop: `${BREAKPOINTS.desktop}px`,
-    laptop: `${BREAKPOINTS.laptop}px`,
-    tablet: `${BREAKPOINTS.tablet}px`,
-    mobileLandscape: `${BREAKPOINTS.mobileLandscape}px`,
-    mobile: `${BREAKPOINTS.mobile}px`,
+    widescreen: `1536px`,
+    desktop: `1280px`,
+    laptop: `1024px`,
+    tablet: `768px`,
+    mobileLandscape: `480px`,
+    mobile: `320px`,
   }[breakpoint];
 
   const handleCanvasClick = (e: React.MouseEvent) => {

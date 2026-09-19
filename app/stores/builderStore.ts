@@ -355,10 +355,7 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
       const updateEl = (elements: BuilderElement[]): boolean => {
         for (const el of elements) {
           if (el.id === id) {
-            el.styles.responsive = {
-              ...(el.styles.responsive || {}),
-              [bp]: { ...(el.styles.responsive?.[bp] || el.styles[bp] || {}), ...styles },
-            };
+            el.styles[bp] = { ...el.styles[bp], ...styles };
             return true;
           }
           if (updateEl(el.children)) return true;

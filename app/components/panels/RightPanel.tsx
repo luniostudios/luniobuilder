@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight, Plus, Redo2, Trash2, Upload } from 'lucide-react';
 import ColorPicker from 'react-best-gradient-color-picker';
 import { useBuilderStore } from '../../stores/builderStore';
-import { Breakpoint, StyleProperties } from '../../types/builder';
+import { StyleProperties } from '../../types/builder';
 import { getEffectiveStyles } from '../../utils/builderUtils';
 import { GOOGLE_FONT_OPTIONS } from './GoogleFonts';
 
@@ -1305,42 +1305,6 @@ interface ContentEditorProps {
   element: BuilderElement;
 }
 
-const NAV_BREAKPOINTS: Breakpoint[] = ['mobile', 'mobileLandscape', 'tablet', 'laptop', 'desktop', 'widescreen'];
-
-const NavbarConfigEditor: React.FC<{ element: BuilderElement; update: (key: string, value: unknown) => void }> = ({ element, update }) => {
-  const logo = typeof element.props.logo === 'object' && element.props.logo ? element.props.logo as { text?: string; href?: string } : { text: String(element.props.text || 'MyLogo'), href: String(element.props.href || '/') };
-  const mobileMenu = typeof element.props.mobileMenu === 'object' && element.props.mobileMenu
-    ? element.props.mobileMenu as { enabled?: boolean; breakpoint?: Breakpoint; animation?: string }
-    : { enabled: element.props.mobileMenu !== false, breakpoint: 'tablet' as Breakpoint, animation: 'slide' };
-  const cta = typeof element.props.cta === 'object' && element.props.cta ? element.props.cta as { enabled?: boolean; text?: string; href?: string } : { enabled: true, text: 'Get Started', href: '#' };
-  const links = Array.isArray(element.props.links) ? element.props.links : [];
-
-  return (
-    <div className="border-b border-gray-800/60 px-4 pb-4 space-y-3">
-      <div className="pt-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Navbar settings</div>
-      <div className="grid grid-cols-2 gap-2">
-        <label className="text-xs text-gray-500">Variant<select value={String(element.props.variant || 'default')} onChange={event => update('variant', event.target.value)} className="mt-1 w-full bg-gray-800 text-gray-200 text-xs rounded-md px-2 py-1.5 border border-gray-700"><option value="default">Default</option><option value="centered">Centered</option><option value="minimal">Minimal</option></select></label>
-        <label className="text-xs text-gray-500">Collapse at<select value={mobileMenu.breakpoint || 'tablet'} onChange={event => update('mobileMenu', { ...mobileMenu, breakpoint: event.target.value as Breakpoint })} className="mt-1 w-full bg-gray-800 text-gray-200 text-xs rounded-md px-2 py-1.5 border border-gray-700">{NAV_BREAKPOINTS.map(value => <option key={value} value={value}>{value}</option>)}</select></label>
-      </div>
-      <div className="flex gap-4 text-xs text-gray-400">
-        <label className="flex items-center gap-2"><input type="checkbox" checked={Boolean(element.props.sticky)} onChange={event => update('sticky', event.target.checked)} /> Sticky</label>
-        <label className="flex items-center gap-2"><input type="checkbox" checked={Boolean(element.props.transparent)} onChange={event => update('transparent', event.target.checked)} /> Transparent</label>
-        <label className="flex items-center gap-2"><input type="checkbox" checked={mobileMenu.enabled !== false} onChange={event => update('mobileMenu', { ...mobileMenu, enabled: event.target.checked })} /> Mobile menu</label>
-      </div>
-      <label className="text-xs text-gray-500 block">Menu animation<select value={mobileMenu.animation || 'slide'} onChange={event => update('mobileMenu', { ...mobileMenu, animation: event.target.value })} className="mt-1 w-full bg-gray-800 text-gray-200 text-xs rounded-md px-2 py-1.5 border border-gray-700"><option value="none">None</option><option value="slide">Slide</option><option value="fade">Fade</option></select></label>
-      <div className="grid grid-cols-2 gap-2">
-        <label className="text-xs text-gray-500">Logo text<input value={logo.text || ''} onChange={event => update('logo', { ...logo, text: event.target.value })} className="mt-1 w-full bg-gray-800 text-gray-200 text-xs rounded-md px-2 py-1.5 border border-gray-700" /></label>
-        <label className="text-xs text-gray-500">Logo link<input value={logo.href || ''} onChange={event => update('logo', { ...logo, href: event.target.value })} className="mt-1 w-full bg-gray-800 text-gray-200 text-xs rounded-md px-2 py-1.5 border border-gray-700" /></label>
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <label className="text-xs text-gray-500">CTA text<input value={cta.text || ''} onChange={event => update('cta', { ...cta, text: event.target.value })} className="mt-1 w-full bg-gray-800 text-gray-200 text-xs rounded-md px-2 py-1.5 border border-gray-700" /></label>
-        <label className="text-xs text-gray-500">CTA link<input value={cta.href || ''} onChange={event => update('cta', { ...cta, href: event.target.value })} className="mt-1 w-full bg-gray-800 text-gray-200 text-xs rounded-md px-2 py-1.5 border border-gray-700" /></label>
-      </div>
-      <label className="text-xs text-gray-500 block">Links JSON<textarea rows={4} defaultValue={JSON.stringify(links, null, 2)} onBlur={event => { try { const value = JSON.parse(event.target.value); if (Array.isArray(value)) update('links', value); } catch { /* Keep the last valid value until JSON is corrected. */ } }} className="mt-1 w-full bg-gray-800 text-gray-200 text-[11px] rounded-md px-2 py-1.5 border border-gray-700 font-mono" /></label>
-    </div>
-  );
-};
-
 const findCmsMapAncestor = (elements: BuilderElement[], targetId: string, ancestor: BuilderElement | null = null): BuilderElement | null => {
   for (const element of elements) {
     if (element.id === targetId) return ancestor;
@@ -1734,8 +1698,6 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
           className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
       </div>
-
-      {element.type === 'navbar' && <NavbarConfigEditor element={element} update={update} />}
 
       {/* Text content */}
       {(element.type === 'heading' || element.type === 'paragraph' || element.type === 'button' || element.type === 'link' || element.type === 'listItem') && (

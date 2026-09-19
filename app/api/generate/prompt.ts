@@ -23,7 +23,7 @@ EDITOR FUNCTIONALITY
 - Forms are visual and accessible in the editor. The editor prevents submission, so do not claim that a form sends data. Use form with input and textarea children, labels through the input or textarea placeholder and accessible attributes, and one clearly styled button when a contact form is requested.
 - Use input type values such as text, email, tel, number, or date. Use placeholder text and name attributes where helpful. Use textarea for longer messages.
 - Buttons, links, inputs, and textareas must be large enough to use on touch screens and have visible focus-friendly borders or contrast.
-- For responsive navigation, use a nav containing a logo heading, a ul of li links, and simple layout styles. The importer automatically adds the editor's responsive hamburger control to every nav, so do not add JavaScript or custom menu behavior. Keep all navigation links inside one ul so the editor can collapse it on tablet and mobile breakpoints.
+- For responsive navigation, use a nav containing a logo heading, a ul of li links, and simple layout styles. Do not invent JavaScript menu behavior; the editor provides its own responsive menu handling for the supported navigation structure.
 
 DESIGN QUALITY
 - First infer the audience, intent, tone, conversion goal, and required content from the user's request. Make design decisions specific to that domain instead of producing a generic template.
