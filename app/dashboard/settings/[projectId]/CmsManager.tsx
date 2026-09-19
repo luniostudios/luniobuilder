@@ -23,6 +23,8 @@ export default function CmsManager({ projectId }: { projectId: string }) {
   const [recordSearch, setRecordSearch] = useState('');
   const [recordsPerPage, setRecordsPerPage] = useState(10);
   const [recordPage, setRecordPage] = useState(1);
+  const [fieldDraft, setFieldDraft] = useState<string[]>([]);
+  const [newField, setNewField] = useState('');
 
   const selected = useMemo(() => collections.find(collection => collection.id === selectedId) || collections[0], [collections, selectedId]);
   const collectionLimit = getCmsCollectionLimitForRole(role);
@@ -62,12 +64,50 @@ export default function CmsManager({ projectId }: { projectId: string }) {
 
   useEffect(() => {
     const fields = selected?.fields || [];
+    setFieldDraft(fields);
+    setNewField('');
     setRecordDraft(Object.fromEntries(fields.map(field => [field, ''])));
     setEditingRecordId(null);
     setEditingRecordDraft({});
     setRecordPage(1);
     setRecordSearch('');
   }, [selected?.id]);
+
+  const addField = () => {
+    const field = newField.trim();
+    if (!field) return;
+    if (fieldDraft.some(existing => existing.toLowerCase() === field.toLowerCase())) {
+      setError('That field already exists.');
+      return;
+    }
+    setFieldDraft(current => [...current, field]);
+    setNewField('');
+    setError('');
+  };
+
+  const saveFields = async () => {
+    if (!selected || fieldDraft.length === 0) {
+      setError('A collection must have at least one field.');
+      return;
+    }
+    setSaving(true);
+    setError('');
+    try {
+      const response = await fetch(`/api/cms/${encodeURIComponent(projectId)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: selected.id, fields: fieldDraft }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || 'Unable to update fields');
+      setCollections(current => current.map(collection => collection.id === selected.id
+        ? { ...collection, fields: data.fields || fieldDraft }
+        : collection));
+      setRecordDraft(current => Object.fromEntries((data.fields || fieldDraft).map((field: string) => [field, current[field] || ''])));
+    } catch (value) {
+      setError(value instanceof Error ? value.message : 'Unable to update fields');
+    } finally { setSaving(false); }
+  };
 
   const createCollection = async () => {
     const fields = collectionForm.fields.split(',').map(field => field.trim()).filter(Boolean);
@@ -195,6 +235,20 @@ export default function CmsManager({ projectId }: { projectId: string }) {
               <p className='text-xs text-gray-500'>{selected.records.length} records</p>
             </div>
             <button type='button' onClick={deleteCollection} disabled={saving} title='Delete collection' className='inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-red-900/70 px-2.5 py-1.5 text-xs text-red-300 hover:bg-red-950/40 disabled:opacity-50'><Trash2 size={14} /> Delete collection</button>
+          </div>
+          <div className='border-b border-gray-800 bg-[#0f1218] px-4 py-3'>
+            <div className='mb-2 flex flex-wrap items-center gap-2'>
+              <span className='text-xs font-semibold uppercase tracking-wide text-gray-500'>Fields</span>
+              {fieldDraft.map(field => <span key={field} className='inline-flex items-center gap-1 rounded-lg border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-gray-300'>
+                {field}
+                <button type='button' onClick={() => setFieldDraft(current => current.filter(existing => existing !== field))} disabled={saving || fieldDraft.length <= 1} title={`Remove ${field} field`} className='text-gray-500 hover:text-red-300 disabled:opacity-40'><X size={13} /></button>
+              </span>)}
+            </div>
+            <div className='flex flex-wrap gap-2'>
+              <input value={newField} onChange={event => setNewField(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); addField(); } }} placeholder='New field name' className='min-w-48 flex-1 rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-200 outline-none focus:border-blue-400' />
+              <button type='button' onClick={addField} disabled={saving || !newField.trim()} className='inline-flex items-center gap-1 rounded-lg border border-gray-700 px-3 py-2 text-xs text-gray-300 hover:bg-gray-800 disabled:opacity-50'><Plus size={14} /> Add field</button>
+              <button type='button' onClick={saveFields} disabled={saving || fieldDraft.length === 0} className='rounded-lg bg-blue-500 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-400 disabled:opacity-50'>Save fields</button>
+            </div>
           </div>
           <div className='flex flex-wrap items-center justify-between gap-3 border-b border-gray-800 bg-[#0f1218] px-4 py-3'>
             <label className='relative min-w-48 flex-1'>

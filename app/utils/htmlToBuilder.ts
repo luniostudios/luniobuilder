@@ -120,7 +120,7 @@ const nodeToBuilderElement = (
   const elementType = element.hasAttribute('data-lunio-cms-map')
     ? 'cmsMap'
     : element.hasAttribute('data-lunio-shop-checkout')
-      ? 'shopCheckout'
+      ? 'button'
       : mapHtmlTagToElementType(tagName);
   if (!elementType) return null;
 
@@ -160,7 +160,7 @@ const nodeToBuilderElement = (
   if (shopNameField) props.nameField = shopNameField;
   if (shopPriceField) props.priceField = shopPriceField;
   if (shopImageField) props.imageField = shopImageField;
-  if (elementType === 'shopCheckout' && props.text) props.buttonText = props.text;
+  if (element.hasAttribute('data-lunio-shop-checkout')) props.shopCheckout = true;
 
   // Process children
   const children: BuilderElement[] = [];
@@ -408,7 +408,6 @@ const getElementName = (type: ElementType): string => {
     calendar: 'Calendar',
     table: 'CMS Table',
     cmsMap: 'CMS Map',
-    shopCheckout: 'Shop Checkout',
     custom: ''
   };
 

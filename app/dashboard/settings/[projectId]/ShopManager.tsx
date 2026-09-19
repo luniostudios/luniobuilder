@@ -61,7 +61,7 @@ export default function ShopManager({ projectId }: { projectId: string }) {
     <section className='mt-6 rounded-3xl border border-gray-800 bg-[#111214] p-6 space-y-5'>
       <div className='flex items-start gap-3'>
         <ShoppingCart className='mt-1 text-emerald-300' size={20} />
-        <div><h2 className='text-xl font-semibold'>Shop</h2><p className='mt-1 text-sm text-gray-400'>Sell products managed in CMS. Add a checkout element inside a Products CMS map.</p></div>
+        <div><h2 className='text-xl font-semibold'>Shop</h2><p className='mt-1 text-sm text-gray-400'>Sell products managed in CMS. Add a button inside a Products CMS map and enable shop checkout in its content settings.</p></div>
       </div>
       {error && <p className='rounded-lg border border-red-800 bg-red-950/30 p-3 text-sm text-red-200'>{error}</p>}
       {message && <p className='rounded-lg border border-emerald-800 bg-emerald-950/30 p-3 text-sm text-emerald-200'>{message}</p>}

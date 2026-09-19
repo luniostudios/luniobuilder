@@ -74,11 +74,20 @@ const evaluateCondition = (element: BuilderElement, record: CmsRecordContextValu
   }
 };
 
-const ShopCheckoutElement: React.FC<{ element: BuilderElement; projectId: string | null; isPreview: boolean; onClick: (event: React.MouseEvent) => void; style: React.CSSProperties }> = ({ element, projectId, isPreview, onClick, style }) => {
+const startShopCheckout = async (projectId: string | null, record: CmsRecordContextValue | null) => {
+  if (!projectId || !record) return;
+  const response = await fetch(`/api/shop/${encodeURIComponent(projectId)}/checkout`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ recordId: record.id }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || !data.url) throw new Error(data.error || 'Unable to start checkout.');
+  window.location.assign(data.url);
+};
+
+const ShopCheckoutButton: React.FC<{ element: BuilderElement; projectId: string | null; isPreview: boolean; onClick: (event: React.MouseEvent) => void; style: React.CSSProperties }> = ({ element, projectId, isPreview, onClick, style }) => {
   const record = useContext(CmsRecordContext);
-  const name = String(record?.data[String(element.props.nameField || 'name')] || element.props.text || 'Product');
-  const price = record?.data[String(element.props.priceField || 'price')];
-  const buttonText = String(element.props.buttonText || 'Buy now');
   const [error, setError] = useState('');
 
   const checkout = async (event: React.MouseEvent) => {
@@ -87,24 +96,12 @@ const ShopCheckoutElement: React.FC<{ element: BuilderElement; projectId: string
       onClick(event);
       return;
     }
-    if (!projectId || !record) return;
     setError('');
-    const response = await fetch(`/api/shop/${encodeURIComponent(projectId)}/checkout`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ recordId: record.id }),
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || !data.url) {
-      setError(data.error || 'Unable to start checkout.');
-      return;
-    }
-    window.location.assign(data.url);
+    try { await startShopCheckout(projectId, record); } catch (value) { setError(value instanceof Error ? value.message : 'Unable to start checkout.'); }
   };
 
   return <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }} onClick={onClick}>
-    <button type="button" style={style} onClick={checkout}>{buttonText}</button>
-    {record && <span style={{ fontSize: '12px', color: '#64748b' }}>{name}{price !== undefined ? ` - ${String(price)}` : ''}</span>}
+    <button type="button" style={style} onClick={checkout}>{element.props.text || 'Buy now'}</button>
     {error && <span style={{ fontSize: '12px', color: '#dc2626' }}>{error}</span>}
   </div>;
 };
@@ -614,6 +611,10 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
           ? (LucideIcons as unknown as Record<string, React.ComponentType<{ 'aria-hidden'?: boolean; style?: React.CSSProperties }>>)[iconName]
           : null;
 
+        if (element.props.shopCheckout === true && !isEditing) {
+          return <ShopCheckoutButton element={element} projectId={projectId} isPreview={isPreview || isPublishedSite} onClick={handleClick} style={safeTextStyles} />;
+        }
+
         return isEditing ? (
           <span
             ref={(node) => setEditingRef(node as HTMLElement | null)}
@@ -879,8 +880,6 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
         );
       case 'cmsMap':
         return <CmsMapElement element={element} projectId={projectId} isPreview={isPreview} isPublishedSite={isPublishedSite} onClick={handleClick} style={containerStyle} />;
-      case 'shopCheckout':
-        return <ShopCheckoutElement element={element} projectId={projectId} isPreview={isPreview || isPublishedSite} onClick={handleClick} style={safeTextStyles} />;
       case 'navbar':
         {
           const menuIds = new Set(
