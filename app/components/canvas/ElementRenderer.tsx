@@ -659,7 +659,6 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
             style={isEditing ? editingTextStyles : safeTextStyles}
             onClick={handleClick}
             onDoubleClick={handleDoubleClick}
-            onBlur={isEditing ? handleContentBlur : undefined}
             onKeyDown={editableKeyDownHandler}
             contentEditable={!isPreview && isEditing}
             suppressContentEditableWarning
@@ -907,13 +906,13 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
         }
       case 'form':
         return (
-          <form style={containerStyle} onClick={handleClick} onSubmit={e => e.preventDefault()} className={isPreview ? '' : 'cursor-pointer'}>
+          <form style={isMenuTarget ? menuStyle : containerStyle} onClick={handleClick} onSubmit={e => e.preventDefault()} className={isPreview ? '' : 'cursor-pointer'}>
             {renderChildren()}
           </form>
         );
       default:
         return (
-          <div style={containerStyle} onClick={handleClick} className={isPreview ? '' : 'cursor-pointer'}>
+          <div style={isMenuTarget ? menuStyle : containerStyle} onClick={handleClick} className={isPreview ? '' : 'cursor-pointer'}>
             {renderChildren()}
           </div>
         );

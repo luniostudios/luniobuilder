@@ -601,11 +601,11 @@ export const getEffectiveStyles = (
 
   if (breakpoint === 'desktop') return desktop;
   if (breakpoint === 'widescreen') return { ...desktop, ...widescreen };
-  if (breakpoint === 'tablet') return { ...desktop, ...tablet };
-  if (breakpoint === 'mobile') return { ...desktop, ...mobile }
   if (breakpoint === 'laptop') return { ...desktop, ...laptop };
-  if (breakpoint === 'mobileLandscape') return { ...desktop, ...mobileLandscape };
-  return { ...desktop, ...tablet, ...mobile, ...widescreen, ...laptop, ...mobileLandscape };
+  if (breakpoint === 'tablet') return { ...desktop, ...laptop, ...tablet };
+  if (breakpoint === 'mobileLandscape') return { ...desktop, ...laptop, ...tablet, ...mobileLandscape };
+  if (breakpoint === 'mobile') return { ...desktop, ...laptop, ...tablet, ...mobileLandscape, ...mobile };
+  return desktop;
 };
 
 const expandBoxShorthand = (
@@ -713,7 +713,7 @@ const buildPseudoClassCssForElement = (element: BuilderElement): string => {
     }
 
     // Responsive breakpoints
-    (['widescreen', 'tablet', 'mobile'] as Breakpoint[]).forEach(breakpoint => {
+    (['widescreen', 'laptop', 'tablet', 'mobileLandscape', 'mobile'] as Breakpoint[]).forEach(breakpoint => {
       const style = styleObjectToCssString(pseudoStyles[breakpoint]);
       if (!style || style === desktopStyle) return;
       const mediaQuery = breakpointQueries[breakpoint];
@@ -734,7 +734,7 @@ const buildResponsiveCssForElement = (element: BuilderElement): string => {
     rules.push(`${selector}{${baseStyle}}`);
   }
 
-  (['widescreen', 'tablet', 'mobile'] as Breakpoint[]).forEach(breakpoint => {
+  (['widescreen', 'laptop', 'tablet', 'mobileLandscape', 'mobile'] as Breakpoint[]).forEach(breakpoint => {
     const style = styleObjectToCssString(getElementExportStyle(element, breakpoint));
     if (!style || style === baseStyle) return;
     const mediaQuery = breakpointQueries[breakpoint];
