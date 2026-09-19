@@ -516,8 +516,7 @@ export const TopBar: React.FC = () => {
       return;
     }
 
-    const siteSlug = normalizeSiteSlug(window.prompt('Choose your LUNIO subdomain:', projectData?.title));
-    console.log('Normalized siteSlug:', siteSlug);
+    const siteSlug = normalizeSiteSlug(getProjectTitle());
     if (!siteSlug) {
       setPublishMessage('Enter a valid subdomain using letters, numbers, or hyphens.');
       return;
@@ -778,9 +777,9 @@ export const TopBar: React.FC = () => {
             </Link>
           </div>
 
-          {/* Page name */}
+          {/* Project name */}
           <div className="text-gray-400 text-xs border-l border-gray-800 pl-3">
-            <span className="text-gray-500">/</span> {page.name}
+            <span className="text-gray-500">/</span> {getProjectTitle()}
           </div>
         </div>
         <div className='flex flex-row'>
@@ -907,7 +906,7 @@ export const TopBar: React.FC = () => {
           }}
         />
 
-        <div className='flex flex-row gap-3'>
+        <div className='flex flex-row gap-3 align-middle items-center'>
           {/* Element actions */}
           {selectedElementId && !isPreviewMode && (
             <div className="flex items-center gap-1 border-r border-gray-800 pr-3">
@@ -932,6 +931,9 @@ export const TopBar: React.FC = () => {
             </div>
           )}
 
+          {/* Save */}
+          {isSaving ? <Loader size={13} className="text-gray-400 align" /> : <Check size={13} className="text-green-500" />}
+
           {/* Export*/}
           <button
             onClick={openCodeModal}
@@ -939,22 +941,6 @@ export const TopBar: React.FC = () => {
           >
             <Code size={13} />
             Code
-          </button>
-
-          {/* Save */}
-          <button
-            onClick={() => void saveProject()}
-            disabled={!projectId || isSaving}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${projectId
-              ? saveMessage === 'Save failed'
-                ? 'bg-red-700 text-white'
-                : 'bg-green-600 text-white hover:bg-green-500'
-              : 'bg-gray-700 text-gray-300 cursor-not-allowed'
-              }`}
-            title={projectId ? 'Save Project' : 'Create project from Dashboard first'}
-          >
-            {isSaving ? <Loader size={13} /> : <Check size={13} />}
-            {isSaving ? 'Saving...' : saveMessage || 'Saved'}
           </button>
 
           {/* Publish */}
@@ -997,6 +983,9 @@ export const TopBar: React.FC = () => {
                   <Globe size={12} />
                   Publish to LUNIO
                 </button>
+                <span className="block w-full border-t border-gray-800 text-xs text-white my-1"><a href={`https://${projectName}.luniobuilder.com`} target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300">
+                  {projectName}.luniobuilder.com
+                </a></span>
                 <button
                   onClick={handlePublish}
                   className="w-full flex items-center gap-2 px-4 py-2 text-xs text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"

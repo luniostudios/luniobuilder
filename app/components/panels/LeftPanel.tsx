@@ -149,7 +149,7 @@ const CmsTab: React.FC = () => {
     <div className="flex h-full min-h-0 flex-col bg-[#111114] text-gray-200">
       <div className="flex items-center justify-between border-b border-gray-800 px-3 py-3">
         <span className="text-xs font-semibold uppercase tracking-wider text-gray-300">CMS Collections</span>
-        <a href={`/dashboard/settings/${projectId}/cms`} target="_blank" rel="noreferrer" title="Open CMS settings" className="rounded p-1 text-gray-500 hover:bg-gray-800 hover:text-gray-200"><ExternalLink size={14} /></a>
+        <a href={`/dashboard/settings/${projectId}/cms`} rel="noreferrer" title="Open CMS settings" className="rounded p-1 text-gray-500 hover:bg-gray-800 hover:text-gray-200"><ExternalLink size={14} /></a>
       </div>
       {collections.length === 0 ? <div className="p-4 text-xs text-gray-500">No collections yet. Create one in CMS settings.</div> : <>
         <div className="border-b border-gray-800 p-2">

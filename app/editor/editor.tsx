@@ -124,6 +124,20 @@ export default function App() {
     loadProjectFromServer();
   }, [projectQueryId, session, projectLoadedId, loadProject, setProjectName]);
 
+  useEffect(() => {
+    if (!projectQueryId) return;
+
+    const projectTitleKey = `projectTitle_${projectQueryId}`;
+    const handleProjectTitleChange = (event: StorageEvent) => {
+      if (event.key === projectTitleKey && event.newValue !== null) {
+        setProjectName(event.newValue);
+      }
+    };
+
+    window.addEventListener('storage', handleProjectTitleChange);
+    return () => window.removeEventListener('storage', handleProjectTitleChange);
+  }, [projectQueryId, setProjectName]);
+
   const contextElement = contextMenu ? getElementById(contextMenu.id) : null;
 
   if (!projectQueryId) {
