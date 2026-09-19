@@ -142,6 +142,8 @@ const CmsMapElement: React.FC<{ element: BuilderElement; projectId: string | nul
   const collectionId = String(element.props.collectionId || element.props.collectionSlug || '');
   const [records, setRecords] = useState<CmsTableRow[]>([]);
   const [loading, setLoading] = useState(Boolean(collectionId));
+  const [filterValue, setFilterValue] = useState('');
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     if (!projectId || !collectionId) {
@@ -171,6 +173,37 @@ const CmsMapElement: React.FC<{ element: BuilderElement; projectId: string | nul
     return children;
   };
 
+  const filterField = String(element.props.filterField || '').trim();
+  const filterQuery = filterValue.trim().toLowerCase();
+  const filteredRecords = filterField && filterQuery
+    ? records.filter(record => String(record.data[filterField] ?? '').toLowerCase().includes(filterQuery))
+    : records;
+  const paginationEnabled = element.props.paginationEnabled === true;
+  const pageSize = Math.max(1, Math.min(100, Number(element.props.pageSize) || 6));
+  const totalPages = paginationEnabled ? Math.max(1, Math.ceil(filteredRecords.length / pageSize)) : 1;
+  const currentPage = Math.min(page, totalPages);
+  const visibleRecords = paginationEnabled
+    ? filteredRecords.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+    : filteredRecords;
+  const controlBackground = String(element.props.controlsBackground || '#ffffff');
+  const controlTextColor = String(element.props.controlsTextColor || '#334155');
+  const controlBorderColor = String(element.props.controlsBorderColor || '#d1d5db');
+  const controlBorderRadius = String(element.props.controlsBorderRadius || '8px');
+  const controlPadding = String(element.props.controlsPadding || '10px 12px');
+  const controlGap = String(element.props.controlsGap || '12px');
+  const filterWidth = String(element.props.filterWidth || '240px');
+  const showControls = isPreview || Boolean(projectId && collectionId);
+  const controls = showControls && (filterField || paginationEnabled) ? (
+    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: controlGap, marginBottom: '16px' }} onClick={event => { if (!isPreview) onClick(event); }}>
+      {filterField && <input value={filterValue} onChange={event => { setFilterValue(event.target.value); setPage(1); }} onClick={event => { if (!isPreview) onClick(event); }} placeholder={String(element.props.filterPlaceholder || `Search ${filterField}...`)} aria-label={`Filter by ${filterField}`} style={{ minWidth: '180px', flex: `1 1 ${filterWidth}`, maxWidth: '100%', padding: controlPadding, border: `1px solid ${controlBorderColor}`, borderRadius: controlBorderRadius, background: controlBackground, color: controlTextColor, outline: 'none' }} />}
+      {paginationEnabled && <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: controlTextColor, fontSize: '13px' }}>
+        <button type="button" onClick={event => { event.stopPropagation(); if (!isPreview) onClick(event); setPage(value => Math.max(1, value - 1)); }} disabled={currentPage === 1} aria-label="Previous page" style={{ border: `1px solid ${controlBorderColor}`, borderRadius: controlBorderRadius, background: controlBackground, color: controlTextColor, cursor: currentPage === 1 ? 'not-allowed' : 'pointer', padding: controlPadding, opacity: currentPage === 1 ? 0.45 : 1 }}>&lt;</button>
+        <span>Page {currentPage} of {totalPages}</span>
+        <button type="button" onClick={event => { event.stopPropagation(); if (!isPreview) onClick(event); setPage(value => Math.min(totalPages, value + 1)); }} disabled={currentPage === totalPages} aria-label="Next page" style={{ border: `1px solid ${controlBorderColor}`, borderRadius: controlBorderRadius, background: controlBackground, color: controlTextColor, cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', padding: controlPadding, opacity: currentPage === totalPages ? 0.45 : 1 }}>&gt;</button>
+      </div>}
+    </div>
+  ) : null;
+
   if (!collectionId) {
     return <div style={{ ...style, paddingTop: '24px', paddingRight: '24px', paddingBottom: '24px', paddingLeft: '24px', border: '1px dashed #94a3b8', color: '#64748b' }} onClick={onClick}>Select a CMS collection, then add components inside this map.</div>;
   }
@@ -180,14 +213,18 @@ const CmsMapElement: React.FC<{ element: BuilderElement; projectId: string | nul
   if (records.length === 0) {
     return (
       <div style={style} onClick={onClick}>
+        {controls}
         {!isPreview && element.children.length > 0 ? renderChildren() : <div style={{ paddingTop: '24px', paddingRight: '24px', paddingBottom: '24px', paddingLeft: '24px', color: '#64748b' }}>{String(element.props.emptyMessage || 'No records yet.')}</div>}
       </div>
     );
   }
 
   return (
-    <div style={style} onClick={onClick}>
-      {records.map(record => <div key={record.id} style={{ minWidth: 0 }}>{renderChildren(record)}</div>)}
+    <div style={{ width: '100%', minWidth: 0 }} onClick={onClick}>
+      {controls}
+      <div style={style}>
+        {visibleRecords.length > 0 ? visibleRecords.map(record => <div key={record.id} style={{ minWidth: 0 }}>{renderChildren(record)}</div>) : <div style={{ padding: '24px', color: '#64748b' }}>{String(element.props.emptyMessage || 'No matching records.')}</div>}
+      </div>
     </div>
   );
 };

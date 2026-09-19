@@ -2031,6 +2031,43 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
               className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">Filter field</label>
+            <select
+              value={String(element.props.filterField || '')}
+              onChange={event => update('filterField', event.target.value)}
+              className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="">No filtering</option>
+              {(cmsCollections.find(collection => collection.id === String(element.props.collectionId || element.props.collectionSlug))?.fields || []).map(field => <option key={field} value={field}>{field}</option>)}
+            </select>
+          </div>
+          {element.props.filterField && <div>
+            <label className="text-xs text-gray-500 block mb-1">Filter placeholder</label>
+            <input value={String(element.props.filterPlaceholder || '')} onChange={event => update('filterPlaceholder', event.target.value)} placeholder="Search products..." className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+          </div>}
+          <label className="flex items-center gap-2 text-xs text-gray-300">
+            <input type="checkbox" checked={element.props.paginationEnabled === true} onChange={event => update('paginationEnabled', event.target.checked)} /> Enable pagination
+          </label>
+          {element.props.paginationEnabled === true && <div>
+            <label className="text-xs text-gray-500 block mb-1">Records per page</label>
+            <input type="number" min={1} max={100} value={Number(element.props.pageSize) || 6} onChange={event => update('pageSize', Math.max(1, Math.min(100, Number(event.target.value) || 1)))} className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+          </div>}
+          {(element.props.filterField || element.props.paginationEnabled === true) && <div className="border-t border-gray-800 pt-3 space-y-2">
+            <div className="text-xs font-semibold uppercase tracking-wider text-gray-400">Control styling</div>
+            {([
+              ['controlsBackground', 'Background', '#ffffff'],
+              ['controlsTextColor', 'Text color', '#334155'],
+              ['controlsBorderColor', 'Border color', '#d1d5db'],
+              ['controlsBorderRadius', 'Radius', '8px'],
+              ['controlsPadding', 'Padding', '10px 12px'],
+              ['controlsGap', 'Control gap', '12px'],
+              ['filterWidth', 'Filter width', '240px'],
+            ] as const).map(([key, label, placeholder]) => <div key={key}>
+              <label className="text-xs text-gray-500 block mb-1">{label}</label>
+              <input value={String(element.props[key] || '')} onChange={event => update(key, event.target.value)} placeholder={placeholder} className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+            </div>)}
+          </div>}
           {!projectId && <p className="text-[11px] text-amber-300">Save this project before connecting CMS data.</p>}
           {projectId && cmsCollections.length === 0 && <p className="text-[11px] text-gray-500">Create a collection in Project Settings first.</p>}
         </div>

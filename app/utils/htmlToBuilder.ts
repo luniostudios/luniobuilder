@@ -117,7 +117,11 @@ const nodeToBuilderElement = (
   const tagName = element.tagName.toLowerCase();
 
   // Map HTML tags to builder element types
-  const elementType = element.hasAttribute('data-lunio-cms-map') ? 'cmsMap' : mapHtmlTagToElementType(tagName);
+  const elementType = element.hasAttribute('data-lunio-cms-map')
+    ? 'cmsMap'
+    : element.hasAttribute('data-lunio-shop-checkout')
+      ? 'shopCheckout'
+      : mapHtmlTagToElementType(tagName);
   if (!elementType) return null;
 
   const builderId = generateId();
@@ -132,10 +136,31 @@ const nodeToBuilderElement = (
   const cmsHrefField = element.getAttribute('data-cms-href-field');
   const cmsAltField = element.getAttribute('data-cms-alt-field');
   const cmsCollection = element.getAttribute('data-cms-collection');
+  const cmsFilterField = element.getAttribute('data-cms-filter-field');
+  const cmsFilterPlaceholder = element.getAttribute('data-cms-filter-placeholder');
+  const cmsPagination = element.getAttribute('data-cms-pagination');
+  const cmsPageSize = element.getAttribute('data-cms-page-size');
+  const cmsConditionField = element.getAttribute('data-cms-condition-field');
+  const cmsConditionOperator = element.getAttribute('data-cms-condition-operator');
+  const cmsConditionValue = element.getAttribute('data-cms-condition-value');
+  const shopNameField = element.getAttribute('data-shop-name-field');
+  const shopPriceField = element.getAttribute('data-shop-price-field');
+  const shopImageField = element.getAttribute('data-shop-image-field');
   if (cmsField) props.cmsField = cmsField;
   if (cmsHrefField) props.cmsHrefField = cmsHrefField;
   if (cmsAltField) props.cmsAltField = cmsAltField;
   if (cmsCollection) props.collectionSlug = cmsCollection;
+  if (cmsFilterField) props.filterField = cmsFilterField;
+  if (cmsFilterPlaceholder) props.filterPlaceholder = cmsFilterPlaceholder;
+  if (cmsPagination === 'true') props.paginationEnabled = true;
+  if (cmsPageSize) props.pageSize = Math.max(1, Math.min(100, Number(cmsPageSize) || 6));
+  if (cmsConditionField) props.conditionField = cmsConditionField;
+  if (cmsConditionOperator) props.conditionOperator = cmsConditionOperator;
+  if (cmsConditionValue) props.conditionValue = cmsConditionValue;
+  if (shopNameField) props.nameField = shopNameField;
+  if (shopPriceField) props.priceField = shopPriceField;
+  if (shopImageField) props.imageField = shopImageField;
+  if (elementType === 'shopCheckout' && props.text) props.buttonText = props.text;
 
   // Process children
   const children: BuilderElement[] = [];

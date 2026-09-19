@@ -297,6 +297,24 @@ export async function POST(req: NextRequest): Promise<NextResponse<GenerateRespo
             }
         }
 
+        const replaceCmsImagePlaceholders = async (html: string, fallbackQuery: string) => {
+            const imageTags = Array.from(html.matchAll(/<img\b[^>]*data-cms-field\s*=\s*["']([^"']+)["'][^>]*>/gi));
+            let result = html;
+            for (const match of imageTags) {
+                const tag = match[0];
+                const field = match[1].toLowerCase();
+                if (!/(image|photo|thumbnail|avatar|cover|logo)/i.test(field)) continue;
+                const srcMatch = tag.match(/\bsrc\s*=\s*["']([^"']*)["']/i);
+                const currentSrc = srcMatch?.[1]?.trim() || '';
+                const isPlaceholder = !currentSrc || /^(#|null|undefined|IMAGE_URL|__IMAGE_URL__)$/i.test(currentSrc) || /example\.com|placeholder\./i.test(currentSrc);
+                if (!isPlaceholder) continue;
+                const altMatch = tag.match(/\balt\s*=\s*["']([^"']*)["']/i);
+                const imageUrl = await fetchUnsplashImage(`${altMatch?.[1] || field} ${fallbackQuery}`);
+                result = result.replace(tag, tag.replace(srcMatch?.[0] || '', `src="${imageUrl}"`));
+            }
+            return result;
+        };
+
         // If the generated HTML likely needs a working image, replace common placeholders with an Unsplash URL.
         try {
             // Determine a query for Unsplash: prefer the user's prompt, else a generic term
@@ -314,6 +332,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<GenerateRespo
 
             // Replace background-image placeholders like url('') or url("") or url(#)
             cleanedContent = cleanedContent.replace(/background-image\s*:\s*url\((['"]?)(?:#|''|""|\s*)(['"]?)\)/gi, `background-image: url('${unsplashUrl}')`);
+            cleanedContent = await replaceCmsImagePlaceholders(cleanedContent, imageQuery);
         } catch (err) {
             console.warn('Unsplash replacement failed:', err);
         }

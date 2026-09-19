@@ -17,6 +17,13 @@ export const extractGeneratedCmsCollections = (html: string): GeneratedCmsCollec
     const slug = String(map.getAttribute('data-cms-collection') || '').trim().toLowerCase();
     if (!slug) return;
     const collection = collections.get(slug) || { name: titleFromSlug(slug), slug, fields: [], data: {} };
+    const shopCheckout = map.querySelector('[data-lunio-shop-checkout="true"]');
+    if (shopCheckout) {
+      for (const field of ['data-shop-name-field', 'data-shop-price-field', 'data-shop-image-field']) {
+        const value = shopCheckout.getAttribute(field);
+        if (value && !collection.fields.includes(value)) collection.fields.push(value);
+      }
+    }
     map.querySelectorAll('[data-cms-field], [data-cms-href-field], [data-cms-alt-field]').forEach(node => {
       const field = node.getAttribute('data-cms-field') || node.getAttribute('data-cms-href-field') || node.getAttribute('data-cms-alt-field');
       if (!field) return;
