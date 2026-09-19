@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '../../../auth/auth';
 import { supabaseServer } from '../../../lib/supabaseServer';
 import { ShopProvider } from '../../../types/shop';
+import { canUseShopForRole } from '../../../lib/projectLimits';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -30,7 +31,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ proj
   const session = await auth();
   const userId = session?.user ? getUserId(session) : null;
   if (!userId || !(await canWriteProject(projectId, userId))) return NextResponse.json({ error: 'Project access denied' }, { status: 403 });
+  const { data: user } = await supabaseServer.schema('next_auth').from('users').select('role').eq('id', userId).single();
+  const role = String(user?.role || 'free').toLowerCase();
   const body = await request.json();
+  if (Boolean(body.enabled) && !canUseShopForRole(role)) return NextResponse.json({ error: 'Shop payments require a Pro plan or higher.' }, { status: 403 });
   const provider: ShopProvider = ['stripe', 'paypal', 'external'].includes(body.provider) ? body.provider : 'stripe';
   const currency = String(body.currency || 'usd').toLowerCase().slice(0, 3);
   if (!/^[a-z]{3}$/.test(currency)) return NextResponse.json({ error: 'Currency must be a three-letter code.' }, { status: 400 });

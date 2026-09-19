@@ -37,6 +37,32 @@ interface CmsRecordContextValue {
 
 const CmsRecordContext = createContext<CmsRecordContextValue | null>(null);
 
+const evaluateCondition = (element: BuilderElement, record: CmsRecordContextValue | null) => {
+  const field = String(element.props.conditionField || '').trim();
+  if (!field) return true;
+  if (!record) return false;
+
+  const actual = record.data[field];
+  const operator = String(element.props.conditionOperator || 'exists');
+  const expected = element.props.conditionValue;
+  const actualText = actual === null || actual === undefined ? '' : String(actual).toLowerCase();
+  const expectedText = expected === null || expected === undefined ? '' : String(expected).toLowerCase();
+  const actualNumber = Number(actual);
+  const expectedNumber = Number(expected);
+
+  switch (operator) {
+    case 'equals': return actualText === expectedText;
+    case 'notEquals': return actualText !== expectedText;
+    case 'contains': return actualText.includes(expectedText);
+    case 'notContains': return !actualText.includes(expectedText);
+    case 'greaterThan': return Number.isFinite(actualNumber) && Number.isFinite(expectedNumber) && actualNumber > expectedNumber;
+    case 'lessThan': return Number.isFinite(actualNumber) && Number.isFinite(expectedNumber) && actualNumber < expectedNumber;
+    case 'exists': return actual !== undefined && actual !== null && actualText !== '';
+    case 'notExists': return actual === undefined || actual === null || actualText === '';
+    default: return true;
+  }
+};
+
 const ShopCheckoutElement: React.FC<{ element: BuilderElement; projectId: string | null; isPreview: boolean; onClick: (event: React.MouseEvent) => void; style: React.CSSProperties }> = ({ element, projectId, isPreview, onClick, style }) => {
   const record = useContext(CmsRecordContext);
   const name = String(record?.data[String(element.props.nameField || 'name')] || element.props.text || 'Product');
@@ -265,6 +291,8 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
   const navbarMenu = useContext(NavbarMenuContext);
   const cmsRecord = useContext(CmsRecordContext);
   const isMenuTarget = navbarMenu?.menuIds.has(element.id) ?? false;
+
+  if (isPreview && !evaluateCondition(element, cmsRecord)) return null;
 
   const resolveCmsProp = (propName: 'text' | 'src', fallback: unknown) => {
     const field = element.props.cmsField;

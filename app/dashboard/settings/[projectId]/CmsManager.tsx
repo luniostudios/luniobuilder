@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Check, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { CmsCollection, CmsRecord } from '@/app/types/cms';
+import { getCmsCollectionLimitForRole, getCmsRecordLimitForRole } from '@/app/lib/projectLimits';
 
 type CollectionWithRecords = CmsCollection & { records: CmsRecord[] };
 
@@ -18,8 +19,12 @@ export default function CmsManager({ projectId }: { projectId: string }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [role, setRole] = useState('free');
 
   const selected = useMemo(() => collections.find(collection => collection.id === selectedId) || collections[0], [collections, selectedId]);
+  const collectionLimit = getCmsCollectionLimitForRole(role);
+  const recordLimit = getCmsRecordLimitForRole(role);
+  const collectionLimitReached = collectionLimit !== null && collections.length >= collectionLimit;
 
   const loadCollections = async () => {
     setLoading(true);
@@ -37,6 +42,12 @@ export default function CmsManager({ projectId }: { projectId: string }) {
   };
 
   useEffect(() => { loadCollections(); }, [projectId]);
+
+  useEffect(() => {
+    fetch('/api/users').then(response => response.ok ? response.json() : null).then(data => {
+      if (data?.role) setRole(String(data.role).toLowerCase());
+    }).catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     const fields = selected?.fields || [];
@@ -133,17 +144,19 @@ export default function CmsManager({ projectId }: { projectId: string }) {
       <div>
         <h2 className='text-xl font-semibold'>CMS collections</h2>
         <p className='mt-1 text-sm text-gray-400'>Create project data and bind it to CMS tables in the editor.</p>
+        <p className='mt-2 text-xs text-gray-500'>Plan limits: {collectionLimit === null ? 'unlimited' : collectionLimit} collections, {recordLimit === null ? 'unlimited' : recordLimit} records per collection.</p>
       </div>
       {error && <p className='rounded-lg border border-red-800 bg-red-950/30 p-3 text-sm text-red-200'>{error}</p>}
       <div className='grid gap-3 md:grid-cols-[1fr_1fr_auto]'>
         <input value={collectionForm.name} onChange={event => setCollectionForm({ ...collectionForm, name: event.target.value })} placeholder='Collection name, e.g. Products' className='rounded-xl border border-gray-700 bg-[#0f1218] px-3 py-2 text-sm' />
         <input value={collectionForm.fields} onChange={event => setCollectionForm({ ...collectionForm, fields: event.target.value })} placeholder='Fields: name, price, image' className='rounded-xl border border-gray-700 bg-[#0f1218] px-3 py-2 text-sm' />
-        <button type='button' onClick={createCollection} disabled={saving} className='inline-flex items-center justify-center gap-2 rounded-xl bg-[#1D976C] px-4 py-2 text-sm font-semibold text-black disabled:opacity-50'><Plus size={16} /> Create</button>
+        <button type='button' onClick={createCollection} disabled={saving || collectionLimitReached} className='inline-flex items-center justify-center gap-2 rounded-xl bg-[#1D976C] px-4 py-2 text-sm font-semibold text-black disabled:opacity-50'><Plus size={16} /> Create</button>
       </div>
       {loading ? <p className='text-sm text-gray-500'>Loading CMS...</p> : collections.length === 0 ? <p className='text-sm text-gray-500'>No collections yet.</p> : <>
         <div className='flex flex-wrap gap-2'>
           {collections.map(collection => <button key={collection.id} type='button' onClick={() => setSelectedId(collection.id)} className={`rounded-xl border px-3 py-2 text-sm ${selected?.id === collection.id ? 'border-blue-400 bg-blue-500/15 text-blue-200' : 'border-gray-700 text-gray-300'}`}>{collection.name} <span className='text-gray-500'>({collection.records.length})</span></button>)}
         </div>
+        {collectionLimitReached && <p className='text-xs text-amber-300'>You have reached your CMS collection limit. Upgrade your plan to create more.</p>}
         {selected && <div className='overflow-x-auto rounded-xl border border-gray-800'>
           <div className='min-w-155'>
             <div className='grid gap-2 border-b border-gray-800 bg-gray-900/60 p-3' style={{ gridTemplateColumns: `repeat(${selected.fields.length}, minmax(140px, 1fr)) 40px` }}>
@@ -165,7 +178,7 @@ export default function CmsManager({ projectId }: { projectId: string }) {
             </div>)}
             <div className='grid gap-2 bg-gray-950/40 p-3' style={{ gridTemplateColumns: `repeat(${selected.fields.length}, minmax(140px, 1fr)) 40px` }}>
               {selected.fields.map(field => <input key={field} value={recordDraft[field] || ''} onChange={event => setRecordDraft({ ...recordDraft, [field]: event.target.value })} placeholder={field} className='rounded-lg border border-gray-700 bg-[#0f1218] px-2 py-2 text-sm' />)}
-              <button type='button' onClick={addRecord} disabled={saving} title='Add record' className='text-blue-300 hover:text-white disabled:opacity-50'><Plus size={18} /></button>
+              <button type='button' onClick={addRecord} disabled={saving || (recordLimit !== null && selected.records.length >= recordLimit)} title='Add record' className='text-blue-300 hover:text-white disabled:opacity-50'><Plus size={18} /></button>
             </div>
           </div>
         </div>}

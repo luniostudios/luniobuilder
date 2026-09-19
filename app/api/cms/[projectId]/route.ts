@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '../../../auth/auth';
 import { supabaseServer } from '../../../lib/supabaseServer';
+import { getCmsCollectionLimitForRole, getCmsRecordLimitForRole } from '../../../lib/projectLimits';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -33,7 +34,8 @@ const authenticate = async (projectId: string, write = false) => {
   if (!userId || !(await getProjectAccess(projectId, userId, write))) {
     return { response: NextResponse.json({ error: 'Project access denied' }, { status: 403 }) };
   }
-  return { userId };
+  const { data: user } = await supabaseServer.schema('next_auth').from('users').select('role').eq('id', userId).single();
+  return { userId, role: String(user?.role || 'free').toLowerCase() };
 };
 
 const slugify = (value: string) => value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 64);
@@ -70,6 +72,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ pro
   const { projectId } = await params;
   const authResult = await authenticate(projectId, true);
   if ('response' in authResult) return authResult.response;
+  const collectionLimit = getCmsCollectionLimitForRole(authResult.role);
+  const recordLimit = getCmsRecordLimitForRole(authResult.role);
   const body = await request.json();
 
   if (body.type === 'seed') {
@@ -87,6 +91,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ pro
 
     let collection = existing;
     if (!collection) {
+      if (collectionLimit !== null) {
+        const { count } = await supabaseServer.from('cms_collections').select('id', { count: 'exact', head: true }).eq('project_id', projectId);
+        if ((count || 0) >= collectionLimit) return NextResponse.json({ error: `Your ${authResult.role} plan allows up to ${collectionLimit} CMS collections.` }, { status: 403 });
+      }
       const { data, error } = await supabaseServer.from('cms_collections').insert({ project_id: projectId, name, slug, fields }).select('id, fields').single();
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
       collection = data;
@@ -110,6 +118,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ pro
   if (body.type === 'record') {
     const { data: collection } = await supabaseServer.from('cms_collections').select('id').eq('id', body.collectionId).eq('project_id', projectId).single();
     if (!collection) return NextResponse.json({ error: 'Collection not found' }, { status: 404 });
+    if (recordLimit !== null) {
+      const { count } = await supabaseServer.from('cms_records').select('id', { count: 'exact', head: true }).eq('collection_id', body.collectionId);
+      if ((count || 0) >= recordLimit) return NextResponse.json({ error: `Your ${authResult.role} plan allows up to ${recordLimit} records per CMS collection.` }, { status: 403 });
+    }
     const { data, error } = await supabaseServer.from('cms_records').insert({ collection_id: body.collectionId, data: body.data || {} }).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json(data);
@@ -119,6 +131,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ pro
   const slug = slugify(String(body.slug || name));
   const fields = Array.isArray(body.fields) ? body.fields.filter((field: unknown): field is string => typeof field === 'string' && Boolean(field.trim())).map((field: string) => field.trim()) : [];
   if (!name || !slug) return NextResponse.json({ error: 'Collection name is required' }, { status: 400 });
+  if (collectionLimit !== null) {
+    const { count } = await supabaseServer.from('cms_collections').select('id', { count: 'exact', head: true }).eq('project_id', projectId);
+    if ((count || 0) >= collectionLimit) return NextResponse.json({ error: `Your ${authResult.role} plan allows up to ${collectionLimit} CMS collections.` }, { status: 403 });
+  }
   const { data, error } = await supabaseServer.from('cms_collections').insert({ project_id: projectId, name, slug, fields }).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ...data, records: [] });

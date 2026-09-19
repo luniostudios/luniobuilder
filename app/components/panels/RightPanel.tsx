@@ -1688,6 +1688,41 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
 
   return (
     <div className="p-4 space-y-3">
+      <div className="border-b border-gray-800 pb-3">
+        <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Conditional rendering</div>
+        <p className="text-[11px] text-gray-500 mb-2">Show this element only when a CMS field matches a rule.</p>
+        <select
+          value={String(element.props.conditionField || '')}
+          onChange={event => update('conditionField', event.target.value)}
+          className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 mb-2"
+        >
+          <option value="">Always show</option>
+          {(cmsCollections.find(collection => collection.id === cmsCollectionKey || collection.slug === cmsCollectionKey)?.fields || []).map(field => <option key={field} value={field}>{field}</option>)}
+        </select>
+        {element.props.conditionField && <>
+          <select
+            value={String(element.props.conditionOperator || 'exists')}
+            onChange={event => update('conditionOperator', event.target.value)}
+            className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 mb-2"
+          >
+            <option value="exists">exists</option>
+            <option value="notExists">does not exist</option>
+            <option value="equals">equals</option>
+            <option value="notEquals">does not equal</option>
+            <option value="contains">contains</option>
+            <option value="notContains">does not contain</option>
+            <option value="greaterThan">is greater than</option>
+            <option value="lessThan">is less than</option>
+          </select>
+          {!['exists', 'notExists'].includes(String(element.props.conditionOperator || 'exists')) && <input
+            value={String(element.props.conditionValue || '')}
+            onChange={event => update('conditionValue', event.target.value)}
+            placeholder="Value"
+            className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />}
+        </>}
+        {!cmsMapAncestor && element.type !== 'cmsMap' && <p className="text-[11px] text-amber-300 mt-2">Connect this element to a CMS Map to choose fields.</p>}
+      </div>
       {/* Name */}
       <div>
         <label className="text-xs text-gray-500 block mb-1">Element Name</label>
