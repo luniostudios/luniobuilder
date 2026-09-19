@@ -16,6 +16,7 @@ import {
   Laptop,
   RectangleHorizontalIcon,
   Globe,
+  Rocket,
 } from 'lucide-react';
 import { useBuilderStore } from '../stores/builderStore';
 import {
@@ -773,7 +774,7 @@ export const TopBar: React.FC = () => {
           {/* Logo */}
           <div className="flex items-center gap-2 mr-2">
             <Link href="/dashboard" className="text-white font-semibold text-sm tracking-tight">
-              Dashboard
+              LUNI<Rocket size={12} className='inline-block ml-1 -mt-0.5' /> Builder
             </Link>
           </div>
 

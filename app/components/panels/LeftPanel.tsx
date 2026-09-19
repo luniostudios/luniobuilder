@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { LayoutGrid as Layout, Type, Image, MousePointer, Square, Columns2 as Columns, Grid2x2 as Grid, AlignLeft, Link, Star, Minus, Move, FileText, ChevronRight, ChevronDown, Eye, EyeOff, Lock, Unlock, Trash2, Copy, Plus, Layers, Package, Globe, Monitor, Play, Form, List, ListEnd, Laptop, CalendarDays, LayoutIcon, LayoutPanelTop, IdCard, TextInitialIcon, Code2, ChevronsDownUp, Table2, ListTree } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { LayoutGrid as Layout, Type, Image, MousePointer, Square, Columns2 as Columns, Grid2x2 as Grid, AlignLeft, Link, Star, Minus, Move, FileText, ChevronRight, ChevronDown, ChevronLeft, Eye, EyeOff, Lock, Unlock, Trash2, Copy, Plus, Layers, Package, Globe, Monitor, Play, Form, List, ListEnd, Laptop, CalendarDays, LayoutIcon, LayoutPanelTop, IdCard, TextInitialIcon, Code2, ChevronsDownUp, Table2, ListTree, Database, ExternalLink, Search } from 'lucide-react';
 import { DndContext, DragEndEvent, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useBuilderStore } from '../../stores/builderStore';
 import { ElementType, BuilderElement, Page } from '../../types/builder';
 import { COMPONENT_CATEGORIES, COMPONENT_LABELS } from '../../utils/builderUtils';
+import type { CmsCollection, CmsRecord } from '../../types/cms';
 
 const COMPONENT_ICONS: Record<string, React.ReactNode> = {
   section: <Layout size={25} />,
@@ -40,35 +41,137 @@ const COMPONENT_ICONS: Record<string, React.ReactNode> = {
 
 export const LeftPanel: React.FC = () => {
   const { leftPanelTab, setLeftPanelTab } = useBuilderStore();
+  const [isCollapsed, setIsCollapsed] = useState(true);
+
+  const tabs = [
+    { id: 'components' as const, label: 'Elements', icon: <Package size={17} /> },
+    { id: 'layers' as const, label: 'Layers', icon: <Layers size={17} /> },
+    { id: 'pages' as const, label: 'Pages', icon: <Globe size={17} /> },
+    { id: 'cms' as const, label: 'CMS', icon: <Database size={17} /> },
+  ];
 
   return (
-    <div className="w-64 bg-[#111114] max-md:hidden overflow-auto flex flex-col border-r border-gray-800 h-full">
-      {/* Tab bar */}
-      <div className="flex border-b border-gray-800">
-        {[
-          { id: 'components' as const, label: 'Elements', icon: <Package size={14} /> },
-          { id: 'layers' as const, label: 'Layers', icon: <Layers size={14} /> },
-          { id: 'pages' as const, label: 'Pages', icon: <Globe size={14} /> },
-        ].map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setLeftPanelTab(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-medium transition-colors ${leftPanelTab === tab.id
-                ? 'text-white border-b-2 border-blue-300 bg-blue-300/5'
-                : 'text-gray-400 hover:text-gray-200'
-              }`}
-          >
-            {tab.icon}
-            {tab.label}
-          </button>
-        ))}
+    <div className={`max-md:hidden flex h-full shrink-0 border-r border-gray-800 bg-[#111114] transition-[width] duration-200 ${isCollapsed ? 'w-13' : 'w-72'}`}>
+      <div className="flex w-13 shrink-0 flex-col items-center border-r border-gray-800 bg-[#0d0f12] py-2">
+        <div className="flex flex-col items-center gap-1">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => {
+                if (!isCollapsed && leftPanelTab === tab.id) {
+                  setIsCollapsed(true);
+                  return;
+                }
+                setLeftPanelTab(tab.id);
+                setIsCollapsed(false);
+              }}
+              aria-label={tab.label}
+              aria-pressed={leftPanelTab === tab.id && !isCollapsed}
+              title={tab.label}
+              className={`flex h-10 w-10 items-center justify-center rounded-lg transition-colors ${leftPanelTab === tab.id && !isCollapsed
+                ? 'bg-blue-500/15 text-blue-300'
+                : 'text-gray-500 hover:bg-gray-800 hover:text-gray-200'
+                }`}
+            >
+              {tab.icon}
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => setIsCollapsed(current => !current)}
+          aria-label={isCollapsed ? 'Open left panel' : 'Collapse left panel'}
+          title={isCollapsed ? 'Open panel' : 'Collapse panel'}
+          className="mt-auto flex h-10 w-10 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-800 hover:text-gray-200"
+        >
+          {isCollapsed ? <ChevronRight size={17} /> : <ChevronLeft size={17} />}
+        </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
-        {leftPanelTab === 'components' && <ComponentsTab />}
-        {leftPanelTab === 'layers' && <LayersTab />}
-        {leftPanelTab === 'pages' && <PagesTab />}
+      <div className={`min-w-0 flex-1 overflow-hidden ${isCollapsed ? 'hidden' : 'flex flex-col'}`}>
+        <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar">
+          {leftPanelTab === 'components' && <ComponentsTab />}
+          {leftPanelTab === 'layers' && <LayersTab />}
+          {leftPanelTab === 'pages' && <PagesTab />}
+          {leftPanelTab === 'cms' && <CmsTab />}
+        </div>
       </div>
+    </div>
+  );
+};
+
+type CmsCollectionWithRecords = CmsCollection & { records: CmsRecord[] };
+
+const CmsTab: React.FC = () => {
+  const { projectId } = useBuilderStore();
+  const [collections, setCollections] = useState<CmsCollectionWithRecords[]>([]);
+  const [selectedId, setSelectedId] = useState('');
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!projectId) {
+      setCollections([]);
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+    fetch(`/api/cms/${encodeURIComponent(projectId)}`)
+      .then(response => response.ok ? response.json() : Promise.reject(new Error('Unable to load CMS collections')))
+      .then(data => {
+        if (cancelled) return;
+        const nextCollections = Array.isArray(data) ? data as CmsCollectionWithRecords[] : [];
+        setCollections(nextCollections);
+        setSelectedId(current => nextCollections.some(collection => collection.id === current) ? current : nextCollections[0]?.id || '');
+      })
+      .catch(value => { if (!cancelled) setError(value instanceof Error ? value.message : 'Unable to load CMS collections'); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+
+    return () => { cancelled = true; };
+  }, [projectId]);
+
+  const selected = collections.find(collection => collection.id === selectedId) || collections[0];
+  const records = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!selected || !query) return selected?.records || [];
+    return selected.records.filter(record => selected.fields.some(field => String(record.data[field] ?? '').toLowerCase().includes(query)));
+  }, [search, selected]);
+
+  if (!projectId) return <div className="p-4 text-xs text-gray-500">Save the project to use CMS collections.</div>;
+  if (loading) return <div className="p-4 text-xs text-gray-500">Loading CMS...</div>;
+  if (error) return <div className="p-4 text-xs text-red-300">{error}</div>;
+
+  return (
+    <div className="flex h-full min-h-0 flex-col bg-[#111114] text-gray-200">
+      <div className="flex items-center justify-between border-b border-gray-800 px-3 py-3">
+        <span className="text-xs font-semibold uppercase tracking-wider text-gray-300">CMS Collections</span>
+        <a href={`/dashboard/settings/${projectId}/cms`} target="_blank" rel="noreferrer" title="Open CMS settings" className="rounded p-1 text-gray-500 hover:bg-gray-800 hover:text-gray-200"><ExternalLink size={14} /></a>
+      </div>
+      {collections.length === 0 ? <div className="p-4 text-xs text-gray-500">No collections yet. Create one in CMS settings.</div> : <>
+        <div className="border-b border-gray-800 p-2">
+          {collections.map(collection => <button key={collection.id} type="button" onClick={() => { setSelectedId(collection.id); setSearch(''); }} className={`mb-1 flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left text-xs ${selected?.id === collection.id ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800/70 hover:text-gray-200'}`}>
+            <span className="truncate">{collection.name}</span><span className="ml-2 shrink-0 text-[10px] text-gray-500">{collection.records.length}</span>
+          </button>)}
+        </div>
+        {selected && <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="sticky top-0 z-10 border-b border-gray-800 bg-[#111114] p-2">
+            <label className="relative block">
+              <Search size={13} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-600" />
+              <input value={search} onChange={event => setSearch(event.target.value)} placeholder={`Search ${selected.name.toLowerCase()}...`} className="w-full rounded-md border border-gray-700 bg-gray-900 py-1.5 pl-8 pr-2 text-xs text-gray-200 outline-none focus:border-blue-400" />
+            </label>
+          </div>
+          <div className="p-2">
+            {records.length === 0 ? <p className="p-3 text-xs text-gray-500">No records found.</p> : records.map(record => <div key={record.id} className="border-b border-gray-800/70 px-2 py-2 last:border-0">
+              <p className="truncate text-xs font-medium text-gray-200">{String(record.data[selected.fields[0]] ?? record.id)}</p>
+              <p className="mt-1 truncate text-[10px] text-gray-500">{selected.fields.slice(1, 3).map(field => `${field}: ${String(record.data[field] ?? '')}`).join(' · ')}</p>
+            </div>)}
+          </div>
+        </div>}
+      </>}
     </div>
   );
 };
@@ -114,7 +217,8 @@ const ComponentsTab: React.FC = () => {
 
   return (
     <div className="p-3">
-      <div className="relative mb-3">
+      <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Components</span>
+      <div className="relative mb-3 mt-3">
         <input
           type="text"
           placeholder="Search components..."
@@ -409,8 +513,8 @@ const PagesTab: React.FC = () => {
           <div
             key={page.id}
             className={`group flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors ${page.id === currentPageId
-                ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30'
-                : 'hover:bg-gray-800 text-gray-400 border border-transparent'
+              ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30'
+              : 'hover:bg-gray-800 text-gray-400 border border-transparent'
               }`}
             onClick={() => setCurrentPage(page.id)}
           >

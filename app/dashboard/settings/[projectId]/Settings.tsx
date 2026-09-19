@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import CmsManager from './CmsManager';
 import ShopManager from './ShopManager';
 
 interface ProjectRecord {
@@ -194,7 +193,13 @@ export default function ProjectSettingsPage() {
           </div>
         </div>
 
-        {projectId && <div className='mt-6'><CmsManager projectId={projectId} /></div>}
+        {projectId && <div className='mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-gray-800 bg-[#111214] p-5'>
+          <div>
+            <h2 className='text-base font-semibold text-white'>Content management</h2>
+            <p className='mt-1 text-sm text-gray-500'>Manage collections and records for this project.</p>
+          </div>
+          <Link href={`/dashboard/settings/${projectId}/cms`} className='rounded-xl bg-blue-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-400'>Open CMS</Link>
+        </div>}
         {projectId && <ShopManager projectId={projectId} />}
       </div>
     </div>

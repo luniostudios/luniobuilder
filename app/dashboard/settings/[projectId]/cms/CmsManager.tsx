@@ -73,22 +73,31 @@ export default function CmsManager({ projectId }: { projectId: string }) {
     setRecordSearch('');
   }, [selected?.id]);
 
-  const addField = () => {
+  const addField = async () => {
     const field = newField.trim();
     if (!field) return;
     if (fieldDraft.some(existing => existing.toLowerCase() === field.toLowerCase())) {
       setError('That field already exists.');
       return;
     }
-    setFieldDraft(current => [...current, field]);
-    setNewField('');
-    setError('');
+    const nextFields = [...fieldDraft, field];
+    const saved = await saveFields(nextFields);
+    if (saved) {
+      setFieldDraft(nextFields);
+      setNewField('');
+    }
   };
 
-  const saveFields = async () => {
-    if (!selected || fieldDraft.length === 0) {
+  const removeField = async (field: string) => {
+    if (fieldDraft.length <= 1) return;
+    const nextFields = fieldDraft.filter(existing => existing !== field);
+    await saveFields(nextFields);
+  };
+
+  const saveFields = async (fieldsToSave = fieldDraft) => {
+    if (!selected || fieldsToSave.length === 0) {
       setError('A collection must have at least one field.');
-      return;
+      return false;
     }
     setSaving(true);
     setError('');
@@ -96,16 +105,19 @@ export default function CmsManager({ projectId }: { projectId: string }) {
       const response = await fetch(`/api/cms/${encodeURIComponent(projectId)}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: selected.id, fields: fieldDraft }),
+        body: JSON.stringify({ id: selected.id, fields: fieldsToSave }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data?.error || 'Unable to update fields');
       setCollections(current => current.map(collection => collection.id === selected.id
-        ? { ...collection, fields: data.fields || fieldDraft }
+        ? { ...collection, fields: data.fields || fieldsToSave }
         : collection));
-      setRecordDraft(current => Object.fromEntries((data.fields || fieldDraft).map((field: string) => [field, current[field] || ''])));
+      setFieldDraft(data.fields || fieldsToSave);
+      setRecordDraft(current => Object.fromEntries((data.fields || fieldsToSave).map((field: string) => [field, current[field] || ''])));
+      return true;
     } catch (value) {
       setError(value instanceof Error ? value.message : 'Unable to update fields');
+      return false;
     } finally { setSaving(false); }
   };
 
@@ -211,66 +223,71 @@ export default function CmsManager({ projectId }: { projectId: string }) {
   };
 
   return (
-    <section className='w-full rounded-3xl border border-gray-800 bg-[#111214] p-6 space-y-5'>
-      <div>
+    <section className='w-full overflow-hidden rounded-xl border border-gray-200 bg-white text-[#172033] shadow-sm'>
+      <div className='border-b border-gray-200 px-5 py-4'>
         <h2 className='text-xl font-semibold'>CMS collections</h2>
-        <p className='mt-1 text-sm text-gray-400'>Create project data and bind it to CMS tables in the editor.</p>
-        <p className='mt-2 text-xs text-gray-500'>Plan limits: {collectionLimit === null ? 'unlimited' : collectionLimit} collections, {recordLimit === null ? 'unlimited' : recordLimit} records per collection.</p>
+        <p className='mt-1 text-sm text-gray-500'>Create project data and bind it to CMS tables in the editor.</p>
+        <p className='mt-2 text-xs text-gray-400'>Plan limits: {collectionLimit === null ? 'unlimited' : collectionLimit} collections, {recordLimit === null ? 'unlimited' : recordLimit} records per collection.</p>
       </div>
-      {error && <p className='rounded-lg border border-red-800 bg-red-950/30 p-3 text-sm text-red-200'>{error}</p>}
-      <div className='grid md:grid-cols-[1fr_1fr_auto]'>
-        <input value={collectionForm.name} onChange={event => setCollectionForm({ ...collectionForm, name: event.target.value })} placeholder='Collection name, e.g. Products' className='rounded-xl border border-gray-700 bg-[#0f1218] px-3 py-2 text-sm' />
-        <input value={collectionForm.fields} onChange={event => setCollectionForm({ ...collectionForm, fields: event.target.value })} placeholder='Fields: name, price, image' className='rounded-xl border border-gray-700 bg-[#0f1218] px-3 py-2 text-sm' />
-        <button type='button' onClick={createCollection} disabled={saving || collectionLimitReached} className='inline-flex items-center justify-center gap-2 rounded-xl bg-[#1D976C] px-4 py-2 text-sm font-semibold text-black disabled:opacity-50'><Plus size={16} /> Create</button>
-      </div>
-      {loading ? <p className='text-sm text-gray-500'>Loading CMS...</p> : collections.length === 0 ? <p className='text-sm text-gray-500'>No collections yet.</p> : <>
-        <div className='flex flex-wrap gap-2'>
-          {collections.map(collection => <button key={collection.id} type='button' onClick={() => setSelectedId(collection.id)} className={`rounded-xl border px-3 py-2 text-sm ${selected?.id === collection.id ? 'border-blue-400 bg-blue-500/15 text-blue-200' : 'border-gray-700 text-gray-300'}`}>{collection.name} <span className='text-gray-500'>({collection.records.length})</span></button>)}
+      {error && <p className='mx-5 mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700'>{error}</p>}
+      <div className='border-b border-gray-200 bg-gray-50 p-4'>
+        <div className='mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500'>New collection</div>
+        <div className='grid gap-2 md:grid-cols-[1fr_1fr_auto]'>
+          <input value={collectionForm.name} onChange={event => setCollectionForm({ ...collectionForm, name: event.target.value })} placeholder='Collection name, e.g. Products' className='rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-400' />
+          <input value={collectionForm.fields} onChange={event => setCollectionForm({ ...collectionForm, fields: event.target.value })} placeholder='Fields: name, price, image' className='rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-400' />
+          <button type='button' onClick={createCollection} disabled={saving || collectionLimitReached} className='inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50'><Plus size={16} /> Create</button>
         </div>
-        {collectionLimitReached && <p className='text-xs text-amber-300'>You have reached your CMS collection limit. Upgrade your plan to create more.</p>}
-        {selected && <div className='overflow-hidden rounded-xl border border-gray-800'>
-          <div className='flex flex-wrap items-center justify-between gap-3 border-b border-gray-800 bg-gray-900/60 px-4 py-3'>
+      </div>
+      {loading ? <p className='p-5 text-sm text-gray-500'>Loading CMS...</p> : collections.length === 0 ? <p className='p-5 text-sm text-gray-500'>No collections yet.</p> : <>
+        <div className='grid min-h-130 lg:grid-cols-[220px_minmax(0,1fr)]'>
+        <div className='border-b border-gray-200 bg-gray-50 p-3 lg:border-b-0 lg:border-r'>
+          <div className='mb-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400'>Collections</div>
+          <div className='space-y-1'>
+          {collections.map(collection => <button key={collection.id} type='button' onClick={() => setSelectedId(collection.id)} className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm ${selected?.id === collection.id ? 'bg-white font-medium text-[#172033] shadow-sm ring-1 ring-gray-200' : 'text-gray-500 hover:bg-white hover:text-gray-900'}`}><span className='truncate'>{collection.name}</span><span className='ml-2 text-xs text-gray-400'>{collection.records.length}</span></button>)}
+          </div>
+          {collectionLimitReached && <p className='mt-4 px-2 text-xs text-amber-700'>You have reached your CMS collection limit.</p>}
+        </div>
+        {selected && <div className='overflow-hidden rounded-xl'>
+          <div className='flex flex-wrap items-center justify-between gap-3 px-4 py-3'>
             <div className='min-w-0'>
-              <h3 className='truncate text-sm font-semibold text-gray-200'>{selected.name}</h3>
+              <h3 className='truncate text-sm font-semibold text-[#172033]'>{selected.name}</h3>
               <p className='text-xs text-gray-500'>{selected.records.length} records</p>
             </div>
-            <button type='button' onClick={deleteCollection} disabled={saving} title='Delete collection' className='inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-red-900/70 px-2.5 py-1.5 text-xs text-red-300 hover:bg-red-950/40 disabled:opacity-50'><Trash2 size={14} /> Delete collection</button>
+            <button type='button' onClick={deleteCollection} disabled={saving} title='Delete collection' className='inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-red-900/70 px-2.5 py-1.5 text-xs text-red-500 hover:bg-red-300/20 disabled:opacity-50'><Trash2 size={14} /> Delete collection</button>
           </div>
-          <div className='border-b border-gray-800 bg-[#0f1218] px-4 py-3'>
+          <div className='border-b border-gray-800/20 bg-white px-4 py-3'>
             <div className='mb-2 flex flex-wrap items-center gap-2'>
               <span className='text-xs font-semibold uppercase tracking-wide text-gray-500'>Fields</span>
-              {fieldDraft.map(field => <span key={field} className='inline-flex items-center gap-1 rounded-lg border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-gray-300'>
-                {field}
-                <button type='button' onClick={() => setFieldDraft(current => current.filter(existing => existing !== field))} disabled={saving || fieldDraft.length <= 1} title={`Remove ${field} field`} className='text-gray-500 hover:text-red-300 disabled:opacity-40'><X size={13} /></button>
+              {fieldDraft.map(field => <span key={field} className='inline-flex items-center gap-1 rounded-lg border border-gray-700 bg-white px-2 py-1 text-xs text-[#172033]'><span className='max-w-32 truncate'>{field}</span>
+                <button type='button' onClick={() => removeField(field)} disabled={saving || fieldDraft.length <= 1} title={`Remove ${field} field`} className='text-gray-500 hover:text-red-500 disabled:opacity-40'><X size={13} /></button>
               </span>)}
             </div>
             <div className='flex flex-wrap gap-2'>
-              <input value={newField} onChange={event => setNewField(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); addField(); } }} placeholder='New field name' className='min-w-48 flex-1 rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-200 outline-none focus:border-blue-400' />
-              <button type='button' onClick={addField} disabled={saving || !newField.trim()} className='inline-flex items-center gap-1 rounded-lg border border-gray-700 px-3 py-2 text-xs text-gray-300 hover:bg-gray-800 disabled:opacity-50'><Plus size={14} /> Add field</button>
-              <button type='button' onClick={saveFields} disabled={saving || fieldDraft.length === 0} className='rounded-lg bg-blue-500 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-400 disabled:opacity-50'>Save fields</button>
+              <input value={newField} onChange={event => setNewField(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); addField(); } }} placeholder='New field name' className='min-w-48 flex-1 rounded-lg border border-gray-800/20 bg-white px-3 py-2 text-sm text-[#172033] outline-none' />
+              <button type='button' onClick={addField} disabled={saving || !newField.trim()} className='inline-flex items-center gap-1 rounded-lg border border-black px-3 py-2 text-xs text-[#172033] hover:bg-gray-200 disabled:opacity-50'><Plus size={14} /> Add field</button>
             </div>
           </div>
-          <div className='flex flex-wrap items-center justify-between gap-3 border-b border-gray-800 bg-[#0f1218] px-4 py-3'>
+          <div className='flex flex-wrap items-center justify-between gap-3 border-b border-gray-800/20 bg-white px-4 py-3'>
             <label className='relative min-w-48 flex-1'>
               <Search size={15} className='pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-500' />
-              <input value={recordSearch} onChange={event => { setRecordSearch(event.target.value); setRecordPage(1); }} placeholder='Filter records...' className='w-full rounded-lg border border-gray-700 bg-gray-900 py-2 pl-9 pr-3 text-sm text-gray-200 outline-none focus:border-blue-400' />
+              <input value={recordSearch} onChange={event => { setRecordSearch(event.target.value); setRecordPage(1); }} placeholder='Filter records...' className='w-full rounded-lg border border-gray-800/20 bg-white py-2 pl-9 pr-3 text-sm text-[#172033] outline-none' />
             </label>
             <label className='flex items-center gap-2 text-xs text-gray-500'>
               Per page
-              <select value={recordsPerPage} onChange={event => { setRecordsPerPage(Number(event.target.value)); setRecordPage(1); }} className='rounded-lg border border-gray-700 bg-gray-900 px-2 py-2 text-sm text-gray-200 outline-none focus:border-blue-400'>
+              <select value={recordsPerPage} onChange={event => { setRecordsPerPage(Number(event.target.value)); setRecordPage(1); }} className='rounded-lg border border-gray-800/20 bg-white px-2 py-2 text-sm text-[#172033] outline-none'>
                 {[10, 25, 50].map(size => <option key={size} value={size}>{size}</option>)}
               </select>
             </label>
           </div>
           <div className='overflow-x-auto'>
             <div className='min-w-160'>
-              <div className='grid gap-1 border-b border-gray-800 bg-gray-900/60 px-4 py-3' style={{ gridTemplateColumns: `repeat(${selected.fields.length}, minmax(120px, 1fr)) 64px` }}>
+              <div className='grid gap-1 border-b border-gray-800/20 bg-white px-4 py-3' style={{ gridTemplateColumns: `repeat(${selected.fields.length}, minmax(120px, 1fr)) 64px` }}>
                 {selected.fields.map(field => <span key={field} className='truncate text-xs font-semibold uppercase tracking-wide text-gray-500' title={field}>{field}</span>)}<span />
               </div>
-              {visibleRecords.map(record => <div key={record.id} className='grid gap-1 border-b border-gray-800 px-4 py-3 last:border-b-0' style={{ gridTemplateColumns: `repeat(${selected.fields.length}, minmax(120px, 1fr)) 64px` }}>
+              {visibleRecords.map(record => <div key={record.id} className='grid gap-1 border-b border-gray-800/20 px-4 py-3 last:border-b-0' style={{ gridTemplateColumns: `repeat(${selected.fields.length}, minmax(120px, 1fr)) 64px` }}>
               {selected.fields.map(field => editingRecordId === record.id
-                ? <input key={field} value={editingRecordDraft[field] || ''} onChange={event => setEditingRecordDraft(current => ({ ...current, [field]: event.target.value }))} className='min-w-0 w-full rounded-lg border border-gray-700 bg-[#0f1218] px-2 py-2 text-sm text-gray-200 outline-none focus:border-blue-400' aria-label={`${field} for ${record.id}`} />
-                : <span key={field} className='block min-w-0 truncate text-sm text-gray-200' title={String(record.data[field] ?? '')}>{String(record.data[field] ?? '')}</span>)}
+                ? <input key={field} value={editingRecordDraft[field] || ''} onChange={event => setEditingRecordDraft(current => ({ ...current, [field]: event.target.value }))} className='min-w-0 w-full rounded-lg border border-gray-800/20 bg-white px-2 py-2 text-sm text-[#172033] outline-none focus:border-blue-400' aria-label={`${field} for ${record.id}`} />
+                : <span key={field} className='block min-w-0 truncate text-sm text-[#172033]' title={String(record.data[field] ?? '')}>{String(record.data[field] ?? '')}</span>)}
               <div className='flex items-center justify-end gap-2'>
                 {editingRecordId === record.id ? <>
                   <button type='button' onClick={() => saveRecord(record.id)} disabled={saving} title='Save record' className='text-emerald-300 hover:text-emerald-200 disabled:opacity-50'><Check size={15} /></button>
@@ -281,21 +298,22 @@ export default function CmsManager({ projectId }: { projectId: string }) {
                 </>}
               </div>
               </div>)}
-              <div className='grid gap-1 bg-gray-950/40 px-4 py-3' style={{ gridTemplateColumns: `repeat(${selected.fields.length}, minmax(120px, 1fr)) 64px` }}>
-                {selected.fields.map(field => <input key={field} value={recordDraft[field] || ''} onChange={event => setRecordDraft({ ...recordDraft, [field]: event.target.value })} placeholder={field} className='min-w-0 w-full rounded-lg border border-gray-700 bg-[#0f1218] px-2 py-2 text-sm' />)}
-                <button type='button' onClick={addRecord} disabled={saving || (recordLimit !== null && selected.records.length >= recordLimit)} title='Add record' className='flex items-center justify-center text-blue-300 hover:text-white disabled:opacity-50'><Plus size={18} /></button>
+              <div className='grid gap-1 bg-white px-4 py-3' style={{ gridTemplateColumns: `repeat(${selected.fields.length}, minmax(120px, 1fr)) 64px` }}>
+                {selected.fields.map(field => <input key={field} value={recordDraft[field] || ''} onChange={event => setRecordDraft({ ...recordDraft, [field]: event.target.value })} placeholder={field} className='min-w-0 w-full rounded-lg border border-gray-800/20 bg-white px-2 py-2 text-sm text-[#172033]' />)}
+                <button type='button' onClick={addRecord} disabled={saving || (recordLimit !== null && selected.records.length >= recordLimit)} title='Add record' className='flex items-center justify-center text-green-500 hover:text-green-400 disabled:opacity-50'><Plus size={18} /></button>
               </div>
             </div>
           </div>
-          <div className='flex flex-wrap items-center justify-between gap-3 border-t border-gray-800 px-4 py-3'>
+          <div className='flex flex-wrap items-center justify-between gap-3 border-t border-gray-800/20 px-4 py-3'>
             <span className='text-xs text-gray-500'>Showing {filteredRecords.length === 0 ? 0 : (currentRecordPage - 1) * recordsPerPage + 1}-{Math.min(currentRecordPage * recordsPerPage, filteredRecords.length)} of {filteredRecords.length} records</span>
             <div className='flex items-center gap-2'>
-              <button type='button' onClick={() => setRecordPage(page => Math.max(1, page - 1))} disabled={currentRecordPage === 1} title='Previous page' className='rounded-lg border border-gray-700 p-1.5 text-gray-300 hover:bg-gray-800 disabled:opacity-40'><ChevronLeft size={16} /></button>
+              <button type='button' onClick={() => setRecordPage(page => Math.max(1, page - 1))} disabled={currentRecordPage === 1} title='Previous page' className='rounded-lg border border-gray-700 p-1.5 text-black disabled:opacity-40'><ChevronLeft size={16} /></button>
               <span className='min-w-16 text-center text-xs text-gray-400'>Page {currentRecordPage} of {totalRecordPages}</span>
-              <button type='button' onClick={() => setRecordPage(page => Math.min(totalRecordPages, page + 1))} disabled={currentRecordPage === totalRecordPages} title='Next page' className='rounded-lg border border-gray-700 p-1.5 text-gray-300 hover:bg-gray-800 disabled:opacity-40'><ChevronRight size={16} /></button>
+              <button type='button' onClick={() => setRecordPage(page => Math.min(totalRecordPages, page + 1))} disabled={currentRecordPage === totalRecordPages} title='Next page' className='rounded-lg border border-gray-700 p-1.5 text-black disabled:opacity-40'><ChevronRight size={16} /></button>
             </div>
           </div>
         </div>}
+        </div>
       </>}
     </section>
   );

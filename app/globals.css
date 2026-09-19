@@ -282,6 +282,108 @@ body {
   animation: marquee 40s linear infinite,
 }
 
+/* Unified editor system. Website content inside the canvas keeps its own styles. */
+.editor-workspace {
+  --editor-ink: #182230;
+  --editor-muted: #6a7788;
+  --editor-faint: #93a0b0;
+  --editor-border: #d9e1ea;
+  --editor-surface: #ffffff;
+  --editor-subtle: #f5f7fa;
+  --editor-hover: #edf3fb;
+  --editor-blue:  #016630;
+  background: #edf1f5;
+  color: var(--editor-ink);
+}
+
+.editor-chrome,
+.editor-rail,
+.editor-panel {
+  background: var(--editor-surface);
+  border-color: var(--editor-border);
+  color: var(--editor-ink);
+}
+
+.editor-chrome {
+  box-shadow: 0 1px 0 rgba(24, 34, 48, 0.04), 0 4px 18px rgba(24, 34, 48, 0.04);
+}
+
+.editor-chrome [class*="text-gray-"],
+.editor-chrome [class*="text-white"],
+.editor-panel [class*="text-gray-"],
+.editor-panel [class*="text-white"] {
+  color: var(--editor-muted) !important;
+}
+
+.editor-chrome a,
+.editor-chrome button:hover,
+.editor-panel button:hover {
+  color: var(--editor-ink) !important;
+}
+
+.editor-rail {
+  box-shadow: 2px 0 16px rgba(24, 34, 48, 0.04);
+}
+
+.editor-rail button:hover {
+  background: var(--editor-hover) !important;
+  color: var(--editor-blue) !important;
+}
+
+.editor-panel {
+  box-shadow: 0 0 18px rgba(24, 34, 48, 0.04);
+}
+
+.editor-panel [class*="bg-"] {
+  background: var(--editor-subtle) !important;
+}
+
+.editor-panel [class*="border-"] {
+  border-color: var(--editor-border) !important;
+}
+
+.editor-panel input,
+.editor-panel textarea,
+.editor-panel select {
+  color: var(--editor-ink) !important;
+  background: var(--editor-subtle) !important;
+  border-color: var(--editor-border) !important;
+  box-shadow: none;
+}
+
+.editor-panel input:focus,
+.editor-panel textarea:focus,
+.editor-panel select:focus {
+  border-color: #8eb2ef !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 217, 0.11) !important;
+}
+
+.editor-panel button:hover,
+.editor-chrome button:hover {
+  background: var(--editor-hover);
+}
+
+.editor-panel [class*="bg-blue-"],
+.editor-chrome [class*="bg-blue-"] {
+  background: var(--editor-blue) !important;
+  color: #ffffff !important;
+}
+
+.editor-panel [class*="text-blue-"],
+.editor-chrome [class*="text-blue-"] {
+  color: var(--editor-blue) !important;
+}
+
+.editor-panel [class*="bg-green-"],
+.editor-chrome [class*="bg-green-"] {
+  background: #16835b !important;
+  color: #ffffff !important;
+}
+
+.editor-canvas {
+  background: radial-gradient(circle at 50% 0%, #ffffff 0%, #f0f3f7 46%, #e7ecf2 100%);
+}
+
 .btn-primary {
     position: relative;
     display: inline-flex;
