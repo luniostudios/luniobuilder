@@ -162,7 +162,7 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
         styles: {
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'flex-start',
+          justifyContent: 'space-between',
           width: '100%',
           paddingBottom: '16px',
           paddingTop: '16px',
@@ -194,6 +194,24 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
           },
           {
             id: generateId(),
+            type: 'icon',
+            name: 'Hamburger',
+            props: { iconName: 'Menu' },
+            styles: {
+              desktop: { display: 'none', cursor: 'pointer', width: '40px', height: '40px', alignItems: 'center', justifyContent: 'center', color: '#111827' },
+              tablet: { display: 'flex' },
+              mobile: { display: 'flex' },
+              widescreen: { display: 'none' },
+              laptop: { display: 'none' },
+              mobileLandscape: { display: 'flex' },
+            },
+            children: [],
+            parentId: null,
+            locked: false,
+            hidden: false,
+          },
+          {
+            id: generateId(),
             type: 'list',
             name: 'Nav Links',
             props: { isNavMenu: true },
@@ -208,7 +226,7 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
             children: [
               {
                 id: generateId(),
-                type: 'listItem',
+                type: 'link',
                 name: 'Nav Item',
                 props: { text: 'Home', href: '#' },
                 styles: { desktop: { margin: '0' }, tablet: {}, mobile: {}, widescreen: { margin: '0' }, laptop: { margin: '0' }, mobileLandscape: { margin: '0' } },
@@ -219,7 +237,7 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
               },
               {
                 id: generateId(),
-                type: 'listItem',
+                type: 'link',
                 name: 'Nav Item',
                 props: { text: 'Services', href: '#' },
                 styles: {
@@ -236,24 +254,6 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
                 hidden: false,
               }
             ],
-            parentId: null,
-            locked: false,
-            hidden: false,
-          },
-          {
-            id: generateId(),
-            type: 'icon',
-            name: 'Hamburger',
-            props: { iconName: 'Menu' },
-            styles: {
-              desktop: { display: 'none', cursor: 'pointer', width: '40px', height: '40px', alignItems: 'center', justifyContent: 'center', color: '#111827' },
-              tablet: { display: 'flex' },
-              mobile: { display: 'flex' },
-              widescreen: { display: 'none' },
-              laptop: { display: 'none' },
-              mobileLandscape: { display: 'flex' },
-            },
-            children: [],
             parentId: null,
             locked: false,
             hidden: false,
@@ -1274,7 +1274,7 @@ export const generateReactProjectFiles = (pages: Page[], projectName: string, br
 import './builder.css';\n\nconst pages = [\n${pageEntries}\n];\n\nconst App = () => {\n  const [currentIndex, setCurrentIndex] = useState(0);\n  const ActivePage = pages[currentIndex].Component;\n\n  return (\n    <div className="app-shell">\n      ${pageMetadata.length > 1 ? `\n      <div className="page-selector">\n${pageMetadata.map((meta, index) => `        <button type="button" className={currentIndex === ${index} ? 'active' : ''} onClick={() => setCurrentIndex(${index})}>${meta.page.name.replace(/'/g, "\\'")}</button>`).join('\n')}\n      </div>\n      ` : ''}\n      <main className="page-view">\n        <ActivePage />\n      </main>\n    </div>\n  );\n};\n\nexport default App;`;
 
   files.push({ path: 'src/App.jsx', content: appSource });
-  files.push({ path: 'src/App.css', content: `body { margin: 0; font-family: system-ui, sans-serif; background: #ffffff; color: #111827; }\n.app-shell { min-height: 100vh; background: #ffffff; }\n.page-selector { display: flex; flex-wrap: wrap; gap: 8px; padding: 16px; background: transparent; }\n.page-selector button { border: none; padding: 10px 14px; background: #e5e7eb; color: #111827; border-radius: 9999px; cursor: pointer; }\n.page-selector button.active { background: #2563eb; color: #ffffff; }\n.page-view { padding: 0; }\n.lunio-nav-open { display: flex !important; position: absolute; top: 100%; left: 0; right: 0; flex-direction: column; align-items: stretch; gap: 12px; padding: 16px; background: #ffffff; box-shadow: 0 8px 20px rgba(15,23,42,.12); z-index: 101; }` });
+  files.push({ path: 'src/App.css', content: `body { margin: 0; font-family: system-ui, sans-serif; background: #ffffff; color: #111827; }\n.app-shell { min-height: 100vh; background: #ffffff; }\n.page-selector { display: flex; flex-wrap: wrap; gap: 8px; padding: 16px; background: transparent; }\n.page-selector button { border: none; padding: 10px 14px; background: #e5e7eb; color: #111827; border-radius: 9999px; cursor: pointer; }\n.page-selector button.active { background: #2563eb; color: #ffffff; }\n.page-view { padding: 0; }\n.lunio-nav-open { display: flex !important; }` });
   files.push({ path: 'src/builder.css', content: `${pages.map(page => generateCssForPage(page)).filter(Boolean).join('\n\n')}` });
   files.push({ path: 'src/index.css', content: `* { box-sizing: border-box; }\nbody { margin: 0; background: #f8fafc; color: #111827; }\nimg { max-width: 100%; display: block; }` });
   files.push({ path: 'src/reportWebVitals.js', content: `const reportWebVitals = onPerfEntry => {\n  if (onPerfEntry && onPerfEntry instanceof Function) {\n    import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {\n      getCLS(onPerfEntry);\n      getFID(onPerfEntry);\n      getFCP(onPerfEntry);\n      getLCP(onPerfEntry);\n      getTTFB(onPerfEntry);\n    });\n  }\n};\nexport default reportWebVitals;` });
@@ -1391,7 +1391,7 @@ export const generateNextProjectFiles = (
   files.push({ path: 'app/[slug]/page.js', content: dynamicRouteSource });
 
   const watermarkCss = showWatermark ? `.lunio-watermark { position: fixed; right: 16px; bottom: 16px; z-index: 2147483647; padding: 8px 12px; border: 1px solid rgba(148,163,184,.35); border-radius: 6px; background: rgba(15,23,42,.92); color: #f8fafc; font: 600 12px/1.2 system-ui, sans-serif; text-decoration: none; box-shadow: 0 4px 14px rgba(15,23,42,.2); }\n.lunio-watermark:hover { background: #2563eb; }\n` : '';
-  const globalsCss = `* { box-sizing: border-box; }\nbody { margin: 0; min-height: 100vh; background: #f8fafc; color: #111827; font-family: system-ui, sans-serif; }\nimg { max-width: 100%; display: block; }\n.app-shell { min-height: 100vh; }\n.page-selector { display: flex; flex-wrap: wrap; gap: 8px; padding: 16px; background: transparent; }\n.page-selector button { border: none; padding: 10px 14px; background: #e5e7eb; color: #111827; border-radius: 9999px; cursor: pointer; }\n.page-selector button.active { background: #2563eb; color: #ffffff; }\n.page-view { padding: 0; }\n.lunio-nav-open { display: flex !important; position: absolute; top: 100%; left: 0; right: 0; flex-direction: column; align-items: stretch; gap: 12px; padding: 16px; background: #ffffff; box-shadow: 0 8px 20px rgba(15,23,42,.12); z-index: 101; }\n${watermarkCss}`;
+  const globalsCss = `* { box-sizing: border-box; }\nbody { margin: 0; min-height: 100vh; background: #f8fafc; color: #111827; font-family: system-ui, sans-serif; }\nimg { max-width: 100%; display: block; }\n.app-shell { min-height: 100vh; }\n.page-selector { display: flex; flex-wrap: wrap; gap: 8px; padding: 16px; background: transparent; }\n.page-selector button { border: none; padding: 10px 14px; background: #e5e7eb; color: #111827; border-radius: 9999px; cursor: pointer; }\n.page-selector button.active { background: #2563eb; color: #ffffff; }\n.page-view { padding: 0; }\n.lunio-nav-open { display: flex !important; }\n${watermarkCss}`;
   const builderCss = `${pages.map(page => generateCssForPage(page)).filter(Boolean).join('\n\n')}`;
   files.push({ path: 'app/globals.css', content: `${globalsCss}\n${builderCss}` });
 

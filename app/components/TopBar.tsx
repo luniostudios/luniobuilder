@@ -14,7 +14,6 @@ import {
   ExternalLink,
   Sparkles,
   Laptop,
-  RectangleHorizontalIcon,
   Globe,
   Rocket,
 } from 'lucide-react';
@@ -32,6 +31,7 @@ import { useOthers } from '@liveblocks/react';
 import { AIGeneratorModal } from './canvas/AIGeneratorModal';
 import { normalizeSiteSlug } from '../lib/tenant';
 import { persistGeneratedCms } from '../utils/generatedCms';
+import { Page } from '../types/builder';
 
 interface UserData {
   id: string;
@@ -41,9 +41,19 @@ interface UserData {
   image?: string | null;
 }
 
-interface ProjectData {
-  id: string;
-  title: string;
+interface ProjectRecord {
+    id: string;
+    user_id?: string;
+    title: string;
+    slug: string;
+    created_at: Date;
+    updated_at: Date;
+    vercelUrl: string;
+    status: string;
+    content?: {
+        pages?: Page[];
+        currentPageId?: string;
+    };
 }
 
 const collaboratorColors = ['#27c3f3', '#8bdc2f', '#ffb526', '#ff6868', '#a78bfa'];
@@ -71,17 +81,6 @@ const makeDosDateTime = () => {
   const date = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
   const time = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() / 2);
   return { date, time };
-};
-
-const concatUint8Arrays = (arrays: Uint8Array[]) => {
-  const length = arrays.reduce((sum, current) => sum + current.length, 0);
-  const result = new Uint8Array(length);
-  let offset = 0;
-  arrays.forEach(chunk => {
-    result.set(chunk, offset);
-    offset += chunk.length;
-  });
-  return result;
 };
 
 const sanitizeCss = (css: string) => {
@@ -210,8 +209,6 @@ export const TopBar: React.FC = () => {
   const {
     projectId,
     projectName,
-    setProjectId,
-    setProjectName,
     pages,
     currentPageId,
     breakpoint,
@@ -254,7 +251,7 @@ export const TopBar: React.FC = () => {
   const { data: session, status } = useSession();
   const others = useOthers();
   const [userData, setUserData] = useState<UserData | null>(null);
-  const [projectData, setProjectData] = useState<ProjectData | null>(null);
+  const [projects, setProjects] = useState<ProjectRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
@@ -285,7 +282,7 @@ export const TopBar: React.FC = () => {
   useEffect(() => {
     if (status === 'authenticated') {
       fetchUserData();
-      fetchProjectData();
+      fetchProjects();
     } else if (status === 'unauthenticated') {
       setLoading(false);
     }
@@ -307,6 +304,22 @@ export const TopBar: React.FC = () => {
     setLoading(false);
   }
 
+  const fetchProjects = async () => {
+        setLoading(true);
+        setError(null);
+
+        const response = await fetch('/api/projects');
+        if (!response.ok) {
+            setError('Unable to load projects.');
+            setLoading(false);
+            return;
+        }
+
+        const data = await response.json();
+        setProjects(data || []);
+        setLoading(false);
+    };
+
   const fetchProjectData = async () => {
     setLoading(true);
     setError(null);
@@ -319,7 +332,6 @@ export const TopBar: React.FC = () => {
     }
 
     const data = await response.json();
-    setProjectData(data);
     setLoading(false);
     console.log('Fetched project data:', data);
   }
@@ -347,7 +359,7 @@ export const TopBar: React.FC = () => {
   };
 
   const getProjectTitle = () => {
-    return projectName || 'LUNIO Project';
+    return projects.find((p) => p.id === projectId)?.title || 'LUNIO Project';
   };
 
   const saveProject = useCallback(async () => {
@@ -645,7 +657,7 @@ export const TopBar: React.FC = () => {
     }
 
     const combinedStyles = sanitizeCss(`${collectedCssImports.join('\n\n')}\n\n${collectedCssParts.join('\n\n')}\n\n/* Page-specific styles */\n${pageStyles}`);
-    const navigationScript = `<script>(function(){document.addEventListener('click',function(event){var toggle=event.target.closest('[data-lunio-nav-toggle]');if(!toggle)return;var nav=toggle.closest('nav');var menu=nav&&nav.querySelector('[data-lunio-nav-menu]');if(!menu)return;var open=menu.classList.toggle('lunio-nav-open');toggle.setAttribute('aria-expanded',String(open));if(open){menu.style.display='flex';menu.style.position='absolute';menu.style.top='100%';menu.style.left='0';menu.style.right='0';menu.style.flexDirection='column';menu.style.alignItems='stretch';menu.style.gap='12px';menu.style.padding='16px';menu.style.backgroundColor='#fff';menu.style.boxShadow='0 8px 20px rgba(15,23,42,.12)';menu.style.zIndex='101';}else{menu.style.display='';}});})();</script>`;
+    const navigationScript = `<script>(function(){document.addEventListener('click',function(event){var toggle=event.target.closest('[data-lunio-nav-toggle]');if(!toggle)return;var nav=toggle.closest('nav');var menu=nav&&nav.querySelector('[data-lunio-nav-menu]');if(!menu)return;var open=menu.classList.toggle('lunio-nav-open');toggle.setAttribute('aria-expanded',String(open));menu.style.display=open?'flex':'';});})();</script>`;
 
     const html = `<!DOCTYPE html>
 <html lang="en">
@@ -779,7 +791,7 @@ export const TopBar: React.FC = () => {
 
           {/* Project name */}
           <div className="text-gray-400 text-xs border-l border-gray-800 pl-3">
-            <span className="text-gray-500">/</span> {getProjectTitle()}
+            <span className="text-gray-500">/</span> {page.name || 'Untitled Project'}
           </div>
         </div>
         <div className='flex flex-row'>
@@ -925,12 +937,6 @@ export const TopBar: React.FC = () => {
             </div>
           )}
 
-          {publishMessage && (
-            <div className="mt-1 text-xs text-gray-300 max-w-xs whitespace-normal">
-              {publishMessage}
-            </div>
-          )}
-
           {/* Save */}
           {isSaving ? <Loader size={13} className="text-gray-400 align" /> : <Check size={13} className="text-green-500" />}
 
@@ -974,21 +980,21 @@ export const TopBar: React.FC = () => {
             </div>
 
             {showPublishMenu && (
-              <div className="absolute top-full right-0 mt-1 w-48 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl py-2 z-50">
+              <div className="absolute top-full right-0 mt-1 px-4 w-48 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl py-2 z-50">
                 <button
                   onClick={publishToLunio}
                   disabled={!projectId}
-                  className={`w-full flex items-center gap-2 px-4 py-2 text-xs ${projectId ? 'text-gray-300 hover:text-white hover:bg-gray-800' : 'text-gray-600 cursor-not-allowed'} transition-colors`}
+                  className={`w-full flex items-center gap-2 px-2 py-2 text-xs ${projectId ? 'text-gray-300 hover:text-white hover:bg-gray-800' : 'text-gray-600 cursor-not-allowed'} transition-colors`}
                 >
                   <Globe size={12} />
                   Publish to LUNIO
+                  <Link href={`https://${projects.find((p) => p.id === projectId)?.title || 'untitled'}.luniobuilder.com`} target="_blank" rel="noreferrer" className="ml-auto text-blue-400 hover:text-blue-300">
+                    <ExternalLink size={12} />
+                  </Link>
                 </button>
-                <span className="block w-full border-t border-gray-800 text-xs text-white my-1"><a href={`https://${projectName}.luniobuilder.com`} target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300">
-                  {projectName}.luniobuilder.com
-                </a></span>
                 <button
                   onClick={handlePublish}
-                  className="w-full flex items-center gap-2 px-4 py-2 text-xs text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
+                  className="w-full flex items-center gap-2 px-2 py-2 text-xs text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
                 >
                   <Share2 size={12} />
                   Publish to Vercel
@@ -996,14 +1002,14 @@ export const TopBar: React.FC = () => {
                 <button
                   onClick={handleViewOnVercel}
                   disabled={!projectId}
-                  className={`w-full flex items-center gap-2 px-4 py-2 text-xs ${projectId ? 'text-gray-300 hover:text-white hover:bg-gray-800' : 'text-gray-600 cursor-not-allowed'} transition-colors`}
+                  className={`w-full flex items-center gap-2 px-2 py-2 text-xs ${projectId ? 'text-gray-300 hover:text-white hover:bg-gray-800' : 'text-gray-600 cursor-not-allowed'} transition-colors`}
                 >
                   <ExternalLink size={12} />
                   View on Vercel
                 </button>
                 <button
                   onClick={userData?.role !== 'pro' && userData?.role !== 'admin' ? () => router.push('/pricing') : exportHTML}
-                  className="w-full flex items-center gap-2 px-4 py-2 text-xs text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
+                  className="w-full flex items-center gap-2 px-2 py-2 text-xs text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
                 >
                   <Download size={12} />
                   Export HTML
@@ -1015,7 +1021,7 @@ export const TopBar: React.FC = () => {
                 </button>
                 <button
                   onClick={userData?.role !== 'pro' && userData?.role !== 'admin' ? () => router.push('/pricing') : exportReact}
-                  className="w-full flex items-center gap-2 px-4 py-2 text-xs text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
+                  className="w-full flex items-center gap-2 px-2 py-2 text-xs text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
                 >
                   <Download size={12} />
                   Export React
@@ -1028,7 +1034,7 @@ export const TopBar: React.FC = () => {
                 <div className="border-t border-gray-800 mt-1 pt-1">
                   <Link
                     href={`/dashboard/settings/${projectId}`}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-xs text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
+                    className="w-full flex items-center gap-2 px-2 py-2 text-xs text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
                   >
                     <Settings size={12} />
                     Site settings
