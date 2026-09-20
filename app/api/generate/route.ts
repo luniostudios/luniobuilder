@@ -28,15 +28,19 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const getGeminiApiUrl = (model: 'gemini-3.6-flash' | 'gemini-pro') =>
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
-const getAccountCredential = async (userId: string, provider?: AIProvider) => {
+type ProviderCredential = { provider: AIProvider; apiKey: string; isPlatform: boolean };
+
+const getAccountCredentials = async (userId: string) => {
     const { data: credentials } = await supabaseServer
         .from('account_ai_credentials')
         .select('provider, encrypted_api_key')
         .eq('user_id', userId)
         .order('updated_at', { ascending: false });
-    const credential = provider ? credentials?.find(item => item.provider === provider) : credentials?.[0];
-    if (!credential) return null;
-    return { provider: credential.provider as AIProvider, apiKey: decryptApiKey(credential.encrypted_api_key) };
+    return (credentials || []).map(credential => ({
+        provider: credential.provider as AIProvider,
+        apiKey: decryptApiKey(credential.encrypted_api_key),
+        isPlatform: false,
+    })).filter(credential => Boolean(credential.apiKey));
 };
 
 const getTextFromProvider = async (provider: AIProvider, apiKey: string, systemPrompt: string) => {
@@ -99,7 +103,8 @@ export async function POST(req: NextRequest): Promise<NextResponse<GenerateRespo
         }
 
         const body: GenerateRequest = await req.json();
-        const { prompt, imageData, imageMimeType, imageReferences: requestedImageReferences, provider, context } = body;
+        const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : '';
+        const { imageData, imageMimeType, imageReferences: requestedImageReferences, provider, context } = body;
         const imageReferences = requestedImageReferences?.length
             ? requestedImageReferences
             : imageData && imageMimeType
@@ -134,8 +139,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<GenerateRespo
         const existingUsage = typeof meta.ai_usage === 'object' && meta.ai_usage !== null ? meta.ai_usage : { date: today, count: 0 };
         const currentCount = existingUsage.date === today ? Number(existingUsage.count || 0) : 0;
 
-        const accountCredential = await getAccountCredential(session.user.id || '', provider);
-        const usesPlatformCredential = !accountCredential;
+        const accountCredentials = await getAccountCredentials(session.user.id || '');
 
         const projectLimit = getProjectLimitForRole(role);
         if (projectLimit !== null) {
@@ -160,8 +164,8 @@ export async function POST(req: NextRequest): Promise<NextResponse<GenerateRespo
             }
         }
 
-        const aiDailyLimit = usesPlatformCredential ? getAIDailyLimitForRole(role) : null;
-        if (aiDailyLimit !== null && aiDailyLimit !== undefined && currentCount >= aiDailyLimit) {
+        const aiDailyLimit = getAIDailyLimitForRole(role);
+        if (accountCredentials.length === 0 && aiDailyLimit !== null && aiDailyLimit !== undefined && currentCount >= aiDailyLimit) {
             return NextResponse.json(
                 { html: '', success: false, error: `Your ${role} plan is limited to ${aiDailyLimit} AI-generated websites per day when using LUNIO's AI key.` },
                 { status: 403 }
@@ -180,91 +184,76 @@ export async function POST(req: NextRequest): Promise<NextResponse<GenerateRespo
     IMAGE REFERENCES:
     Analyze all provided images together and generate HTML that matches their shared design language, layout patterns, colors, typography, and visual style. Use each image as a reference and do not ignore any of them.`;
             if (prompt) {
-                systemPrompt += `\n\nAlso incorporate this additional requirement: ${prompt}`;
+                systemPrompt += `\n\nUSER REQUIREMENTS (implement every item):\n---\n${prompt}\n---`;
             }
         } else if (prompt) {
-            systemPrompt += `\n\nGenerate HTML for: ${prompt}`;
+                systemPrompt += `\n\nUSER REQUIREMENTS (implement every item):\n---\n${prompt}\n---`;
         }
         if (context) {
-            systemPrompt += `\n\nSELECTED ELEMENT TO EDIT:\n${context}\n\nReturn the edited replacement fragment only. Preserve the selected element's purpose and improve it according to the user's request.`;
+                systemPrompt += `\n\nSELECTED ELEMENT TO EDIT (preserve its role and improve it):\n---\n${context}\n---\nReturn only the replacement fragment. Keep the same semantic category whenever practical and implement every applicable user requirement in that fragment.`;
         }
 
-        const selectedProvider = accountCredential?.provider || 'gemini-3.6-flash';
-        const providerKey = accountCredential?.apiKey || GEMINI_API_KEY;
-        if (hasImage && selectedProvider !== 'gemini-3.6-flash') {
-            return NextResponse.json(
-                { html: '', success: false, error: 'Reference images are currently supported with Gemini only.' },
-                { status: 400 }
-            );
-        }
-        if (!providerKey) {
+            systemPrompt += `\n\nFINAL GENERATION RULE: Complete the implementation before optimizing decoration. Do not return a plan, explanation, TODO, placeholder, or feature description. Return the finished builder-compatible HTML only.`;
+
+        const platformCredential: ProviderCredential | null = GEMINI_API_KEY
+            ? { provider: 'gemini-3.6-flash', apiKey: GEMINI_API_KEY, isPlatform: true }
+            : null;
+        const credentialsByPreference = provider
+            ? [...accountCredentials.filter(credential => credential.provider === provider), ...accountCredentials.filter(credential => credential.provider !== provider)]
+            : accountCredentials;
+        const candidates = [...credentialsByPreference, ...(platformCredential ? [platformCredential] : [])]
+            .filter(candidate => !hasImage || candidate.provider === 'gemini-3.6-flash' || candidate.provider === 'gemini-pro')
+            .filter(candidate => !candidate.isPlatform || aiDailyLimit === null || currentCount < aiDailyLimit)
+            .filter((candidate, index, all) => all.findIndex(item => item.provider === candidate.provider) === index);
+
+        if (candidates.length === 0) {
             return NextResponse.json(
                 { html: '', success: false, error: 'Add an AI provider API key in Profile Settings or configure GEMINI_API_KEY.' },
                 { status: 500 }
             );
         }
 
-        let response: any;
-
-        if (hasImage && selectedProvider === 'gemini-3.6-flash') {
-            // Use vision API with all reference images.
-            response = await fetch(getGeminiApiUrl(selectedProvider), {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-goog-api-key': providerKey,
-                },
-                body: JSON.stringify({
-                    contents: [
-                        {
-                            parts: [
-                                {
-                                    text: systemPrompt,
-                                },
-                                ...imageReferences.map(reference => ({
-                                    inline_data: {
-                                        mime_type: reference.mimeType,
-                                        data: reference.data,
-                                    },
-                                })),
-                            ],
-                        },
-                    ],
-                    generationConfig: {
-                        temperature: 0,
-                        top_p: 0.95,
-                        max_output_tokens: 8192,
-                    },
-                }),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.text();
-                console.error('Gemini API error:', errorData);
-                return NextResponse.json(
-                    { html: '', success: false, error: 'Failed to generate content from image' },
-                    { status: 500 }
-                );
+        let generatedContent = '';
+        let usedPlatformCredential = false;
+        const providerErrors: string[] = [];
+        for (const candidate of candidates) {
+            try {
+                if (hasImage) {
+                    const response = await fetch(getGeminiApiUrl(candidate.provider as 'gemini-3.6-flash' | 'gemini-pro'), {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': candidate.apiKey },
+                        body: JSON.stringify({
+                            contents: [{ parts: [
+                                { text: systemPrompt },
+                                ...imageReferences.map(reference => ({ inline_data: { mime_type: reference.mimeType, data: reference.data } })),
+                            ] }],
+                            generationConfig: { temperature: 0, top_p: 0.95, max_output_tokens: 8192 },
+                        }),
+                    });
+                    if (!response.ok) throw new Error(`Gemini image request failed (${response.status})`);
+                    const data = await response.json();
+                    generatedContent = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                } else {
+                    generatedContent = await getTextFromProvider(candidate.provider, candidate.apiKey, systemPrompt);
+                }
+                if (generatedContent.trim()) {
+                    usedPlatformCredential = candidate.isPlatform;
+                    break;
+                }
+                throw new Error('The provider returned an empty response');
+            } catch (error) {
+                const message = error instanceof Error ? error.message : 'Unknown provider error';
+                providerErrors.push(`${candidate.provider}: ${message}`);
+                console.warn(`AI provider ${candidate.provider} failed; trying the next available provider.`);
             }
-
-            const jsonResponse = await response.json();
-            response = jsonResponse;
-        } else {
-            const generatedText = await getTextFromProvider(selectedProvider, providerKey, systemPrompt);
-            response = { candidates: [{ content: { parts: [{ text: generatedText }] } }] };
         }
 
-        const data = response as any;
-
-        // Extract content from Gemini response
-        if (!data.candidates || !data.candidates[0]?.content?.parts?.[0]?.text) {
+        if (!generatedContent.trim()) {
             return NextResponse.json(
-                { html: '', success: false, error: 'Invalid response from Gemini' },
-                { status: 500 }
+                { html: '', success: false, error: `All available AI providers failed. ${providerErrors.join(' | ')}` },
+                { status: 502 }
             );
         }
-
-        const generatedContent = data.candidates[0].content.parts[0].text;
 
         // Clean up the response (remove markdown code blocks if present)
         let cleanedContent = generatedContent
@@ -337,7 +326,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<GenerateRespo
             console.warn('Unsplash replacement failed:', err);
         }
 
-        if (usesPlatformCredential && aiDailyLimit !== null) {
+        if (usedPlatformCredential && aiDailyLimit !== null) {
             const updatedUsage = {
                 ...meta,
                 ai_usage: {

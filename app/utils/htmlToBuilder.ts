@@ -126,8 +126,15 @@ const nodeToBuilderElement = (
 
   const builderId = generateId();
 
-  // Extract inline styles
+  // Extract base inline styles and optional generated breakpoint overrides.
   const styles = extractStylesFromElement(element);
+  const responsiveStyles = {
+    widescreen: extractStylesFromAttribute(element, 'widescreen'),
+    tablet: extractStylesFromAttribute(element, 'tablet'),
+    mobile: extractStylesFromAttribute(element, 'mobile'),
+    laptop: extractStylesFromAttribute(element, 'laptop'),
+    mobileLandscape: extractStylesFromAttribute(element, 'mobileLandscape'),
+  };
 
   // Extract text content and props
   const props = extractPropsFromElement(element, tagName);
@@ -177,12 +184,12 @@ const nodeToBuilderElement = (
     name: getElementName(elementType),
     props,
     styles: {
-      widescreen: {},
+      widescreen: responsiveStyles.widescreen,
       desktop: styles,
-      tablet: {},
-      mobile: {},
-      laptop: {},
-      mobileLandscape: {},
+      tablet: responsiveStyles.tablet,
+      mobile: responsiveStyles.mobile,
+      laptop: responsiveStyles.laptop,
+      mobileLandscape: responsiveStyles.mobileLandscape,
     },
     children,
     parentId,
@@ -254,6 +261,23 @@ const extractStylesFromElement = (element: HTMLElement): StyleProperties => {
     }
   });
 
+  return styles;
+};
+
+const extractStylesFromAttribute = (element: HTMLElement, breakpoint: string): StyleProperties => {
+  const value = element.getAttribute(`data-lunio-style-${breakpoint}`);
+  if (!value) return {};
+
+  const styles: StyleProperties = {};
+  value.split(';').forEach(rule => {
+    const colonIndex = rule.indexOf(':');
+    if (colonIndex === -1) return;
+    const property = rule.slice(0, colonIndex).trim();
+    const styleValue = rule.slice(colonIndex + 1).trim();
+    if (property && styleValue) {
+      (styles as Record<string, string>)[cssPropertyToCamel(property)] = styleValue;
+    }
+  });
   return styles;
 };
 
