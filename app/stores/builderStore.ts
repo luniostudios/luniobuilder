@@ -43,6 +43,7 @@ interface BuilderStore extends BuilderState {
   updatePageSeo: (id: string, seo: Partial<Page['seo']>) => void;
   updatePageName: (id: string, name: string) => void;
   updatePageSlug: (id: string, slug: string) => void;
+  updatePagePassword: (id: string, passwordProtected: boolean, password: string) => void;
   updatePageCmsDetail: (id: string, settings: Partial<NonNullable<Page['cmsDetail']>>) => void;
 
   // UI state
@@ -601,6 +602,17 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
       const pages = deepClone(state.pages);
       const pageToUpdate = pages.find(candidate => candidate.id === id)!;
       pageToUpdate.slug = `/${normalizedSlug}`;
+      return { pages };
+    });
+  },
+
+  updatePagePassword: (id, passwordProtected, password) => {
+    set(state => {
+      const pages = deepClone(state.pages);
+      const page = pages.find(candidate => candidate.id === id);
+      if (!page) return state;
+      page.passwordProtected = passwordProtected;
+      page.password = passwordProtected ? password : '';
       return { pages };
     });
   },

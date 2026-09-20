@@ -677,10 +677,6 @@ export default function Dashboard() {
                                                 <div className="flex items-start justify-between">
                                                     <div className="overflow-hidden pr-2">
                                                         <h3 className="font-semibold text-[#102022] truncate">{project.title}</h3>
-                                                        <a href={project.vercelUrl} target="_blank" rel="noreferrer" className="text-sm text-gray-500 hover:text-gray-600 truncate flex items-center gap-1 mt-0.5 group/link">
-                                                            {project.vercelUrl}
-                                                            <ExternalLink size={12} className="opacity-0 -translate-y-1 group-hover/link:opacity-100 group-hover/link:translate-y-0 transition-all" />
-                                                        </a>
                                                         {userData && (userData.role == 'ADMIN' || userData.role?.toLowerCase() === 'owner') && project.user_id && (
                                                             <div className="text-xs text-gray-500 mt-1">Owner: {userData.id === project.user_id ? userData.name : project.user_id}</div>
                                                         )}

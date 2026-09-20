@@ -2171,7 +2171,7 @@ interface SeoEditorProps {
 }
 
 const SeoEditor: React.FC<SeoEditorProps> = ({ pageId }) => {
-  const { pages, projectId, updatePageSeo, updatePageName, updatePageCmsDetail } = useBuilderStore();
+  const { pages, projectId, updatePageSeo, updatePageName, updatePagePassword, updatePageCmsDetail } = useBuilderStore();
   const [cmsCollections, setCmsCollections] = useState<Array<{ id: string; name: string; fields: string[] }>>([]);
   const page = pages.find(p => p.id === pageId)!;
 
@@ -2206,6 +2206,30 @@ const SeoEditor: React.FC<SeoEditorProps> = ({ pageId }) => {
           className="w-full bg-gray-800 text-gray-500 text-sm rounded-lg px-3 py-2 border border-gray-700 focus:outline-none cursor-not-allowed"
           readOnly
         />
+      </div>
+
+      <div className="border-t border-gray-800 pt-4">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <div>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Page password</p>
+            <p className="text-[11px] text-gray-600 mt-1">Visitors must enter this password to view the published page.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => updatePagePassword(page.id, !page.passwordProtected, page.password || '')}
+            className={`rounded-full px-3 py-1 text-[11px] font-semibold ${page.passwordProtected ? 'bg-amber-500/20 text-amber-300' : 'bg-gray-800 text-gray-400'}`}
+          >{page.passwordProtected ? 'Enabled' : 'Disabled'}</button>
+        </div>
+        {page.passwordProtected && <label className="text-xs text-gray-500 block">
+          Password
+          <input
+            type="password"
+            value={page.password || ''}
+            onChange={event => updatePagePassword(page.id, true, event.target.value)}
+            placeholder="Enter page password"
+            className="mt-1 w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        </label>}
       </div>
 
       {page.slug !== '/' && <div className="border-t border-gray-800 pt-4">

@@ -196,6 +196,8 @@ export interface Page {
   id: string;
   name: string;
   slug: string;
+  passwordProtected?: boolean;
+  password?: string;
   elements: BuilderElement[];
   seo: {
     title: string;

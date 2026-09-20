@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { supabaseServer } from '../../../lib/supabaseServer';
 import { normalizeSiteSlug } from '../../../lib/tenant';
 import TenantSite from '../../TenantSite';
 import type { Page } from '../../../types/builder';
 import type { CmsRecord } from '../../../types/cms';
+import { siteAccessCookieName } from '../../../lib/siteAccess';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -109,13 +111,17 @@ export default async function TenantPage({ params }: TenantRouteProps) {
 	const page = findPage(pages, requestedSlug) || detail?.page;
 
 	if (!project || !page) notFound();
+	const accessCookie = (await cookies()).get(siteAccessCookieName(project.id, page.id));
+	const isPageUnlocked = !page.passwordProtected || accessCookie?.value === 'granted';
+	const publicPages = pages.map(({ password: _password, ...publicPage }) => publicPage);
 
 	return (
 		<TenantSite
 			projectId={project.id}
 			projectName={project.title}
-			pages={pages}
+			pages={publicPages}
 			currentPageId={page.id}
+			isPageUnlocked={isPageUnlocked}
 			cmsRecord={detail?.record}
 		/>
 	);
