@@ -6,6 +6,7 @@ import type { CmsDetailSettings } from '../../types/cms';
 import { useBuilderStore } from '../../stores/builderStore';
 import { canHaveChildren, getEffectiveStyles, stylesToCSS } from '../../utils/builderUtils';
 import * as LucideIcons from 'lucide-react';
+import { ComponentIcon, X } from 'lucide-react';
 
 interface ElementRendererProps {
   element: BuilderElement;
@@ -299,6 +300,8 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     setDropTarget,
     moveElement,
     addElementFromPalette,
+    addComponentFromPalette,
+    toggleElementComponent,
     updateElementProps,
     pushHistory,
     setCurrentPage,
@@ -473,10 +476,13 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
 
     const elementId = e.dataTransfer.getData('elementId');
     const elementType = e.dataTransfer.getData('elementType') as ElementType;
+    const componentId = e.dataTransfer.getData('componentId');
     const targetPosition = element.type === 'cmsMap' ? 'inside' : (dropPosition || 'after');
 
     if (elementId && elementId !== element.id) {
       moveElement(elementId, element.id, targetPosition);
+    } else if (componentId) {
+      addComponentFromPalette(componentId, element.id, targetPosition);
     } else if (elementType) {
       addElementFromPalette(elementType, element.id, targetPosition);
     }
@@ -539,6 +545,23 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     selectElement(element.id);
     setIsEditing(true);
   };
+
+  const componentActionLabel = element.isComponent ? 'Remove component' : 'Make component';
+  const selectionTooltip = isSelected && !element.locked ? (
+    <div className="absolute -top-8 left-0 z-50 flex items-center gap-1 rounded bg-blue-500 px-1.5 py-1 text-xs text-white whitespace-nowrap pointer-events-auto shadow-sm">
+      <span>{element.name}</span>
+      <button
+        type="button"
+        onMouseDown={event => event.stopPropagation()}
+        onClick={event => { event.stopPropagation(); toggleElementComponent(element.id); }}
+        className="rounded bg-black px-1.5 py-0.5 font-medium"
+        title={componentActionLabel}
+        aria-label={componentActionLabel}
+      >
+        {element.isComponent ? <X aria-hidden style={{ width: '1em', height: '1em', color: 'white' }} /> : <ComponentIcon aria-hidden style={{ width: '1em', height: '1em', color: 'white' }} />}
+      </button>
+    </div>
+  ) : null;
 
   const handleEditKeyDown: React.KeyboardEventHandler<any> = (e) => {
     if (e.key === 'Enter' && element.type !== 'paragraph') {
@@ -825,11 +848,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
       >
         {dropIndicatorBefore && <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-500 z-50" />}
         {content}
-        {isSelected && !element.locked && (
-          <div className="absolute -top-5 left-0 bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-t-sm whitespace-nowrap z-50 pointer-events-none">
-            {element.name}
-          </div>
-        )}
+        {selectionTooltip}
         {dropIndicatorAfter && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 z-50" />}
       </div>
     );
@@ -939,11 +958,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     >
       {dropIndicatorBefore && <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-500 z-50" />}
       {containerElement}
-      {isSelected && !element.locked && (
-        <div className="absolute -top-5 left-0 bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-t-sm whitespace-nowrap z-50 pointer-events-none">
-          {element.name}
-        </div>
-      )}
+      {selectionTooltip}
       {dropIndicatorAfter && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 z-50" />}
     </div>
   );

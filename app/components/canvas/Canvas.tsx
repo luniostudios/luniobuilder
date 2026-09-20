@@ -13,6 +13,7 @@ export const Canvas: React.FC = () => {
     isPreviewMode,
     selectElement,
     addElementFromPalette,
+    addComponentFromPalette,
     setDropTarget,
     setDraggedElementId,
     setDraggedElementType,
@@ -75,9 +76,9 @@ export const Canvas: React.FC = () => {
     e.preventDefault();
     e.stopPropagation();
     const types = Array.from(e.dataTransfer.types || []);
-    if (types.includes('elementType') || types.includes('elementId')) {
+    if (types.includes('elementType') || types.includes('elementId') || types.includes('componentId')) {
       setDropTarget('canvas-root', 'inside');
-      e.dataTransfer.dropEffect = types.includes('elementType') ? 'copy' : 'move';
+      e.dataTransfer.dropEffect = types.includes('elementId') ? 'move' : 'copy';
     }
   };
 
@@ -85,9 +86,9 @@ export const Canvas: React.FC = () => {
     e.preventDefault();
     e.stopPropagation();
     const types = Array.from(e.dataTransfer.types || []);
-    if (types.includes('elementType') || types.includes('elementId')) {
+    if (types.includes('elementType') || types.includes('elementId') || types.includes('componentId')) {
       setDropTarget('canvas-root', 'inside');
-      e.dataTransfer.dropEffect = types.includes('elementType') ? 'copy' : 'move';
+      e.dataTransfer.dropEffect = types.includes('elementId') ? 'move' : 'copy';
     }
   };
 
@@ -96,9 +97,12 @@ export const Canvas: React.FC = () => {
     e.stopPropagation();
     const elementId = e.dataTransfer.getData('elementId');
     const elementType = e.dataTransfer.getData('elementType') as ElementType;
+    const componentId = e.dataTransfer.getData('componentId');
 
     if (elementId) {
       moveElement(elementId, 'canvas-root', 'inside');
+    } else if (componentId) {
+      addComponentFromPalette(componentId, 'canvas-root', 'inside');
     } else if (elementType) {
       addElementFromPalette(elementType, 'canvas-root', 'inside');
     }

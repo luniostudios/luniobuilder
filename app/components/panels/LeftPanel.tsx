@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from 'react';
-import { LayoutGrid as Layout, Type, Image, MousePointer, Square, Columns2 as Columns, Grid2x2 as Grid, AlignLeft, Link, Star, Minus, Move, FileText, ChevronRight, ChevronDown, ChevronLeft, Eye, EyeOff, Lock, Unlock, Trash2, Copy, Plus, Layers, Package, Globe, Monitor, Play, Form, List, ListEnd, Laptop, CalendarDays, LayoutIcon, LayoutPanelTop, IdCard, TextInitialIcon, Code2, ChevronsDownUp, Table2, ListTree, Database, ExternalLink, Search } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { LayoutGrid as Layout, Type, Image, MousePointer, Square, Columns2 as Columns, Grid2x2 as Grid, AlignLeft, Link, Star, Minus, Move, FileText, ChevronRight, ChevronDown, ChevronLeft, Eye, EyeOff, Lock, Unlock, Trash2, Copy, Plus, Layers, Package, Globe, Monitor, Play, Form, List, ListEnd, Laptop, CalendarDays, LayoutIcon, LayoutPanelTop, IdCard, TextInitialIcon, Code2, ChevronsDownUp, Table2, ListTree, Database, ExternalLink, Search, Blocks } from 'lucide-react';
 import { DndContext, DragEndEvent, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useBuilderStore } from '../../stores/builderStore';
 import { ElementType, BuilderElement, Page } from '../../types/builder';
-import { COMPONENT_CATEGORIES, COMPONENT_LABELS } from '../../utils/builderUtils';
+import { COMPONENT_CATEGORIES, COMPONENT_LABELS, getComponentElements } from '../../utils/builderUtils';
 import type { CmsCollection, CmsRecord } from '../../types/cms';
 
 const COMPONENT_ICONS: Record<string, React.ReactNode> = {
@@ -45,6 +45,7 @@ export const LeftPanel: React.FC = () => {
 
   const tabs = [
     { id: 'components' as const, label: 'Elements', icon: <Package size={17} /> },
+    { id: 'library' as const, label: 'Components', icon: <Blocks size={17} /> },
     { id: 'layers' as const, label: 'Layers', icon: <Layers size={17} /> },
     { id: 'pages' as const, label: 'Pages', icon: <Globe size={17} /> },
     { id: 'cms' as const, label: 'CMS', icon: <Database size={17} /> },
@@ -92,6 +93,7 @@ export const LeftPanel: React.FC = () => {
       <div className={`min-w-0 flex-1 overflow-hidden ${isCollapsed ? 'hidden' : 'flex flex-col'}`}>
         <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar">
           {leftPanelTab === 'components' && <ComponentsTab />}
+          {leftPanelTab === 'library' && <ComponentLibraryTab />}
           {leftPanelTab === 'layers' && <LayersTab />}
           {leftPanelTab === 'pages' && <PagesTab />}
           {leftPanelTab === 'cms' && <CmsTab />}
@@ -268,6 +270,74 @@ const ComponentsTab: React.FC = () => {
   );
 };
 
+const ComponentLibraryTab: React.FC = () => {
+  const { pages, selectedElementId, getElementById, addComponentFromPalette, setDraggedElementType } = useBuilderStore();
+  const [search, setSearch] = useState('');
+  const components = getComponentElements(pages);
+  const filteredComponents = components.filter(component => {
+    const query = search.trim().toLowerCase();
+    return !query || `${component.componentName || ''} ${component.name}`.toLowerCase().includes(query);
+  });
+  const getTarget = () => {
+    const selected = selectedElementId ? getElementById(selectedElementId) : null;
+    return selected?.type === 'cmsMap' ? selected.id : 'canvas-root';
+  };
+
+  const handleDragStart = (event: React.DragEvent, component: BuilderElement) => {
+    event.dataTransfer.setData('componentId', component.id);
+    event.dataTransfer.setData('text/plain', component.id);
+    event.dataTransfer.effectAllowed = 'copy';
+    setDraggedElementType(null);
+  };
+
+  const handleDoubleClick = (component: BuilderElement) => {
+    addComponentFromPalette(component.id, getTarget(), 'inside');
+  };
+
+  return (
+    <div className="p-3">
+      <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">Saved Components</span>
+      <div className="relative mb-3 mt-3">
+        <input
+          type="text"
+          placeholder="Search components..."
+          value={search}
+          onChange={event => setSearch(event.target.value)}
+          className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        />
+      </div>
+      {filteredComponents.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-gray-700 p-4 text-center text-xs text-gray-500">
+          {components.length === 0 ? 'Mark an element as a component to reuse it here.' : 'No components found.'}
+        </div>
+      ) : (
+        <div className="space-y-1.5">
+          {filteredComponents.map(component => {
+            const sourcePage = pages.find(page => page.elements.some(element => element.id === component.id))?.name;
+            return (
+              <div
+                key={component.id}
+                draggable
+                onDragStart={event => handleDragStart(event, component)}
+                onDoubleClick={() => handleDoubleClick(component)}
+                className="flex cursor-grab items-center gap-2 rounded-lg border border-gray-700/60 bg-gray-800/60 px-2.5 py-2 hover:border-gray-600 hover:bg-gray-700/80 active:cursor-grabbing"
+                title="Double-click to add, or drag onto the canvas"
+              >
+                <span className="text-blue-300"><Blocks size={18} /></span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-xs font-medium text-gray-200">{component.componentName || component.name}</span>
+                  {sourcePage && <span className="block truncate text-[10px] text-gray-500">{sourcePage}</span>}
+                </span>
+                <Copy size={13} className="shrink-0 text-gray-600" />
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const getSiblingIds = (page: Page, parentId: string | null): string[] => {
   const find = (elements: BuilderElement[], currentParentId: string | null): string[] | null => {
     if (currentParentId === null) {
@@ -312,6 +382,10 @@ const isDescendant = (ancestorId: string, descendantId: string, page: Page): boo
   return search(ancestor.children);
 };
 
+const containsElement = (element: BuilderElement, id: string): boolean => (
+  element.children.some(child => child.id === id || containsElement(child, id))
+);
+
 const LayerItem: React.FC<{ element: BuilderElement; depth: number; collapseSignal: number }> = ({ element, depth, collapseSignal }) => {
   const {
     selectedElementId,
@@ -324,6 +398,7 @@ const LayerItem: React.FC<{ element: BuilderElement; depth: number; collapseSign
   } = useBuilderStore();
 
   const [isExpanded, setIsExpanded] = useState(true);
+  const layerRef = useRef<HTMLDivElement>(null);
   const hasChildren = element.children.length > 0;
   const isSelected = selectedElementId === element.id;
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: element.id });
@@ -332,9 +407,19 @@ const LayerItem: React.FC<{ element: BuilderElement; depth: number; collapseSign
     if (collapseSignal > 0) setIsExpanded(false);
   }, [collapseSignal]);
 
+  useEffect(() => {
+    if (hasChildren && selectedElementId && containsElement(element, selectedElementId)) {
+      setIsExpanded(true);
+    }
+    if (isSelected) {
+      requestAnimationFrame(() => layerRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }));
+    }
+  }, [element, hasChildren, isSelected, selectedElementId]);
+
   return (
     <div
-      ref={setNodeRef}
+      ref={node => { setNodeRef(node); layerRef.current = node; }}
+      data-layer-id={element.id}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={isDragging ? 'opacity-50' : ''}
     >

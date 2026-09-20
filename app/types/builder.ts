@@ -218,7 +218,7 @@ export interface BuilderState {
   dropPosition: 'before' | 'after' | 'inside' | null;
   breakpoint: Breakpoint;
   canvasScale: number;
-  leftPanelTab: 'components' | 'layers' | 'pages' | 'cms';
+  leftPanelTab: 'components' | 'library' | 'layers' | 'pages' | 'cms';
   rightPanelTab: 'style' | 'content' | 'css' | 'seo';
   pseudoClassState: 'base' | 'hover' | 'active' | 'focus';
   history: Page[][];

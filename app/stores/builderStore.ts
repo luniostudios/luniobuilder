@@ -24,6 +24,7 @@ interface BuilderStore extends BuilderState {
   // Element manipulation
   addElement: (type: ElementType, parentId: string | null, index?: number) => string;
   addElementFromPalette: (type: ElementType, targetId: string, position: 'before' | 'after' | 'inside') => void;
+  addComponentFromPalette: (componentId: string, targetId: string, position: 'before' | 'after' | 'inside') => void;
   moveElement: (elementId: string, targetId: string, position: 'before' | 'after' | 'inside') => void;
   deleteElement: (id: string) => void;
   duplicateElement: (id: string) => void;
@@ -213,6 +214,56 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
       return { pages, selectedElementId: id };
     });
 
+    get().pushHistory();
+  },
+
+  addComponentFromPalette: (componentId, targetId, position) => {
+    set(state => {
+      const pages = deepClone(state.pages);
+      const findElement = (elements: BuilderElement[]): BuilderElement | null => {
+        for (const element of elements) {
+          if (element.id === componentId) return element;
+          const nested = findElement(element.children);
+          if (nested) return nested;
+        }
+        return null;
+      };
+      const source = pages.map(page => findElement(page.elements)).find(Boolean);
+      if (!source) return state;
+
+      const cloneElement = (element: BuilderElement, parentId: string | null): BuilderElement => {
+        const clone = deepClone(element);
+        clone.id = generateId();
+        clone.parentId = parentId;
+        clone.isComponent = false;
+        clone.componentName = undefined;
+        clone.children = clone.children.map(child => cloneElement(child, clone.id));
+        return clone;
+      };
+
+      const page = pages.find(candidate => candidate.id === state.currentPageId)!;
+      const cloned = cloneElement(source, null);
+      const findAndInsert = (elements: BuilderElement[], parentId: string | null): boolean => {
+        for (let index = 0; index < elements.length; index += 1) {
+          if (elements[index].id === targetId) {
+            if (position === 'inside') {
+              cloned.parentId = targetId;
+              elements[index].children.push(cloned);
+            } else {
+              cloned.parentId = parentId;
+              elements.splice(position === 'after' ? index + 1 : index, 0, cloned);
+            }
+            return true;
+          }
+          if (findAndInsert(elements[index].children, elements[index].id)) return true;
+        }
+        return false;
+      };
+
+      if (targetId === 'canvas-root') page.elements.push(cloned);
+      else if (!findAndInsert(page.elements, null)) return state;
+      return { pages, selectedElementId: cloned.id };
+    });
     get().pushHistory();
   },
 

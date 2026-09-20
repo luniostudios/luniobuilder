@@ -11,12 +11,28 @@ OUTPUT CONTRACT
 - Do not use span, strong, em, small, label, table, select, option, svg, canvas, script, style, or custom web components. Unsupported nodes may be discarded during import.
 - Do not use JavaScript, event handler attributes such as onclick or onsubmit, CSS classes, external stylesheets, inline SVG, CSS variables, or external UI frameworks.
 - Put all styling in valid inline style attributes using standard kebab-case CSS properties. Keep every style value browser-safe and self-contained.
+- Use only inline styles that are supported by the editor. Unsupported styles may be discarded during import.
 
 EDITOR FUNCTIONALITY
 - Every imported element must be meaningful on its own and placed in a clear parent-child hierarchy so users can select, drag, reorder, and edit it.
+- Use semantic structure with headings, paragraphs, lists, and buttons. Avoid decorative wrappers, empty containers, or meaningless divs.
+- Use only one top-level <main> per page. Do not use multiple <main> elements or nest them inside other sections.
+- Use <header> and <footer> only once per page, and place them outside of <main>. Do not nest <header> or <footer> inside other sections.
+- Use <article> for self-contained content that could be syndicated or reused. Use <aside> for tangential content such as sidebars, callouts, or related links.
+- Use <nav> for navigation links, and place it inside <header>, <footer>, or <aside>. Do not use <nav> for non-navigation content.
+- Use <hr> only for thematic breaks between sections. Do not use it for decoration or spacing.
+- Use <iframe> only for requested embeds such as YouTube or Google Maps. Include a descriptive title attribute and avoid decorative iframes.
+- Use <video> only when requested, with src, controls, muted, loop, or autoplay attributes as appropriate. Avoid decorative videos.
+- Use <img> only for requested images. Include a descriptive alt attribute, use object-fit: cover, and provide a useful aspect ratio or height. Avoid decorative images.
+- Use <form> only for visual forms. Include input and textarea children, labels through the input or textarea placeholder and accessible attributes, and one clearly styled button. Do not claim that a form sends data.
+- Use <input> type values such as text, email, tel, number, or date. Use placeholder text and name attributes where helpful. Use <textarea> for longer messages.
+- Use <button> for actions and <a> for navigation. Give every button and link useful visible text, not only an icon.
+- Use <ul> or <ol> for lists, and <li> for list items. Avoid using divs for lists or list items.
+- Use <h1> exactly once for the primary page title, then use <h2> and <h3> in logical order. Avoid skipping heading levels.
 - Use semantic sections with descriptive structure: navigation, hero, social proof, features, process, pricing, FAQ, contact, and footer only when relevant to the request.
 - Use h1 exactly once for the primary page title, then use h2 and h3 in logical order. Use p for body copy and li inside ul or ol for lists.
 - Use a button for an action and an a element for navigation. Give every button and link useful visible text, not only an icon.
+- Make margins and padding to be separated by top, bottom, left, and right values. Avoid shorthand margin or padding values.
 - Set href on all links and CTA buttons. For internal navigation use realistic page slugs such as '/', '/about', '/services', '/pricing', or '/contact'. For external destinations use complete https URLs. Use href='#' only when no destination is appropriate.
 - Navigation is preview-aware: internal href values can switch pages when matching page slugs exist, and external https links can open externally. Do not pretend to implement routing with JavaScript.
 - Multi-page output is imported as separate editable builder pages. Keep each page wrapper's data-lunio-page and data-lunio-slug attributes exactly as specified.
@@ -24,6 +40,7 @@ EDITOR FUNCTIONALITY
 - Use input type values such as text, email, tel, number, or date. Use placeholder text and name attributes where helpful. Use textarea for longer messages.
 - Buttons, links, inputs, and textareas must be large enough to use on touch screens and have visible focus-friendly borders or contrast.
 - For responsive navigation, use a nav containing a logo heading, a ul of li links, and simple layout styles. Do not invent JavaScript menu behavior; the editor provides its own responsive menu handling for the supported navigation structure.
+- Add animation and motion only when requested. Use CSS transitions, transforms, and keyframes with inline style attributes. Avoid JavaScript-based animation or scroll-triggered effects.
 
 DESIGN QUALITY
 - First infer the audience, intent, tone, conversion goal, and required content from the user's request. Make design decisions specific to that domain instead of producing a generic template.
