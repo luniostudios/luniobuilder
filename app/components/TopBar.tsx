@@ -12,7 +12,6 @@ import {
   Folder,
   X,
   ExternalLink,
-  Sparkles,
   Laptop,
   Globe,
   Rocket,
@@ -28,7 +27,7 @@ import { useRouter } from 'next/navigation';
 import Editor from '@monaco-editor/react';
 import { useSession } from 'next-auth/react';
 import { useOthers } from '@liveblocks/react';
-import { AIGeneratorModal } from './canvas/AIGeneratorModal';
+import { useAIGeneration } from './functions/useAIGeneration';
 import { normalizeSiteSlug } from '../lib/tenant';
 import { persistGeneratedCms } from '../utils/generatedCms';
 import { Page } from '../types/builder';
@@ -54,6 +53,15 @@ interface ProjectRecord {
         pages?: Page[];
         currentPageId?: string;
     };
+}
+
+interface InputPromptRequest {
+  title: string;
+  message?: string;
+  initialValue?: string;
+  placeholder?: string;
+  type?: 'text' | 'password';
+  resolve: (value: string | null) => void;
 }
 
 const collaboratorColors = ['#27c3f3', '#8bdc2f', '#ffb526', '#ff6868', '#a78bfa'];
@@ -226,8 +234,6 @@ export const TopBar: React.FC = () => {
     getElementById,
     deleteElement,
     duplicateElement,
-    addGeneratedElements,
-    addGeneratedPages,
     replaceElementWithGenerated,
   } = useBuilderStore();
 
@@ -254,8 +260,37 @@ export const TopBar: React.FC = () => {
   const [projects, setProjects] = useState<ProjectRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
-  const selectedElement = selectedElementId ? getElementById(selectedElementId) : null;
+  const [inputPrompt, setInputPrompt] = useState<InputPromptRequest | null>(null);
+  const [inputPromptValue, setInputPromptValue] = useState('');
+  const { generate: generateWithAI } = useAIGeneration();
+
+  useEffect(() => {
+    const handleQuickAi = async (event: Event) => {
+      const { elementId, prompt, onComplete } = (event as CustomEvent<{ elementId: string; prompt: string; onComplete?: () => void }>).detail;
+      const element = getElementById(elementId);
+      if (!element || !prompt?.trim()) {
+        onComplete?.();
+        return;
+      }
+
+      try {
+        const result = await generateWithAI({
+          prompt: prompt.trim(),
+          projectId,
+          context: JSON.stringify({ type: element.type, name: element.name, props: element.props, styles: element.styles, children: element.children }, null, 2),
+        });
+
+        if (!result.success || !result.html) return;
+        replaceElementWithGenerated(elementId, result.html);
+        if (projectId && result.html.includes('data-lunio-cms-map')) void persistGeneratedCms(projectId, result.html);
+      } finally {
+        onComplete?.();
+      }
+    };
+
+    window.addEventListener('lunio:edit-with-ai', handleQuickAi);
+    return () => window.removeEventListener('lunio:edit-with-ai', handleQuickAi);
+  }, [generateWithAI, getElementById, projectId, replaceElementWithGenerated]);
 
   const collaborators = useMemo(() => {
     const currentUser = {
@@ -336,7 +371,19 @@ export const TopBar: React.FC = () => {
     console.log('Fetched project data:', data);
   }
 
-  const requestVercelToken = (allowPrompt = true) => {
+  const openInputPrompt = ({ title, message, initialValue = '', placeholder = '', type = 'text' }: Omit<InputPromptRequest, 'resolve'>) => new Promise<string | null>(resolve => {
+    setInputPrompt({ title, message, initialValue, placeholder, type, resolve });
+    setInputPromptValue(initialValue);
+  });
+
+  const closeInputPrompt = (value: string | null) => {
+    const request = inputPrompt;
+    setInputPrompt(null);
+    setInputPromptValue('');
+    request?.resolve(value);
+  };
+
+  const requestVercelToken = async (allowPrompt = true) => {
     if (typeof window === 'undefined') return null;
     const projectKey = getVercelTokenKey();
     const existingToken = window.localStorage.getItem(projectKey) || window.localStorage.getItem('vercelToken');
@@ -346,9 +393,12 @@ export const TopBar: React.FC = () => {
       return null;
     }
 
-    const token = window.prompt(
-      'Enter your Vercel Personal Token (scopes: deployments.read, deployments.write, projects.read):'
-    );
+    const token = await openInputPrompt({
+      title: 'Vercel personal token',
+      message: 'Required scopes: deployments.read, deployments.write, projects.read.',
+      placeholder: 'Paste your Vercel token',
+      type: 'password',
+    });
     if (!token) return null;
     const trimmed = token.trim();
     if (trimmed) {
@@ -439,7 +489,7 @@ export const TopBar: React.FC = () => {
     setPublishMessage('');
     setShowPublishMenu(false);
 
-    const token = requestVercelToken(Boolean(!projectId));
+    const token = await requestVercelToken(Boolean(!projectId));
     if (!token && !projectId) {
       setPublishMessage('Vercel token required to publish.');
       return;
@@ -448,8 +498,10 @@ export const TopBar: React.FC = () => {
     // Make the defaultName the title of the project if it exists, otherwise fall back to the previous projectName or a generic default
 
     const defaultName = getProjectTitle() || 'LUNIO Project';
-    const projectName = window.prompt('Vercel Project Name:', defaultName)?.trim() || defaultName;
-    const teamId = window.prompt('Vercel Team ID (optional):', '')?.trim() || undefined;
+    const projectNameInput = await openInputPrompt({ title: 'Vercel project name', initialValue: defaultName, placeholder: defaultName });
+    const projectName = projectNameInput?.trim() || defaultName;
+    const teamIdInput = await openInputPrompt({ title: 'Vercel team ID', message: 'Optional. Leave blank for your personal account.', placeholder: 'Team ID' });
+    const teamId = teamIdInput?.trim() || undefined;
 
     setIsPublishing(true);
 
@@ -894,29 +946,7 @@ export const TopBar: React.FC = () => {
             {isPreviewMode ? <EyeOff size={13} /> : <Eye size={13} />}
             {isPreviewMode ? 'Editor' : 'Preview'}
           </button>
-          {/*Ask AI */}
-          {!isPreviewMode && selectedElement && (
-            <button
-              onClick={() => setIsAIModalOpen(true)}
-              className="flex ml-2 items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all bg-green-800 text-green-300 border border-green-700"
-            >
-              <Sparkles size={13} />
-              {selectedElement ? 'Edit with AI' : null}
-            </button>)}
         </div>
-
-        <AIGeneratorModal
-          isOpen={isAIModalOpen}
-          projectId={projectId}
-          editElement={selectedElement}
-          onClose={() => setIsAIModalOpen(false)}
-          onGenerate={(html) => {
-            if (selectedElementId) replaceElementWithGenerated(selectedElementId, html);
-            else if (html.includes('data-lunio-page=')) addGeneratedPages(html);
-            else addGeneratedElements(html, null);
-            if (projectId && html.includes('data-lunio-cms-map')) void persistGeneratedCms(projectId, html);
-          }}
-        />
 
         <div className='flex flex-row gap-3 align-middle items-center'>
           {/* Element actions */}
@@ -1103,6 +1133,20 @@ export const TopBar: React.FC = () => {
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {inputPrompt && (
+        <div className='fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4' onClick={() => closeInputPrompt(null)}>
+          <div role='dialog' aria-modal='true' aria-labelledby='input-prompt-title' className='w-full max-w-md rounded-xl border border-gray-700 bg-[#17171c] p-5 shadow-2xl' onClick={event => event.stopPropagation()}>
+            <h2 id='input-prompt-title' className='text-base font-semibold text-white'>{inputPrompt.title}</h2>
+            {inputPrompt.message && <p className='mt-2 text-sm text-gray-400'>{inputPrompt.message}</p>}
+            <input autoFocus type={inputPrompt.type} value={inputPromptValue} onChange={event => setInputPromptValue(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') closeInputPrompt(inputPromptValue); }} placeholder={inputPrompt.placeholder} className='mt-4 w-full rounded-lg border border-gray-700 bg-[#111114] px-3 py-2 text-sm text-white outline-none focus:border-blue-400' />
+            <div className='mt-4 flex justify-end gap-2'>
+              <button type='button' onClick={() => closeInputPrompt(null)} className='rounded-lg border border-gray-700 px-3 py-2 text-sm text-gray-300 hover:bg-gray-800'>Cancel</button>
+              <button type='button' onClick={() => closeInputPrompt(inputPromptValue)} className='rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-500'>Continue</button>
             </div>
           </div>
         </div>

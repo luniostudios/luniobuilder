@@ -21,7 +21,6 @@ export const Canvas: React.FC = () => {
     moveElement,
   } = useBuilderStore();
 
-  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   const [showWatermark, setShowWatermark] = useState(true);
   const canvasRef = useRef<HTMLDivElement>(null);
   const page = getCurrentPage();

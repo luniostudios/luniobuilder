@@ -6,7 +6,7 @@ import type { CmsDetailSettings } from '../../types/cms';
 import { useBuilderStore } from '../../stores/builderStore';
 import { canHaveChildren, getEffectiveStyles, stylesToCSS } from '../../utils/builderUtils';
 import * as LucideIcons from 'lucide-react';
-import { ComponentIcon, X } from 'lucide-react';
+import { ArrowUp, ComponentIcon, Link2, LoaderCircle, X } from 'lucide-react';
 
 interface ElementRendererProps {
   element: BuilderElement;
@@ -302,6 +302,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     addElementFromPalette,
     addComponentFromPalette,
     toggleElementComponent,
+    convertElementToLink,
     updateElementProps,
     pushHistory,
     setCurrentPage,
@@ -311,6 +312,8 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
 
   const [isEditing, setIsEditing] = useState(false);
   const [editingValue, setEditingValue] = useState(element.props.text || '');
+  const [quickAiPrompt, setQuickAiPrompt] = useState('');
+  const [isQuickAiGenerating, setIsQuickAiGenerating] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -547,14 +550,49 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
   };
 
   const componentActionLabel = element.isComponent ? 'Remove component' : 'Make component';
+  const editWithAi = () => {
+    const prompt = quickAiPrompt.trim();
+    if (!prompt || isQuickAiGenerating) return;
+    setIsQuickAiGenerating(true);
+    window.dispatchEvent(new CustomEvent('lunio:edit-with-ai', { detail: {
+      elementId: element.id,
+      prompt,
+      onComplete: () => setIsQuickAiGenerating(false),
+    } }));
+    setQuickAiPrompt('');
+  };
   const selectionTooltip = isSelected && !element.locked ? (
-    <div className="absolute -top-8 left-0 z-50 flex items-center gap-1 rounded bg-blue-500 px-1.5 py-1 text-xs text-white whitespace-nowrap pointer-events-auto shadow-sm">
-      <span>{element.name}</span>
+    <div className="absolute -top-10 left-0 z-50 flex items-center gap-1 rounded-md border border-slate-600 bg-[#1b1d22] p-1 text-xs text-white whitespace-nowrap pointer-events-auto shadow-xl">
+      <span className="px-2 font-medium text-slate-100">{element.name}</span>
+      <form onMouseDown={event => event.stopPropagation()} onPointerDown={event => event.stopPropagation()} onClick={event => event.stopPropagation()} onSubmit={event => { event.preventDefault(); event.stopPropagation(); editWithAi(); }} className="flex items-center gap-1 rounded-sm border border-slate-500 bg-[#282b33] pl-2 focus-within:border-blue-400">
+        <input
+          value={quickAiPrompt}
+          onChange={event => setQuickAiPrompt(event.target.value)}
+          onMouseDown={event => event.stopPropagation()}
+          onClick={event => event.stopPropagation()}
+          placeholder="Quick AI prompt..."
+          aria-label="Quick AI prompt"
+          className="w-36 bg-transparent py-1 text-[11px] text-white outline-none placeholder:text-slate-400"
+        />
+        <button type="submit" onMouseDown={event => event.stopPropagation()} onPointerDown={event => event.stopPropagation()} onClick={event => event.stopPropagation()} title={isQuickAiGenerating ? 'Generating' : 'Apply AI prompt'} aria-label={isQuickAiGenerating ? 'Generating' : 'Apply AI prompt'} className="rounded-sm bg-blue-600 p-1.5 text-white transition-colors hover:bg-blue-500 disabled:opacity-50" disabled={!quickAiPrompt.trim() || isQuickAiGenerating}>
+          {isQuickAiGenerating ? <LoaderCircle aria-hidden className="animate-spin" style={{ width: '1em', height: '1em' }} /> : <ArrowUp aria-hidden style={{ width: '1em', height: '1em' }} />}
+        </button>
+      </form>
+      {element.type !== 'link' && <button
+        type="button"
+        onMouseDown={event => event.stopPropagation()}
+        onClick={event => { event.stopPropagation(); convertElementToLink(element.id); }}
+        className="rounded-sm bg-blue-600 p-1.5 font-medium text-white transition-colors hover:bg-blue-500"
+        title="Convert to link"
+        aria-label="Convert to link"
+      >
+        <Link2 aria-hidden style={{ width: '1em', height: '1em' }} />
+      </button>}
       <button
         type="button"
         onMouseDown={event => event.stopPropagation()}
         onClick={event => { event.stopPropagation(); toggleElementComponent(element.id); }}
-        className="rounded bg-black px-1.5 py-0.5 font-medium"
+        className="rounded-sm bg-blue-600 p-1.5 font-medium text-white transition-colors hover:bg-blue-500"
         title={componentActionLabel}
         aria-label={componentActionLabel}
       >

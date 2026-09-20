@@ -32,6 +32,7 @@ interface BuilderStore extends BuilderState {
   updateElementStyles: (id: string, styles: Partial<StyleProperties>) => void;
   updateElementPseudoClassStyles: (id: string, pseudoClass: keyof PseudoClassStyles, breakpoint: Breakpoint, styles: Partial<StyleProperties>) => void;
   updateElementName: (id: string, name: string) => void;
+  convertElementToLink: (id: string) => void;
   toggleElementLock: (id: string) => void;
   toggleElementVisibility: (id: string) => void;
   toggleElementComponent: (id: string) => void;
@@ -398,6 +399,35 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
       updateEl(page.elements);
       return { pages };
     });
+  },
+
+  convertElementToLink: (id) => {
+    set(state => {
+      const pages = deepClone(state.pages);
+      const page = pages.find(p => p.id === state.currentPageId)!;
+
+      const convertElement = (elements: BuilderElement[]): boolean => {
+        for (const element of elements) {
+          if (element.id === id) {
+            const text = typeof element.props.text === 'string' && element.props.text.trim()
+              ? element.props.text
+              : element.name || 'Link';
+            const href = typeof element.props.href === 'string' ? element.props.href : '#';
+            element.type = 'link';
+            element.name = 'Link';
+            element.props = { ...element.props, text, href };
+            return true;
+          }
+          if (convertElement(element.children)) return true;
+        }
+        return false;
+      };
+
+      convertElement(page.elements);
+      return { pages };
+    });
+
+    get().pushHistory();
   },
 
   updateElementStyles: (id, styles) => {
