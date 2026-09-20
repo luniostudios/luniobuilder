@@ -858,12 +858,12 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     zIndex: containerStyle.zIndex || 101,
   } : containerStyle;
 
-  const renderChildren = () => (
+  const renderChildren = (children = element.children) => (
     <>
-      {element.children.map(child => (
+      {children.map(child => (
         <ElementRenderer key={child.id} element={child} isPreview={isPreview} />
       ))}
-      {!isPreview && element.children.length === 0 && (
+      {!isPreview && children.length === 0 && (
         <div className="w-full py-8 flex items-center justify-center text-gray-300 text-sm border-2 border-dashed border-gray-200 rounded-lg pointer-events-none">
           Drop elements here
         </div>
@@ -891,6 +891,11 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
               ))
               .map(child => child.id)
           );
+          const hiddenMenuIds = new Set(
+            element.children
+              .filter(child => getEffectiveStyles(child, breakpoint).display === 'none')
+              .map(child => child.id)
+          );
           const toggleMenu = (event: React.MouseEvent) => {
             event.preventDefault();
             event.stopPropagation();
@@ -899,7 +904,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
           return (
             <NavbarMenuContext.Provider value={{ isOpen: isMenuOpen, toggle: toggleMenu, menuIds }}>
               <nav style={containerStyle} onClick={handleClick} className={isPreview ? '' : 'cursor-pointer'}>
-                {renderChildren()}
+                {renderChildren(!isMenuOpen ? element.children.filter(child => !hiddenMenuIds.has(child.id)) : element.children)}
               </nav>
             </NavbarMenuContext.Provider>
           );
@@ -922,6 +927,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
   return (
     <div
       ref={ref}
+      style={isMenuTarget && navbarMenu?.isOpen ? { display: 'contents' } : undefined}
       className={wrapperClasses}
       draggable={!isPreview && !element.locked}
       onDragStart={handleDragStart}
