@@ -1,7 +1,7 @@
 "use client";
 
 import React, { JSX, createContext, useContext, useEffect, useRef, useState } from 'react';
-import { BuilderElement, ElementType } from '../../types/builder';
+import { BuilderElement, ElementInteraction, ElementType, PageInteraction } from '../../types/builder';
 import type { CmsDetailSettings } from '../../types/cms';
 import { useBuilderStore } from '../../stores/builderStore';
 import { canHaveChildren, getEffectiveStyles, stylesToCSS } from '../../utils/builderUtils';
@@ -303,6 +303,9 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     addComponentFromPalette,
     toggleElementComponent,
     convertElementToLink,
+    applyElementInteraction,
+    interactionTargetSelection,
+    selectInteractionTarget,
     updateElementProps,
     pushHistory,
     setCurrentPage,
@@ -314,13 +317,38 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
   const [editingValue, setEditingValue] = useState(element.props.text || '');
   const [quickAiPrompt, setQuickAiPrompt] = useState('');
   const [isQuickAiGenerating, setIsQuickAiGenerating] = useState(false);
+  const [activeInteraction, setActiveInteraction] = useState<ElementInteraction | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
+  const page = useBuilderStore(state => state.getCurrentPage());
+  const triggeredInteraction = useBuilderStore(state => state.triggeredInteractions[element.id]);
+  const isRevealed = useBuilderStore(state => Boolean(state.revealedElementIds[element.id]));
+  const visibilityOverride = useBuilderStore(state => state.visibilityOverrides[element.id]);
+  const opacityOverride = useBuilderStore(state => state.opacityOverrides[element.id]);
+  const pageInteraction = (page.interactions || []).find((interaction: PageInteraction) => interaction.trigger === 'load');
   const styles = getEffectiveStyles(element, breakpoint);
   const cssStyles = stylesToCSS(styles);
+  const runtimeInteraction = activeInteraction || triggeredInteraction;
+  const runtimeOpacity = opacityOverride || (runtimeInteraction && 'opacity' in runtimeInteraction ? runtimeInteraction.opacity : undefined);
+  const interactionStyles = {
+    ...(runtimeInteraction ? {
+      animationName: runtimeInteraction.animationName,
+      animationDuration: runtimeInteraction.duration,
+      animationTimingFunction: 'ease',
+      animationFillMode: 'both',
+    } : {}),
+    ...(runtimeOpacity ? { opacity: runtimeOpacity } : {}),
+    ...(pageInteraction && !runtimeInteraction ? {
+    animationName: pageInteraction.animationName,
+    animationDuration: pageInteraction.duration,
+    animationTimingFunction: 'ease',
+    animationFillMode: 'both',
+    } : {}),
+  };
   const safeCssStyles: React.CSSProperties = {
     ...cssStyles,
+    ...stylesToCSS(interactionStyles),
     boxSizing: 'border-box',
     maxWidth: '100%',
     minWidth: 0,
@@ -426,19 +454,36 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
   const isHovered = hoveredElementId === element.id;
   const isDropTarget = dropTargetId === element.id;
 
+  const runInteraction = (interaction: ElementInteraction) => {
+    const targetId = interaction.action === 'animate' ? element.id : interaction.targetElementId || element.id;
+    applyElementInteraction(targetId, interaction);
+    if (targetId === element.id && interaction.action === 'animate') setActiveInteraction(interaction);
+  };
+
   const handleClick = (e: React.MouseEvent) => {
-    if (isPreview) return;
     e.stopPropagation();
+    if (!isPreview && interactionTargetSelection && interactionTargetSelection.sourceId !== element.id) {
+      selectInteractionTarget(element.id);
+      return;
+    }
+    const clickInteraction = (element.interactions || []).find(interaction => interaction.trigger === 'click');
+    if (clickInteraction) {
+      runInteraction(clickInteraction);
+    }
+    if (isPreview) return;
     selectElement(element.id);
   };
 
   const handleMouseEnter = (e: React.MouseEvent) => {
+    const hoverInteraction = (element.interactions || []).find(interaction => interaction.trigger === 'hover');
+    if (hoverInteraction) runInteraction(hoverInteraction);
     if (isPreview) return;
     e.stopPropagation();
     hoverElement(element.id);
   };
 
   const handleMouseLeave = () => {
+    if ((element.interactions || []).some(interaction => interaction.trigger === 'hover')) setActiveInteraction(null);
     if (isPreview) return;
     hoverElement(null);
   };
@@ -505,7 +550,9 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     }
   }, [element.props.text, isEditing]);
 
-  if (element.hidden && !isPreview) {
+  const runtimeVisibility = visibilityOverride || triggeredInteraction?.visibility;
+  const shouldHide = runtimeVisibility === 'hide' || (element.hidden && runtimeVisibility !== 'show' && !isRevealed);
+  if (shouldHide && !isPreview) {
     return (
       <div
         style={{ ...safeCssStyles, opacity: 0.3, outline: '1px dashed #d1d5db' }}
@@ -518,7 +565,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     );
   }
 
-  if (element.hidden && isPreview) {
+  if (shouldHide && isPreview) {
     return null;
   }
 
@@ -840,7 +887,10 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
             aria-label="Toggle navigation menu"
             aria-expanded={navbarMenu.isOpen}
             style={{ ...safeCssStyles, border: 'none', background: 'transparent', paddingTop: 0, paddingRight: 0, paddingBottom: 0, paddingLeft: 0 }}
-            onClick={navbarMenu.toggle}
+            onClick={event => {
+              handleClick(event);
+              navbarMenu.toggle(event);
+            }}
             onDoubleClick={handleDoubleClick}
           >
             <IconComp style={{ width: '100%', height: '100%' }} />
@@ -875,6 +925,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     return (
       <div
         ref={ref}
+        style={safeCssStyles}
         className={wrapperClasses}
         draggable={!isPreview && !element.locked && !isEditing}
         onDragStart={handleDragStart}
@@ -984,7 +1035,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
   return (
     <div
       ref={ref}
-      style={isMenuTarget && navbarMenu?.isOpen ? { display: 'contents' } : undefined}
+      style={{ ...safeCssStyles, ...(isMenuTarget && navbarMenu?.isOpen ? { display: 'contents' } : {}) }}
       className={wrapperClasses}
       draggable={!isPreview && !element.locked}
       onDragStart={handleDragStart}

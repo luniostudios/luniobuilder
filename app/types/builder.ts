@@ -177,6 +177,24 @@ export interface PseudoClassStyles {
   focus?: ResponsiveStyles;
 }
 
+export type InteractionTrigger = 'hover' | 'click';
+
+export interface ElementInteraction {
+  trigger: InteractionTrigger;
+  action: 'animate' | 'show' | 'visibility' | 'opacity';
+  animationName: string;
+  duration: string;
+  targetElementId?: string;
+  visibilityMode?: 'show' | 'hide' | 'toggle';
+  opacityValue?: string;
+}
+
+export interface PageInteraction {
+  trigger: 'load';
+  animationName: string;
+  duration: string;
+}
+
 export interface BuilderElement {
   id: string;
   type: ElementType;
@@ -190,6 +208,7 @@ export interface BuilderElement {
   hidden: boolean;
   isComponent?: boolean;
   componentName?: string;
+  interactions?: ElementInteraction[];
 }
 
 export interface Page {
@@ -205,6 +224,7 @@ export interface Page {
     keywords: string;
   };
   cmsDetail?: import('./cms').CmsDetailSettings;
+  interactions?: PageInteraction[];
 }
 
 export type Breakpoint = 'widescreen' | 'desktop' | 'tablet' | 'mobile' | 'laptop' | 'mobileLandscape';
@@ -221,11 +241,16 @@ export interface BuilderState {
   breakpoint: Breakpoint;
   canvasScale: number;
   leftPanelTab: 'components' | 'library' | 'layers' | 'pages' | 'cms';
-  rightPanelTab: 'style' | 'content' | 'css' | 'seo';
+  rightPanelTab: 'style' | 'content' | 'css' | 'interactions' | 'seo';
   pseudoClassState: 'base' | 'hover' | 'active' | 'focus';
   history: Page[][];
   historyIndex: number;
   isPreviewMode: boolean;
+  triggeredInteractions: Record<string, { animationName: string; duration: string; visibility?: 'show' | 'hide'; opacity?: string }>;
+  revealedElementIds: Record<string, boolean>;
+  visibilityOverrides: Record<string, 'show' | 'hide'>;
+  opacityOverrides: Record<string, string>;
+  interactionTargetSelection: { sourceId: string; interactionIndex: number } | null;
 }
 
 export interface ComponentDefinition {

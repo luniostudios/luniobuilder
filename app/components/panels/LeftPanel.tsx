@@ -7,7 +7,7 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-
 import { CSS } from '@dnd-kit/utilities';
 import { useBuilderStore } from '../../stores/builderStore';
 import { ElementType, BuilderElement, Page } from '../../types/builder';
-import { COMPONENT_CATEGORIES, COMPONENT_LABELS, getComponentElements } from '../../utils/builderUtils';
+import { COMPONENT_CATEGORIES, COMPONENT_LABELS, canHaveChildren, getComponentElements } from '../../utils/builderUtils';
 import type { CmsCollection, CmsRecord } from '../../types/cms';
 
 const COMPONENT_ICONS: Record<string, React.ReactNode> = {
@@ -207,7 +207,7 @@ const ComponentsTab: React.FC = () => {
 
   const handleDoubleClick = (type: ElementType) => {
     const selectedElement = selectedElementId ? getElementById(selectedElementId) : null;
-    addElementFromPalette(type, selectedElement?.type === 'cmsMap' ? selectedElement.id : 'canvas-root', 'inside');
+    addElementFromPalette(type, selectedElement && canHaveChildren(selectedElement.type) ? selectedElement.id : 'canvas-root', 'inside');
   };
 
   const filteredCategories = Object.entries(COMPONENT_CATEGORIES).map(([cat, types]) => ({

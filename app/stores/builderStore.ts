@@ -1,8 +1,13 @@
 import { create } from 'zustand';
-import { BuilderState, BuilderElement, Page, ElementType, StyleProperties, Breakpoint, ElementProps, PseudoClassStyles } from '../types/builder';
+import { BuilderState, BuilderElement, Page, ElementType, StyleProperties, Breakpoint, ElementProps, PseudoClassStyles, ElementInteraction, PageInteraction } from '../types/builder';
 import { generateId, createDefaultElement, deepClone } from '../utils/builderUtils';
 import { createStarterPage } from '../utils/starterTemplate';
 import { htmlToBuilderElements, htmlToBuilderPages } from '../utils/htmlToBuilder';
+const parseInteractionDuration = (duration: string) => {
+  const value = Number.parseFloat(duration);
+  if (!Number.isFinite(value)) return 800;
+  return duration.trim().endsWith('ms') ? value : value * 1000;
+};
 
 interface BuilderStore extends BuilderState {
   // Auth/project tracking
@@ -35,7 +40,14 @@ interface BuilderStore extends BuilderState {
   convertElementToLink: (id: string) => void;
   toggleElementLock: (id: string) => void;
   toggleElementVisibility: (id: string) => void;
+  triggerElementInteraction: (id: string, animationName: string, duration: string) => void;
+  revealElementForInteraction: (id: string, animationName: string, duration: string) => void;
+  applyElementInteraction: (id: string, interaction: ElementInteraction) => void;
   toggleElementComponent: (id: string) => void;
+  updateElementInteractions: (id: string, interactions: ElementInteraction[]) => void;
+  beginInteractionTargetSelection: (sourceId: string, interactionIndex: number) => void;
+  selectInteractionTarget: (targetId: string) => void;
+  cancelInteractionTargetSelection: () => void;
 
   // Page management
   addPage: () => void;
@@ -46,6 +58,7 @@ interface BuilderStore extends BuilderState {
   updatePageSlug: (id: string, slug: string) => void;
   updatePagePassword: (id: string, passwordProtected: boolean, password: string) => void;
   updatePageCmsDetail: (id: string, settings: Partial<NonNullable<Page['cmsDetail']>>) => void;
+  updatePageInteractions: (id: string, interactions: PageInteraction[]) => void;
 
   // UI state
   setBreakpoint: (breakpoint: Breakpoint) => void;
@@ -102,6 +115,11 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
   history: [[defaultPage]],
   historyIndex: 0,
   isPreviewMode: false,
+  revealedElementIds: {},
+  visibilityOverrides: {},
+  opacityOverrides: {},
+  interactionTargetSelection: null,
+  triggeredInteractions: {},
 
   setProjectId: (id) => set({ projectId: id }),
   setProjectName: (name) => set({ projectName: name }),
@@ -401,6 +419,52 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
     });
   },
 
+  updateElementInteractions: (id, interactions) => {
+    set(state => {
+      const pages = deepClone(state.pages);
+      const page = pages.find(item => item.id === state.currentPageId)!;
+      const update = (elements: BuilderElement[]): boolean => {
+        for (const element of elements) {
+          if (element.id === id) { element.interactions = interactions; return true; }
+          if (update(element.children)) return true;
+        }
+        return false;
+      };
+      update(page.elements);
+      return { pages };
+    });
+    get().pushHistory();
+  },
+
+  beginInteractionTargetSelection: (sourceId, interactionIndex) => set({ interactionTargetSelection: { sourceId, interactionIndex } }),
+  cancelInteractionTargetSelection: () => set({ interactionTargetSelection: null }),
+  selectInteractionTarget: (targetId) => {
+    const selection = get().interactionTargetSelection;
+    if (!selection || selection.sourceId === targetId) return;
+    set(state => {
+      const pages = deepClone(state.pages);
+      const page = pages.find(item => item.id === state.currentPageId)!;
+      const update = (elements: BuilderElement[]): boolean => {
+        for (const element of elements) {
+          if (element.id === selection.sourceId) {
+            const interactions = [...(element.interactions || [])];
+            const interaction = interactions[selection.interactionIndex];
+            if (interaction) {
+              interactions[selection.interactionIndex] = { ...interaction, targetElementId: targetId };
+              element.interactions = interactions;
+            }
+            return true;
+          }
+          if (update(element.children)) return true;
+        }
+        return false;
+      };
+      update(page.elements);
+      return { pages, interactionTargetSelection: null };
+    });
+    get().pushHistory();
+  },
+
   convertElementToLink: (id) => {
     set(state => {
       const pages = deepClone(state.pages);
@@ -537,6 +601,58 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
     });
   },
 
+  triggerElementInteraction: (id, animationName, duration) => {
+    set(state => ({ triggeredInteractions: { ...state.triggeredInteractions, [id]: { animationName, duration } } }));
+    window.setTimeout(() => {
+      set(state => {
+        const triggeredInteractions = { ...state.triggeredInteractions };
+        delete triggeredInteractions[id];
+        return { triggeredInteractions };
+      });
+    }, parseInteractionDuration(duration));
+  },
+
+  revealElementForInteraction: (id, animationName, duration) => {
+    set(state => ({
+      revealedElementIds: { ...state.revealedElementIds, [id]: true },
+      triggeredInteractions: { ...state.triggeredInteractions, [id]: { animationName, duration } },
+    }));
+    window.setTimeout(() => {
+      set(state => {
+        const triggeredInteractions = { ...state.triggeredInteractions };
+        delete triggeredInteractions[id];
+        return { triggeredInteractions };
+      });
+    }, parseInteractionDuration(duration));
+  },
+
+  applyElementInteraction: (id, interaction) => {
+    const visibility = interaction.action === 'show'
+      ? 'show'
+      : interaction.action === 'visibility'
+        ? interaction.visibilityMode === 'hide'
+          ? 'hide'
+          : interaction.visibilityMode === 'toggle'
+            ? get().getElementById(id)?.hidden ? 'show' : 'hide'
+            : 'show'
+        : undefined;
+    const opacity = interaction.action === 'opacity' ? interaction.opacityValue || '1' : undefined;
+    const animationName = interaction.animationName || 'fade-in';
+    const duration = interaction.duration || '0.8s';
+    set(state => ({
+      triggeredInteractions: { ...state.triggeredInteractions, [id]: { animationName, duration, visibility, opacity } },
+      visibilityOverrides: visibility ? { ...state.visibilityOverrides, [id]: visibility } : state.visibilityOverrides,
+      opacityOverrides: opacity !== undefined ? { ...state.opacityOverrides, [id]: opacity } : state.opacityOverrides,
+    }));
+    window.setTimeout(() => {
+      set(state => {
+        const triggeredInteractions = { ...state.triggeredInteractions };
+        delete triggeredInteractions[id];
+        return { triggeredInteractions };
+      });
+    }, parseInteractionDuration(duration));
+  },
+
   toggleElementComponent: (id) => {
     const makeComponentName = (name: string) => {
       const words = String(name || 'Component')
@@ -658,11 +774,22 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
     });
   },
 
+  updatePageInteractions: (id, interactions) => {
+    set(state => {
+      const pages = deepClone(state.pages);
+      const page = pages.find(candidate => candidate.id === id);
+      if (!page) return state;
+      page.interactions = interactions;
+      return { pages };
+    });
+    get().pushHistory();
+  },
+
   setBreakpoint: (breakpoint) => set({ breakpoint }),
   setCanvasScale: (canvasScale) => set({ canvasScale }),
   setLeftPanelTab: (leftPanelTab) => set({ leftPanelTab }),
   setRightPanelTab: (rightPanelTab) => set({ rightPanelTab }),
-  setPreviewMode: (isPreviewMode) => set({ isPreviewMode, selectedElementId: null, pseudoClassState: 'base' }),
+  setPreviewMode: (isPreviewMode) => set({ isPreviewMode, selectedElementId: null, pseudoClassState: 'base', triggeredInteractions: {}, revealedElementIds: {}, visibilityOverrides: {}, opacityOverrides: {}, interactionTargetSelection: null }),
   setPseudoClassState: (pseudoClassState) => set({ pseudoClassState }),
 
   pushHistory: () => {

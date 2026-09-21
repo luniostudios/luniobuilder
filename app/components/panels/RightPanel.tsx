@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight, Plus, Redo2, Trash2, Upload } from 'lucide-react';
 import ColorPicker from 'react-best-gradient-color-picker';
 import { useBuilderStore } from '../../stores/builderStore';
-import { StyleProperties } from '../../types/builder';
+import { ElementInteraction, PageInteraction, StyleProperties } from '../../types/builder';
 import { getEffectiveStyles } from '../../utils/builderUtils';
 import { GOOGLE_FONT_OPTIONS } from './GoogleFonts';
 
@@ -59,7 +59,7 @@ export const RightPanel: React.FC = () => {
         <>
           {/* Tabs */}
           <div className="flex border-b border-gray-800">
-            {(['style', 'content', 'css'] as const).map(tab => (
+            {(['style', 'content', 'interactions', 'css'] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => setRightPanelTab(tab)}
@@ -76,27 +76,89 @@ export const RightPanel: React.FC = () => {
           <div className="flex-1 overflow-y-auto custom-scrollbar">
             {rightPanelTab === 'style' && <StyleEditor element={element} breakpoint={breakpoint} />}
             {rightPanelTab === 'content' && <ContentEditor element={element} />}
+            {rightPanelTab === 'interactions' && <InteractionsEditor element={element} page={page} />}
             {rightPanelTab === 'css' && <CSSEditor element={element} breakpoint={breakpoint} />}
           </div>
         </>
       ) : (
         <>
           <div className="flex border-b border-gray-800">
-            <button
-              onClick={() => setRightPanelTab('seo')}
-              className="flex-1 py-3 text-xs font-medium text-white border-b-2 border-blue-300 bg-blue-300/5"
-            >
-              Page Settings
-            </button>
+            {(['seo', 'interactions'] as const).map(tab => <button key={tab} onClick={() => setRightPanelTab(tab)} className={`flex-1 py-3 text-xs font-medium ${rightPanelTab === tab ? 'text-white border-b-2 border-blue-300 bg-blue-300/5' : 'text-gray-400 hover:text-gray-200'}`}>{tab === 'seo' ? 'Page Settings' : 'Interactions'}</button>)}
           </div>
           <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
-            <SeoEditor pageId={page.id} />
+            {rightPanelTab === 'interactions' ? <InteractionsEditor page={page} /> : <SeoEditor pageId={page.id} />}
           </div>
         </>
       )}
     </div>
   );
 };
+
+const INTERACTION_ANIMATIONS = ['fade-in', 'fade-out', 'slide-up', 'pop-in', 'bounce', 'spin', 'slide-in'];
+
+const flattenElements = (elements: BuilderElement[], result: BuilderElement[] = []) => {
+  elements.forEach(item => {
+    result.push(item);
+    flattenElements(item.children || [], result);
+  });
+  return result;
+};
+
+const InteractionsEditor: React.FC<{ element?: BuilderElement; page: any }> = ({ element, page }) => {
+  const { updateElementInteractions, updatePageInteractions, beginInteractionTargetSelection, cancelInteractionTargetSelection, interactionTargetSelection } = useBuilderStore() as any;
+  const elementInteractions = (element?.interactions || []) as ElementInteraction[];
+  const pageInteractions = (page.interactions || []) as PageInteraction[];
+  const targetElements = flattenElements(page.elements || []).filter(item => item.id !== element?.id);
+  const updateElement = (next: ElementInteraction[]) => { if (element) updateElementInteractions(element.id, next); };
+  const updatePage = (next: PageInteraction[]) => updatePageInteractions(page.id, next);
+
+  return <div className='text-gray-200'>
+    <div className='flex items-center justify-between border-b border-gray-800 px-4 py-3'>
+      <div><p className='text-sm font-semibold'>Interactions</p><p className='mt-1 text-[11px] text-gray-500'>Animate elements and pages with simple triggers.</p></div>
+    </div>
+    {element && <InteractionCard title='Element trigger' description='Animate this element when visitors interact with it.'>
+      {elementInteractions.map((interaction, index) => <div key={`${interaction.trigger}-${index}`} className='mb-2 rounded-lg border border-gray-700 bg-gray-900/60 p-3'>
+        <div className='flex items-center justify-between gap-2'>
+          <select value={interaction.trigger} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, trigger: event.target.value as ElementInteraction['trigger'] } : item))} className='min-w-0 flex-1 rounded border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white'>
+            <option value='hover'>While hovering</option><option value='click'>On click</option>
+          </select>
+          <button type='button' onClick={() => updateElement(elementInteractions.filter((_, itemIndex) => itemIndex !== index))} title='Remove trigger' className='p-1 text-gray-500 hover:text-red-300'><Trash2 size={14} /></button>
+        </div>
+        <select value={interaction.animationName} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, animationName: event.target.value } : item))} className='mt-2 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white'>
+          {INTERACTION_ANIMATIONS.map(animation => <option key={animation} value={animation}>{animation}</option>)}
+        </select>
+        <select value={interaction.action || 'animate'} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, action: event.target.value as ElementInteraction['action'], targetElementId: ['show', 'visibility', 'opacity'].includes(event.target.value) ? item.targetElementId : undefined } : item))} className='mt-2 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white'>
+          <option value='animate'>Animate this element</option><option value='show'>Show another element</option><option value='visibility'>Toggle element visibility</option><option value='opacity'>Change element opacity</option>
+        </select>
+        {(interaction.action || 'animate') !== 'animate' && <div className='mt-2 flex items-center gap-2'>
+          <button type='button' onClick={() => beginInteractionTargetSelection(element.id, index)} className={`flex-1 rounded border px-2 py-1.5 text-left text-xs ${interactionTargetSelection?.sourceId === element.id && interactionTargetSelection?.interactionIndex === index ? 'border-blue-400 bg-blue-500/20 text-blue-200' : 'border-gray-700 bg-gray-800 text-gray-300 hover:border-blue-400'}`}>
+            {interactionTargetSelection?.sourceId === element.id && interactionTargetSelection?.interactionIndex === index ? 'Click an element on the canvas...' : interaction.targetElementId ? `Target: ${targetElements.find(target => target.id === interaction.targetElementId)?.name || 'Selected element'}` : 'Select target on canvas'}
+          </button>
+          {interactionTargetSelection?.sourceId === element.id && interactionTargetSelection?.interactionIndex === index && <button type='button' onClick={cancelInteractionTargetSelection} className='rounded border border-gray-700 px-2 py-1.5 text-xs text-gray-400 hover:text-white'>Cancel</button>}
+        </div>}
+        {(interaction.action || 'animate') === 'visibility' && <select value={interaction.visibilityMode || 'toggle'} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, visibilityMode: event.target.value as ElementInteraction['visibilityMode'] } : item))} className='mt-2 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white'>
+          <option value='toggle'>Toggle visibility</option><option value='show'>Show target</option><option value='hide'>Hide target</option>
+        </select>}
+        {(interaction.action || 'animate') === 'opacity' && <input value={interaction.opacityValue || '0'} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, opacityValue: event.target.value } : item))} placeholder='Opacity, e.g. 0.5 or 50%' className='mt-2 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white outline-none' />}
+        <input value={interaction.duration} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, duration: event.target.value } : item))} placeholder='Duration, e.g. 0.8s' className='mt-2 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white outline-none' />
+      </div>)}
+      <button type='button' onClick={() => updateElement([...elementInteractions, { trigger: 'hover', action: 'animate', animationName: 'fade-in', duration: '0.8s' }])} className='flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-gray-600 px-3 py-2 text-xs text-gray-400 hover:border-blue-400 hover:text-blue-300'><Plus size={14} /> Add element trigger</button>
+    </InteractionCard>}
+    <InteractionCard title='Page trigger' description='Run an animation when the page loads.'>
+      {pageInteractions.map((interaction, index) => <div key={index} className='rounded-lg border border-gray-700 bg-gray-900/60 p-3'>
+        <div className='flex items-center justify-between'><span className='text-xs text-gray-300'>When page loads</span><button type='button' onClick={() => updatePage(pageInteractions.filter((_, itemIndex) => itemIndex !== index))} title='Remove trigger' className='p-1 text-gray-500 hover:text-red-300'><Trash2 size={14} /></button></div>
+        <select value={interaction.animationName} onChange={event => updatePage(pageInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, animationName: event.target.value } : item))} className='mt-2 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white'>{INTERACTION_ANIMATIONS.map(animation => <option key={animation} value={animation}>{animation}</option>)}</select>
+        <input value={interaction.duration} onChange={event => updatePage(pageInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, duration: event.target.value } : item))} placeholder='Duration, e.g. 0.8s' className='mt-2 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white outline-none' />
+      </div>)}
+      <button type='button' onClick={() => updatePage([...pageInteractions, { trigger: 'load', animationName: 'fade-in', duration: '0.8s' }])} className='flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-gray-600 px-3 py-2 text-xs text-gray-400 hover:border-blue-400 hover:text-blue-300'><Plus size={14} /> Add page trigger</button>
+    </InteractionCard>
+  </div>;
+};
+
+const InteractionCard: React.FC<{ title: string; description: string; children: React.ReactNode }> = ({ title, description, children }) => <div className='border-b border-gray-800/60 p-4'>
+  <div className='mb-3 flex items-start justify-between'><div><p className='text-xs font-semibold uppercase tracking-wider text-gray-300'>{title}</p><p className='mt-1 text-[11px] text-gray-500'>{description}</p></div><Plus size={15} className='text-gray-500' /></div>
+  {children}
+</div>;
 
 interface SectionProps {
   title: string;
