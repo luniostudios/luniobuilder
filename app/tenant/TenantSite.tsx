@@ -57,7 +57,7 @@ export default function TenantSite({ projectId, projectName, pages, currentPageI
     : undefined;
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="relative min-h-screen bg-white pb-10">
       <CmsRecordProvider record={cmsRecord} detailSettings={detailSettings}>
         {page.elements.map(element => (
           <ElementRenderer key={element.id} element={element} isPreview isPublishedSite />

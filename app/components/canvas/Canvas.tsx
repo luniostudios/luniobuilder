@@ -19,11 +19,28 @@ export const Canvas: React.FC = () => {
     setDraggedElementType,
     dropTargetId,
     moveElement,
+    setBreakpoint,
   } = useBuilderStore();
 
   const [showWatermark, setShowWatermark] = useState(true);
   const canvasRef = useRef<HTMLDivElement>(null);
   const page = getCurrentPage();
+
+  useEffect(() => {
+    if (!isPreviewMode) return;
+    const getBreakpoint = (width: number) => {
+      if (width <= 479) return 'mobile' as const;
+      if (width <= 767) return 'mobileLandscape' as const;
+      if (width <= 991) return 'tablet' as const;
+      if (width <= 1200) return 'laptop' as const;
+      if (width >= 1920) return 'widescreen' as const;
+      return 'desktop' as const;
+    };
+    const updateBreakpoint = () => setBreakpoint(getBreakpoint(window.innerWidth));
+    updateBreakpoint();
+    window.addEventListener('resize', updateBreakpoint);
+    return () => window.removeEventListener('resize', updateBreakpoint);
+  }, [isPreviewMode, setBreakpoint]);
 
   useEffect(() => {
     let isMounted = true;
@@ -122,7 +139,7 @@ export const Canvas: React.FC = () => {
   if (isPreviewMode) {
     return (
       <div className="flex-1 overflow-auto bg-gray-100 flex justify-center">
-        <div style={{ width: breakpointWidth }} className="bg-white min-h-screen pb-10 relative">
+        <div style={{ width: '100%' }} className="bg-white min-h-screen pb-10 relative">
           {page.elements.map(el => (
             <ElementRenderer key={el.id} element={el} isPreview />
           ))}
