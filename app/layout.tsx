@@ -56,7 +56,7 @@ export default async function RootLayout({
   ));
 
   return (
-    <html lang="en" className={`${geistSans.variable} bg-[#111114]`}>
+    <html lang="en" className={`${geistSans.variable} bg-[#111114]`} suppressHydrationWarning>
       <head>
         <meta property="og:image" content="/socials/og.png" />
         <meta property="og:image:alt" content="LUNIO Builder" />

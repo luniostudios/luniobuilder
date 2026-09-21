@@ -228,11 +228,20 @@ const CmsMapElement: React.FC<{ element: BuilderElement; projectId: string | nul
     );
   }
 
+  const recordGridStyle: React.CSSProperties = {
+    ...style,
+    display: style.display === 'flex' ? 'flex' : 'grid',
+    gridTemplateColumns: style.gridTemplateColumns || 'repeat(3, minmax(0, 1fr))',
+    gap: style.gap || '20px',
+    width: style.width || '100%',
+    minWidth: 0,
+  };
+
   return (
     <div style={{ width: '100%', minWidth: 0 }} onClick={onClick}>
       {controls}
-      <div style={style}>
-        {visibleRecords.length > 0 ? visibleRecords.map(record => <div key={record.id} style={{ minWidth: 0 }}>{renderChildren(record)}</div>) : <div style={{ padding: '24px', color: '#64748b' }}>{String(element.props.emptyMessage || 'No matching records.')}</div>}
+      <div style={recordGridStyle}>
+        {visibleRecords.length > 0 ? visibleRecords.map(record => <div key={record.id} style={{ width: '100%', minWidth: 0 }}>{renderChildren(record)}</div>) : <div style={{ padding: '24px', color: '#64748b' }}>{String(element.props.emptyMessage || 'No matching records.')}</div>}
       </div>
     </div>
   );
@@ -1035,7 +1044,9 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
   return (
     <div
       ref={ref}
-      style={{ ...safeCssStyles, ...(isMenuTarget && navbarMenu?.isOpen ? { display: 'contents' } : {}) }}
+      style={element.type === 'cmsMap'
+        ? { width: '100%', minWidth: 0 }
+        : { ...safeCssStyles, ...(isMenuTarget && navbarMenu?.isOpen ? { display: 'contents' } : {}) }}
       className={wrapperClasses}
       draggable={!isPreview && !element.locked}
       onDragStart={handleDragStart}

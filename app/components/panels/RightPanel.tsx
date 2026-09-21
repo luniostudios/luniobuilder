@@ -114,9 +114,11 @@ const InteractionsEditor: React.FC<{ element?: BuilderElement; page: any }> = ({
 
   return <div className='text-gray-200'>
     <div className='flex items-center justify-between border-b border-gray-800 px-4 py-3'>
-      <div><p className='text-sm font-semibold'>Interactions</p><p className='mt-1 text-[11px] text-gray-500'>Animate elements and pages with simple triggers.</p></div>
+      <div>
+        <p className='text-sm font-semibold'>Interactions</p>
+        <p className='mt-1 text-[11px] text-gray-500'>Animate elements and pages with simple triggers.</p></div>
     </div>
-    {element && <InteractionCard title='Element trigger' description='Animate this element when visitors interact with it.'>
+    {element && <InteractionCard title='Element trigger' description='Animate this element when visitors interact with it.' onAdd={() => updateElement([...elementInteractions, { trigger: 'hover', action: 'animate', animationName: 'fade-in', duration: '0.8s' }])}>
       {elementInteractions.map((interaction, index) => <div key={`${interaction.trigger}-${index}`} className='mb-2 rounded-lg border border-gray-700 bg-gray-900/60 p-3'>
         <div className='flex items-center justify-between gap-2'>
           <select value={interaction.trigger} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, trigger: event.target.value as ElementInteraction['trigger'] } : item))} className='min-w-0 flex-1 rounded border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white'>
@@ -142,21 +144,28 @@ const InteractionsEditor: React.FC<{ element?: BuilderElement; page: any }> = ({
         {(interaction.action || 'animate') === 'opacity' && <input value={interaction.opacityValue || '0'} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, opacityValue: event.target.value } : item))} placeholder='Opacity, e.g. 0.5 or 50%' className='mt-2 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white outline-none' />}
         <input value={interaction.duration} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, duration: event.target.value } : item))} placeholder='Duration, e.g. 0.8s' className='mt-2 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white outline-none' />
       </div>)}
-      <button type='button' onClick={() => updateElement([...elementInteractions, { trigger: 'hover', action: 'animate', animationName: 'fade-in', duration: '0.8s' }])} className='flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-gray-600 px-3 py-2 text-xs text-gray-400 hover:border-blue-400 hover:text-blue-300'><Plus size={14} /> Add element trigger</button>
+      <div className='mt-4 px-4 py-4 border-2 border-gray-800/50 rounded-lg border-dashed'>
+        <h2 className='text-sm font-semibold text-gray-300'>ElementTriggers</h2>
+        <p className='mt-1 text-[11px] text-gray-500'>These triggers are applied to the element and will run when the specified event occurs.</p>
+      </div>
     </InteractionCard>}
-    <InteractionCard title='Page trigger' description='Run an animation when the page loads.'>
+    <InteractionCard title='Page trigger' description='Run an animation when the page loads.' onAdd={() => updatePage([...pageInteractions, { trigger: 'load', animationName: 'fade-in', duration: '0.8s' }])}>
       {pageInteractions.map((interaction, index) => <div key={index} className='rounded-lg border border-gray-700 bg-gray-900/60 p-3'>
         <div className='flex items-center justify-between'><span className='text-xs text-gray-300'>When page loads</span><button type='button' onClick={() => updatePage(pageInteractions.filter((_, itemIndex) => itemIndex !== index))} title='Remove trigger' className='p-1 text-gray-500 hover:text-red-300'><Trash2 size={14} /></button></div>
         <select value={interaction.animationName} onChange={event => updatePage(pageInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, animationName: event.target.value } : item))} className='mt-2 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white'>{INTERACTION_ANIMATIONS.map(animation => <option key={animation} value={animation}>{animation}</option>)}</select>
         <input value={interaction.duration} onChange={event => updatePage(pageInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, duration: event.target.value } : item))} placeholder='Duration, e.g. 0.8s' className='mt-2 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white outline-none' />
       </div>)}
-      <button type='button' onClick={() => updatePage([...pageInteractions, { trigger: 'load', animationName: 'fade-in', duration: '0.8s' }])} className='flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-gray-600 px-3 py-2 text-xs text-gray-400 hover:border-blue-400 hover:text-blue-300'><Plus size={14} /> Add page trigger</button>
+      <div className='mt-4 px-4 py-4 border-2 border-gray-800/50 rounded-lg border-dashed'>
+        <h2 className='text-sm font-semibold text-gray-300'>Page Triggers</h2>
+        <p className='mt-1 text-[11px] text-gray-500'>These triggers are applied to the page and will run when the specified event occurs.</p>
+      </div>
     </InteractionCard>
   </div>;
 };
 
-const InteractionCard: React.FC<{ title: string; description: string; children: React.ReactNode }> = ({ title, description, children }) => <div className='border-b border-gray-800/60 p-4'>
-  <div className='mb-3 flex items-start justify-between'><div><p className='text-xs font-semibold uppercase tracking-wider text-gray-300'>{title}</p><p className='mt-1 text-[11px] text-gray-500'>{description}</p></div><Plus size={15} className='text-gray-500' /></div>
+const InteractionCard: React.FC<{ title: string; description: string; onAdd: () => void; children: React.ReactNode }> = ({ title, description, onAdd, children }) => <div className='border-b border-gray-800/60 p-4'>
+  <div className='mb-3 flex items-start justify-between'><div><p className='text-xs font-semibold uppercase tracking-wider text-gray-300'>{title}</p><p className='mt-1 text-[11px] text-gray-500'>{description}</p>
+  </div><button type='button' onClick={onAdd} title={`Add ${title.toLowerCase()}`} aria-label={`Add ${title.toLowerCase()}`} className='rounded p-1 text-gray-500 hover:bg-gray-800 hover:text-gray-200'><Plus size={15} /></button></div>
   {children}
 </div>;
 
@@ -829,7 +838,7 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
             onChange={e => update('visibility', e.target.checked ? 'visible' : 'hidden')}
             className="accent-blue-500"
           />
-          Visible
+          {styles.visibility !== 'hidden' ? 'Visible' : 'Hidden'}
         </label>
         {(styles.position === 'absolute' || styles.position === 'fixed') && (
           <div className="grid grid-cols-2 gap-2 mt-1">
@@ -1796,19 +1805,6 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
           className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
       </div>
-
-      {/* Text content */}
-      {(element.type === 'heading' || element.type === 'paragraph' || element.type === 'button' || element.type === 'link' || element.type === 'listItem') && (
-        <div>
-          <label className="text-xs text-gray-500 block mb-1">Text</label>
-          <textarea
-            value={element.props.text || ''}
-            onChange={e => update('text', e.target.value)}
-            rows={3}
-            className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
-          />
-        </div>
-      )}
 
       {element.type === 'heading' && (
         <div>

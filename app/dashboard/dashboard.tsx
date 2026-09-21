@@ -639,7 +639,7 @@ export default function Dashboard() {
 
                                     {/* Project Cards */}
                                     {filteredProjects.map((project) => (
-                                        <div key={project.id} className="group bg-white rounded-2xl border border-gray-200/80 shadow-sm hover:-translate-y-0.5 hover:shadow-xl hover:shadow-gray-200/60 transition-all overflow-visible relative flex flex-col h-full">
+                                        <div key={project.id} className={`group bg-white rounded-2xl border border-gray-200/80 shadow-sm hover:-translate-y-0.5 hover:shadow-xl hover:shadow-gray-200/60 transition-all overflow-visible relative flex flex-col h-full ${openDropdown === project.id ? 'z-30' : 'z-0'}`}>
 
                                             {/* Image / Thumbnail Container */}
                                             <div className="relative w-full h-44 overflow-hidden rounded-t-2xl bg-gray-100 shrink-0">
@@ -697,7 +697,7 @@ export default function Dashboard() {
                                                         {openDropdown === project.id && (
                                                             <>
                                                                 <div className="fixed inset-0 z-10" onClick={() => setOpenDropdown(null)}></div>
-                                                                <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-20">
+                                                                <div className="absolute right-0 z-40 mt-1 w-48 rounded-lg border border-gray-100 bg-white py-1 shadow-lg">
                                                                     <Link href={`/dashboard/settings/${project.id}`} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
                                                                         <Settings size={14} className="text-gray-400" /> Settings
                                                                     </Link>
