@@ -592,20 +592,18 @@ export const getEffectiveStyles = (
   element: BuilderElement,
   breakpoint: 'widescreen' | 'desktop' | 'tablet' | 'mobile' | 'laptop' | 'mobileLandscape'
 ): StyleProperties => {
-  const widescreen = element.styles.widescreen || {};
-  const desktop = element.styles.desktop || {};
-  const tablet = element.styles.tablet || {};
-  const mobile = element.styles.mobile || {};
-  const laptop = element.styles.laptop || {};
-  const mobileLandscape = element.styles.mobileLandscape || {};
+  const styles = element.styles || {};
+  const desktop = styles.desktop || {};
+  const cascade: Record<typeof breakpoint, StyleProperties> = {
+    desktop,
+    widescreen: { ...desktop, ...(styles.widescreen || {}) },
+    laptop: { ...desktop, ...(styles.laptop || {}) },
+    tablet: { ...desktop, ...(styles.laptop || {}), ...(styles.tablet || {}) },
+    mobileLandscape: { ...desktop, ...(styles.laptop || {}), ...(styles.tablet || {}), ...(styles.mobileLandscape || {}) },
+    mobile: { ...desktop, ...(styles.laptop || {}), ...(styles.tablet || {}), ...(styles.mobileLandscape || {}), ...(styles.mobile || {}) },
+  };
 
-  if (breakpoint === 'desktop') return desktop;
-  if (breakpoint === 'widescreen') return { ...desktop, ...widescreen };
-  if (breakpoint === 'laptop') return { ...desktop, ...laptop };
-  if (breakpoint === 'tablet') return { ...desktop, ...laptop, ...tablet };
-  if (breakpoint === 'mobileLandscape') return { ...desktop, ...laptop, ...tablet, ...mobileLandscape };
-  if (breakpoint === 'mobile') return { ...desktop, ...laptop, ...tablet, ...mobileLandscape, ...mobile };
-  return desktop;
+  return cascade[breakpoint];
 };
 
 const expandBoxShorthand = (

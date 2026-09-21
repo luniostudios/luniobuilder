@@ -74,7 +74,7 @@ export const Canvas: React.FC = () => {
   ) : null;
 
   const breakpointWidth = {
-    widescreen: '1990px',
+    widescreen: '1920px',
     desktop: `1280px`,
     laptop: `1024px`,
     tablet: `768px`,
@@ -138,8 +138,16 @@ export const Canvas: React.FC = () => {
 
   if (isPreviewMode) {
     return (
-      <div className="flex-1 overflow-auto bg-gray-100 flex justify-center">
-        <div style={{ width: '100%' }} className="bg-white min-h-screen pb-10 relative">
+      <div className="flex-1 overflow-auto bg-gray-300">
+        <div
+          style={{
+            width: breakpointWidth,
+            minHeight: '100%',
+            margin: '0 auto',
+            transition: 'width 0.3s ease',
+          }}
+          className="bg-white min-h-screen pb-10 relative scroll-"
+        >
           {page.elements.map(el => (
             <ElementRenderer key={el.id} element={el} isPreview />
           ))}

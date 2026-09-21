@@ -580,11 +580,11 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
   // Get styles based on current pseudo-class state
   let styles: any;
   if (pseudoClassState === 'base') {
-    styles = getEffectiveStyles(element, breakpoint as 'widescreen' | 'desktop' | 'tablet' | 'mobile');
+    styles = getEffectiveStyles(element, breakpoint as 'widescreen' | 'desktop' | 'laptop' | 'tablet' | 'mobileLandscape' | 'mobile');
   } else {
-    // Get pseudo-class specific styles
     const pseudoStyles = element.pseudoClassStyles?.[pseudoClassState as 'hover' | 'active' | 'focus'] as any;
-    styles = pseudoStyles?.[breakpoint as 'widescreen' | 'desktop' | 'tablet' | 'mobile'] || {};
+    const pseudoElement = { ...element, styles: pseudoStyles || {} } as BuilderElement;
+    styles = getEffectiveStyles(pseudoElement, breakpoint as 'widescreen' | 'desktop' | 'laptop' | 'tablet' | 'mobileLandscape' | 'mobile');
   }
 
   const isTextElement = ['heading', 'paragraph', 'button', 'link', 'listItem'].includes(element.type);
@@ -1247,7 +1247,10 @@ const CSSEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
   const { updateElementStyles } = useBuilderStore();
   const [rows, setRows] = useState<CSSRow[]>([]);
 
-  const currentStyles = element.styles?.[breakpoint] || {};
+  const currentStyles = getEffectiveStyles(
+    element,
+    breakpoint as 'widescreen' | 'desktop' | 'laptop' | 'tablet' | 'mobileLandscape' | 'mobile'
+  );
 
   React.useEffect(() => {
     setRows([...buildStyleRows(currentStyles), createEmptyRow()]);

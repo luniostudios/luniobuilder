@@ -349,10 +349,10 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     } : {}),
     ...(runtimeOpacity ? { opacity: runtimeOpacity } : {}),
     ...(pageInteraction && !runtimeInteraction ? {
-    animationName: pageInteraction.animationName,
-    animationDuration: pageInteraction.duration,
-    animationTimingFunction: 'ease',
-    animationFillMode: 'both',
+      animationName: pageInteraction.animationName,
+      animationDuration: pageInteraction.duration,
+      animationTimingFunction: 'ease',
+      animationFillMode: 'both',
     } : {}),
   };
   const safeCssStyles: React.CSSProperties = {
@@ -362,6 +362,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     maxWidth: '100%',
     minWidth: 0,
   };
+  const { border: _border, borderTop: _borderTop, borderRight: _borderRight, borderBottom: _borderBottom, borderLeft: _borderLeft, ...leafWrapperStyles } = safeCssStyles;
   const safeTextStyles: React.CSSProperties = {
     ...safeCssStyles,
     overflowWrap: 'break-word',
@@ -462,6 +463,13 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
   const isSelected = selectedElementId === element.id;
   const isHovered = hoveredElementId === element.id;
   const isDropTarget = dropTargetId === element.id;
+  const hasCustomBorder = Boolean(
+    cssStyles.border ||
+    cssStyles.borderTop ||
+    cssStyles.borderRight ||
+    cssStyles.borderBottom ||
+    cssStyles.borderLeft
+  );
 
   const runInteraction = (interaction: ElementInteraction) => {
     const targetId = interaction.action === 'animate' ? element.id : interaction.targetElementId || element.id;
@@ -557,7 +565,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     if (!isEditing) {
       setEditingValue(element.props.text || '');
     }
-  }, [element.props.text, isEditing]);
+  }, [element.props.text]);
 
   const runtimeVisibility = visibilityOverride || triggeredInteraction?.visibility;
   const shouldHide = runtimeVisibility === 'hide' || (element.hidden && runtimeVisibility !== 'show' && !isRevealed);
@@ -610,11 +618,13 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     const prompt = quickAiPrompt.trim();
     if (!prompt || isQuickAiGenerating) return;
     setIsQuickAiGenerating(true);
-    window.dispatchEvent(new CustomEvent('lunio:edit-with-ai', { detail: {
-      elementId: element.id,
-      prompt,
-      onComplete: () => setIsQuickAiGenerating(false),
-    } }));
+    window.dispatchEvent(new CustomEvent('lunio:edit-with-ai', {
+      detail: {
+        elementId: element.id,
+        prompt,
+        onComplete: () => setIsQuickAiGenerating(false),
+      }
+    }));
     setQuickAiPrompt('');
   };
   const selectionTooltip = isSelected && !element.locked ? (
@@ -673,8 +683,8 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
   const wrapperClasses = isPreview ? '' : [
     'relative',
     'outline-none',
-    isSelected ? 'ring-2 ring-blue-500 ring-inset' : '',
-    isHovered && !isSelected ? 'ring-1 ring-blue-300 ring-inset' : '',
+    isSelected && !hasCustomBorder ? 'ring-2 ring-blue-500 ring-inset' : '',
+    isHovered && !isSelected && !hasCustomBorder ? 'ring-1 ring-blue-300 ring-inset' : '',
     isDropTarget && dropPosition === 'inside' ? 'ring-2 ring-green-400 ring-inset bg-green-50/20' : '',
     draggedElementId === element.id ? 'opacity-40' : '',
   ].filter(Boolean).join(' ');
@@ -749,7 +759,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
         ) : (
           <button
             ref={(node) => setEditingRef(node as HTMLElement | null)}
-            style={safeCssStyles}
+            style={leafWrapperStyles}
             onClick={(e) => {
               if (isPreview && hrefValue) {
                 handleButtonClick(e, hrefValue);
