@@ -9,6 +9,8 @@ import { useBuilderStore } from '../../stores/builderStore';
 import { ElementType, BuilderElement, Page } from '../../types/builder';
 import { COMPONENT_CATEGORIES, COMPONENT_LABELS, canHaveChildren, getComponentElements } from '../../utils/builderUtils';
 import type { CmsCollection, CmsRecord } from '../../types/cms';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogDescription, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const COMPONENT_ICONS: Record<string, React.ReactNode> = {
   section: <Layout size={25} />,
@@ -565,6 +567,7 @@ const PagesTab: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editSlug, setEditSlug] = useState('');
+  const [pageToDelete, setPageToDelete] = useState<Page | null>(null);
 
   const startEdit = (page: Page) => {
     setEditingId(page.id);
@@ -655,17 +658,32 @@ const PagesTab: React.FC = () => {
             >SP</button>}
 
             {pages.length > 1 && page.slug !== '/' && (
-              <button
-                onClick={e => { e.stopPropagation(); if (confirm(`Delete page "${page.name}"? This cannot be undone.`)) { deletePage(page.id); } }}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                onClick={e => { e.stopPropagation(); setPageToDelete(page); }}
                 aria-label={`Delete page ${page.name}`}
                 className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 transition-colors"
               >
                 <Trash2 size={10} />
-              </button>
+              </Button>
             )}
           </div>
         ))}
       </div>
+      <Dialog open={Boolean(pageToDelete)} onOpenChange={open => { if (!open) setPageToDelete(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete page?</DialogTitle>
+            <DialogDescription>Delete page &quot;{pageToDelete?.name}&quot;? This action cannot be undone.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setPageToDelete(null)}>Cancel</Button>
+            <Button type="button" variant="destructive" onClick={() => { if (pageToDelete) deletePage(pageToDelete.id); setPageToDelete(null); }}>Delete page</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

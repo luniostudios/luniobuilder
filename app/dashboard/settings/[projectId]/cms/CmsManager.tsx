@@ -4,6 +4,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { Check, ChevronLeft, ChevronRight, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
 import { CmsCollection, CmsRecord } from '@/app/types/cms';
 import { getCmsCollectionLimitForRole, getCmsRecordLimitForRole } from '@/app/lib/projectLimits';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Drawer, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 
 type CollectionWithRecords = CmsCollection & { records: CmsRecord[] };
 
@@ -27,6 +30,7 @@ export default function CmsManager({ projectId }: { projectId: string }) {
   const [fieldDraft, setFieldDraft] = useState<string[]>([]);
   const [isAddFieldModalOpen, setIsAddFieldModalOpen] = useState(false);
   const [fieldName, setFieldName] = useState('');
+  const [isDeleteCollectionOpen, setIsDeleteCollectionOpen] = useState(false);
 
   const selected = useMemo(() => collections.find(collection => collection.id === selectedId) || collections[0], [collections, selectedId]);
   const collectionLimit = getCmsCollectionLimitForRole(role);
@@ -200,7 +204,7 @@ export default function CmsManager({ projectId }: { projectId: string }) {
   };
 
   const deleteCollection = async () => {
-    if (!selected || !window.confirm(`Delete the ${selected.name} collection and all of its records?`)) return;
+    if (!selected) return;
     setSaving(true);
     setError('');
     try {
@@ -212,6 +216,7 @@ export default function CmsManager({ projectId }: { projectId: string }) {
       if (!response.ok) throw new Error(data?.error || 'Unable to delete collection');
       setCollections(current => current.filter(collection => collection.id !== selected.id));
       setSelectedId('');
+      setIsDeleteCollectionOpen(false);
     } catch (value) {
       setError(value instanceof Error ? value.message : 'Unable to delete collection');
     } finally { setSaving(false); }
@@ -277,7 +282,7 @@ export default function CmsManager({ projectId }: { projectId: string }) {
                 <h3 className='truncate text-sm font-semibold text-[#172033]'>{selected.name}</h3>
                 <p className='text-xs text-gray-500'>{selected.records.length} records</p>
               </div>
-              <button type='button' onClick={deleteCollection} disabled={saving} title='Delete collection' className='inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-red-900/70 px-2.5 py-1.5 text-xs text-red-500 hover:bg-red-300/20 disabled:opacity-50'><Trash2 size={14} /> Delete collection</button>
+              <Button type='button' onClick={() => setIsDeleteCollectionOpen(true)} disabled={saving} title='Delete collection' variant='destructive' size='sm'><Trash2 size={14} /> Delete collection</Button>
             </div>
             <div className='border-b border-gray-800/20 bg-white px-4 py-3'>
               <div className='mb-2 flex flex-wrap items-center gap-2'>
@@ -336,26 +341,23 @@ export default function CmsManager({ projectId }: { projectId: string }) {
           </div>}
         </div>
       </>}
-      {isAddFieldModalOpen && <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4' onClick={() => setIsAddFieldModalOpen(false)}>
-        <div role='dialog' aria-modal='true' aria-labelledby='add-field-title' className='w-full max-w-sm rounded-xl bg-white p-5 shadow-2xl' onClick={event => event.stopPropagation()}>
-          <h2 id='add-field-title' className='text-lg font-semibold text-[#172033]'>Add field</h2>
-          <input autoFocus value={fieldName} onChange={event => setFieldName(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); void submitNewField(); } }} placeholder='Field name' className='mt-4 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-[#172033] outline-none focus:border-emerald-500' />
-          <div className='mt-4 flex justify-end gap-2'>
-            <button type='button' onClick={() => setIsAddFieldModalOpen(false)} className='rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50'>Cancel</button>
-            <button type='button' onClick={() => void submitNewField()} disabled={saving || !fieldName.trim()} className='rounded-lg bg-emerald-900 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50'>Add field</button>
-          </div>
-        </div>
-      </div>}
-      {isCreateCollectionOpen && <div className='fixed inset-0 z-50 bg-black/40' onClick={() => setIsCreateCollectionOpen(false)}>
-        <aside role='dialog' aria-modal='true' aria-labelledby='create-collection-title' className='ml-auto flex h-full w-full max-w-xl flex-col bg-white text-[#172033] shadow-2xl' onClick={event => event.stopPropagation()}>
-          <div className='flex items-start justify-between border-b border-gray-200 px-6 py-5'>
-            <div>
-              <h2 id='create-collection-title' className='text-lg font-semibold'>Create a new collection</h2>
-              <p className='mt-1 text-sm text-gray-500'>Create a table under <span className='rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs text-gray-700'>public</span></p>
-            </div>
-            <button type='button' onClick={() => setIsCreateCollectionOpen(false)} title='Close' aria-label='Close' className='rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900'><X size={18} /></button>
-          </div>
-          <div className='flex-1 overflow-y-auto px-6 py-6'>
+      <Dialog open={isAddFieldModalOpen} onOpenChange={open => { if (!open) setIsAddFieldModalOpen(false); }}>
+        <DialogContent className='max-w-sm'>
+          <DialogHeader><DialogTitle>Add field</DialogTitle></DialogHeader>
+          <input autoFocus value={fieldName} onChange={event => setFieldName(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); void submitNewField(); } }} placeholder='Field name' className='w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-[#172033] outline-none focus:border-emerald-500' />
+          <DialogFooter>
+            <Button type='button' variant='outline' onClick={() => setIsAddFieldModalOpen(false)}>Cancel</Button>
+            <Button type='button' onClick={() => void submitNewField()} disabled={saving || !fieldName.trim()} className='bg-emerald-900 text-white hover:bg-emerald-800'>Add field</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Drawer direction='right' open={isCreateCollectionOpen} onOpenChange={open => { if (!open) setIsCreateCollectionOpen(false); }}>
+        <DrawerContent className='h-full max-h-screen w-full max-w-xl rounded-none border-l border-gray-200 text-[#172033]'>
+          <DrawerHeader className='border-b border-gray-200'>
+            <DrawerTitle>Create a new collection</DrawerTitle>
+            <DrawerDescription>Create a table under <span className='rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs text-gray-700'>public</span></DrawerDescription>
+          </DrawerHeader>
+          <div className='flex-1 overflow-y-auto px-2 py-2'>
             <label className='block text-sm font-medium text-gray-700'>Name
               <input autoFocus value={collectionForm.name} onChange={event => setCollectionForm({ ...collectionForm, name: event.target.value })} placeholder='Collection name' className='mt-2 w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100' />
             </label>
@@ -365,23 +367,35 @@ export default function CmsManager({ projectId }: { projectId: string }) {
                   <h3 className='text-sm font-semibold'>Columns</h3>
                   <p className='mt-1 text-xs text-gray-500'>Add the fields your collection records will use.</p>
                 </div>
-                <button type='button' onClick={addCollectionField} className='inline-flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50'><Plus size={14} /> Add column</button>
+                <Button type='button' onClick={addCollectionField} variant='outline' size='sm'><Plus size={14} /> Add column</Button>
               </div>
               <div className='mt-4 space-y-2'>
                 {collectionForm.fields.map((field, index) => <div key={index} className='flex items-center gap-2'>
                   <span className='w-5 text-center text-xs text-gray-400'>{index + 1}</span>
                   <input value={field} onChange={event => updateCollectionField(index, event.target.value)} placeholder='Column name' className='min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100' />
-                  <button type='button' onClick={() => removeCollectionField(index)} title='Remove column' aria-label={`Remove column ${index + 1}`} className='rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-500'><X size={16} /></button>
+                  <Button type='button' onClick={() => removeCollectionField(index)} title='Remove column' aria-label={`Remove column ${index + 1}`} variant='ghost' size='icon-sm' className='text-gray-400 hover:bg-red-50 hover:text-red-500'><X size={16} /></Button>
                 </div>)}
               </div>
             </div>
           </div>
-          <div className='flex justify-end gap-2 border-t border-gray-200 px-6 py-4'>
-            <button type='button' onClick={() => setIsCreateCollectionOpen(false)} className='rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50'>Cancel</button>
-            <button type='button' onClick={() => void createCollection()} disabled={saving || collectionLimitReached || !collectionForm.name.trim() || collectionForm.fields.every(field => !field.trim())} className='rounded-lg bg-emerald-900 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50'>{saving ? 'Creating...' : 'Create collection'}</button>
-          </div>
-        </aside>
-      </div>}
+          <DrawerFooter className='border-t border-gray-200'>
+            <Button type='button' variant='outline' onClick={() => setIsCreateCollectionOpen(false)}>Cancel</Button>
+            <Button type='button' onClick={() => void createCollection()} disabled={saving || collectionLimitReached || !collectionForm.name.trim() || collectionForm.fields.every(field => !field.trim())} className='bg-emerald-900 text-white hover:bg-emerald-800'>{saving ? 'Creating...' : 'Create collection'}</Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+      <Dialog open={isDeleteCollectionOpen} onOpenChange={setIsDeleteCollectionOpen}>
+        <DialogContent className='max-w-sm'>
+          <DialogHeader>
+            <DialogTitle>Delete collection?</DialogTitle>
+            <DialogDescription>Delete the {selected?.name} collection and all of its records? This action cannot be undone.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type='button' variant='outline' onClick={() => setIsDeleteCollectionOpen(false)}>Cancel</Button>
+            <Button type='button' variant='destructive' onClick={() => void deleteCollection()} disabled={saving}>Delete collection</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

@@ -2,6 +2,17 @@
 
 import { ChangeEvent, FormEvent, useState } from 'react';
 import { Camera, Check, LoaderCircle, Mail, Shield, UserRound, X } from 'lucide-react';
+import { signOut } from 'next-auth/react';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import AIProviderManager from '../settings/[projectId]/AIProviderManager';
 
 interface ProfileData {
@@ -24,6 +35,8 @@ export default function ProfileSettings({ user, onSaved }: ProfileSettingsProps)
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const uploadPhoto = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -72,6 +85,22 @@ export default function ProfileSettings({ user, onSaved }: ProfileSettingsProps)
       setSuccess('Your profile has been updated.');
     }
     setSaving(false);
+  };
+
+  const deleteAccount = async () => {
+    setDeleting(true);
+    setError(null);
+    const response = await fetch('/api/users', { method: 'DELETE' });
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      setError(data?.error || 'Unable to delete your account.');
+      setDeleting(false);
+      return;
+    }
+
+    setDeleteDialogOpen(false);
+    await signOut({ callbackUrl: '/' });
   };
 
   const avatar = image || 'https://www.gravatar.com/avatar?d=mp&f=y';
@@ -135,6 +164,38 @@ export default function ProfileSettings({ user, onSaved }: ProfileSettingsProps)
       </form>
 
       <AIProviderManager />
+
+      <section className="rounded-xl border border-red-200 bg-red-50 p-5 sm:p-7">
+        <h2 className="font-semibold text-red-900">Delete account</h2>
+        <p className="mt-1 text-sm text-red-700">Permanently delete your account and all of your projects.</p>
+        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <DialogTrigger asChild>
+            <button type="button" disabled={deleting} className="mt-4 inline-flex items-center gap-2 rounded-lg border border-red-300 px-4 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60">
+              Delete account
+            </button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete your account?</DialogTitle>
+              <DialogDescription>
+                This permanently deletes your account and all of your projects. This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <DialogClose asChild>
+                <button type="button" disabled={deleting} className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60">
+                  Cancel
+                </button>
+              </DialogClose>
+              <button type="button" onClick={deleteAccount} disabled={deleting} className="inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60">
+                {deleting && <LoaderCircle size={16} className="animate-spin" />}
+                {deleting ? 'Deleting account...' : 'Delete account'}
+              </button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </section>
+
     </section>
   );
 }

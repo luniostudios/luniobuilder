@@ -4,6 +4,8 @@ import React, { useState, useRef } from 'react';
 import { useAIGeneration } from '../functions/useAIGeneration';
 import type { AIProvider } from '../../types/ai';
 import type { BuilderElement } from '../../types/builder';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface AIGeneratorModalProps {
   isOpen: boolean;
@@ -23,6 +25,7 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
   const [prompt, setPrompt] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [invalidImage, setInvalidImage] = useState(false);
   const [provider, setProvider] = useState<AIProvider>('gemini-3.6-flash');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { generate, loading, error, clearError } = useAIGeneration();
@@ -38,7 +41,7 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
       reader.readAsDataURL(file);
       clearError();
     } else {
-      alert('Please select a valid image file');
+      setInvalidImage(true);
     }
   };
 
@@ -97,18 +100,17 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full border-6 border-slate-500/20 max-h-[90vh] overflow-y-auto">
+    <>
+      <Dialog open={isOpen} onOpenChange={open => { if (!open) onClose(); }}>
+        <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto border-6 border-slate-500/20 p-0" onKeyDown={handleKeyDown}>
         {/* Header */}
-        <div className=" border-gray-200 p-6">
-          <h2 className="text-2xl font-bold text-gray-900 text-center">{editElement ? 'Edit with AI' : 'Generate with AI'}</h2>
-          <p className="text-gray-600 text-sm mt-1 text-center">
-            {editElement ? `Describe how you want to change this ${editElement.type}.` : "Describe what you want to create and we'll generate it for you"}
-          </p>
-        </div>
+          <DialogHeader className="border-gray-200 p-6">
+            <DialogTitle className="text-center text-2xl font-bold">{editElement ? 'Edit with AI' : 'Generate with AI'}</DialogTitle>
+            <DialogDescription className="mt-1 text-center">
+              {editElement ? `Describe how you want to change this ${editElement.type}.` : "Describe what you want to create and we'll generate it for you"}
+            </DialogDescription>
+          </DialogHeader>
 
         {/* Content */}
         <div className="p-6 space-y-6">
@@ -151,12 +153,14 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
                 <span className="font-semibold">Error: </span>
                 {error}
               </p>
-              <button
+              <Button
+                type="button"
+                variant="ghost"
                 onClick={clearError}
-                className="text-xs text-red-600 hover:text-red-700 font-medium mt-2"
+                className="mt-2 h-auto p-0 text-xs font-medium text-red-600 hover:text-red-700"
               >
                 Dismiss
-              </button>
+              </Button>
             </div>
           )}
 
@@ -174,23 +178,37 @@ export const AIGeneratorModal: React.FC<AIGeneratorModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 p-6 flex gap-3 justify-end bg-gray-50">
-          <button
+          <DialogFooter className="border-t border-gray-200 bg-gray-50 p-6">
+          <Button
+            type="button"
+            variant="outline"
             onClick={onClose}
             disabled={loading}
-            className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
+            type="button"
             onClick={handleGenerate}
             disabled={loading || (!prompt.trim() && !imageFile)}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium"
+            className="bg-blue-600 px-6 text-white hover:bg-blue-700"
           >
             {loading ? 'Generating...' : editElement ? 'Apply edit' : 'Generate'}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={invalidImage} onOpenChange={setInvalidImage}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Invalid image</DialogTitle>
+            <DialogDescription>Please select a valid image file.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" onClick={() => setInvalidImage(false)}>OK</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };

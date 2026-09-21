@@ -1,3 +1,4 @@
+import { Table, TableCaption, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useSession } from 'next-auth/react';
 import React, { useEffect, useState } from 'react'
 
@@ -79,48 +80,49 @@ const users = () => {
 
     return (
         <div>
-            <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                    <tr>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <Table className="min-w-full divide-y divide-gray-200">
+                <TableCaption>A list of all users.</TableCaption>
+                <TableHeader className="bg-gray-50">
+                    <TableRow>
+                        <TableHead scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             ID
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        </TableHead>
+                        <TableHead scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Name
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        </TableHead>
+                        <TableHead scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Email
-                        </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        </TableHead>
+                        <TableHead scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Role
-                        </th>
-                    </tr>
-                </thead>
+                        </TableHead>
+                    </TableRow>
+                </TableHeader>
                 <tbody className="bg-white divide-y divide-gray-200">
                     {loading && (
-                        <tr>
+                        <TableRow>
                             <td colSpan={4} className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                 Loading...
                             </td>
-                        </tr>
+                        </TableRow>
                     )}
                     {error && (
-                        <tr>
+                        <TableRow>
                             <td colSpan={4} className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                 {error}
                             </td>
-                        </tr>
+                        </TableRow>
                     )}
                     {allUserData && allUserData.map((user) => (
-                        <tr key={user.id}>
+                        <TableRow key={user.id}>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.id}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.name}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.email}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.role}</td>
-                        </tr>
+                        </TableRow>
                     ))}
                 </tbody>
-            </table>
+            </Table>
 
         </div>
     )

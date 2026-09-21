@@ -33,7 +33,10 @@ import Userss from './users/users';
 import ProfileSettings from './profile/ProfileSettings';
 import Analytics from './analytics/Analytics';
 import { Popover, PopoverContent, PopoverHeader, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SignOut } from '../components/auth/signOut';
+import UserAvatar from '../components/auth/UserAvatar';
 
 interface NavItemProps {
     icon: React.ComponentType<{ size: number; className?: string }>;
@@ -729,32 +732,31 @@ export default function Dashboard() {
                                                             </>
                                                         )}
                                                     </div>
-                                                    {deleteModal.isOpen && deleteModal.projectId === project.id && (
-                                                        <div className='absolute inset-0 flex items-center justify-center z-50'>
-                                                            <div className='bg-[#111214] rounded-xl p-6 w-full max-w-sm'>
-                                                                <h2 className='text-xl font-semibold text-white'>Confirm Deletion</h2>
-                                                                <p className='mt-2 text-sm text-gray-400'>Are you sure you want to delete this project? This action cannot be undone.</p>
-                                                                <div className='mt-6 flex justify-end gap-4'>
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            deleteProject(project.id);
-                                                                            setDeleteModal({ isOpen: false, projectId: null });
-                                                                        }}
-                                                                        disabled={deletingProjectId === project.id}
-                                                                        className='px-4 py-2 rounded-lg bg-red-600 text-sm text-white transition hover:bg-red-500 disabled:bg-red-500 disabled:opacity-80'
-                                                                    >
-                                                                        {deletingProjectId === project.id ? 'Deleting…' : 'Delete'}
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => setDeleteModal({ isOpen: false, projectId: null })}
-                                                                        className='px-4 py-2 rounded-lg bg-gray-700 text-sm text-gray-300 transition hover:bg-gray-600'
-                                                                    >
-                                                                        Cancel
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    )}
+                                                    <Dialog
+                                                        open={deleteModal.isOpen && deleteModal.projectId === project.id}
+                                                        onOpenChange={open => { if (!open) setDeleteModal({ isOpen: false, projectId: null }); }}
+                                                    >
+                                                        <DialogContent className='max-w-sm'>
+                                                            <DialogHeader>
+                                                                <DialogTitle>Confirm deletion</DialogTitle>
+                                                                <DialogDescription>Are you sure you want to delete this project? This action cannot be undone.</DialogDescription>
+                                                            </DialogHeader>
+                                                            <DialogFooter>
+                                                                <Button type='button' variant='outline' onClick={() => setDeleteModal({ isOpen: false, projectId: null })}>Cancel</Button>
+                                                                <Button
+                                                                    type='button'
+                                                                    variant='destructive'
+                                                                    onClick={() => {
+                                                                        deleteProject(project.id);
+                                                                        setDeleteModal({ isOpen: false, projectId: null });
+                                                                    }}
+                                                                    disabled={deletingProjectId === project.id}
+                                                                >
+                                                                    {deletingProjectId === project.id ? 'Deleting...' : 'Delete'}
+                                                                </Button>
+                                                            </DialogFooter>
+                                                        </DialogContent>
+                                                    </Dialog>
                                                 </div>
 
                                                 <div className="flex items-center justify-between text-xs text-gray-400 mt-4 border-t border-gray-100 pt-3">
@@ -795,71 +797,59 @@ export default function Dashboard() {
 
                         </div>}
                 </div>
-                {createProjectModal.isOpen && (
-                    <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50'>
-                        <div className='bg-[#111214] rounded-xl p-6 w-full max-w-sm'>
-                            <h2 className='text-xl font-semibold text-white'>Create New Project</h2>
-                            <p className='mt-2 text-sm text-gray-400'>Enter a name for your new project.</p>
-                            <input
-                                type='text'
-                                placeholder='Project name'
-                                value={createProjectModal.name}
-                                onChange={(e) => setCreateProjectModal({ ...createProjectModal, name: e.target.value })}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                        confirmCreateProject();
-                                    }
-                                }}
-                                className='mt-4 w-full px-3 py-2 rounded-lg bg-[#1a1d23] border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-[#1D976C]'
-                                autoFocus
-                            />
-                            <div className='mt-6 flex justify-end gap-4'>
-                                <button
-                                    onClick={() => confirmCreateProject()}
-                                    disabled={saving}
-                                    className='px-4 py-2 rounded-lg bg-[#1D976C] text-sm text-black font-semibold transition hover:opacity-90 disabled:opacity-80'
-                                >
-                                    {saving ? 'Creating…' : 'Create'}
-                                </button>
-                                <button
-                                    onClick={() => setCreateProjectModal({ isOpen: false, name: '' })}
-                                    disabled={saving}
-                                    className='px-4 py-2 rounded-lg bg-gray-700 text-sm text-gray-300 transition hover:bg-gray-600 disabled:opacity-80'
-                                >
-                                    Cancel
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-                {inviteModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                        <div className="w-full max-w-md rounded-xl bg-[#111214] p-6">
-                            <h2 className="text-xl font-semibold text-white">Invite to {inviteModal.projectTitle}</h2>
-                            <p className="mt-2 text-sm text-gray-400">Enter the email address of the user you want to invite.</p>
-                            <input
-                                type="email"
-                                autoFocus
-                                placeholder="collaborator@example.com"
-                                value={inviteEmail}
-                                onChange={(event) => setInviteEmail(event.target.value)}
-                                onKeyDown={(event) => {
-                                    if (event.key === 'Enter' && inviteEmail && !inviteSaving) {
-                                        inviteCollaborator();
-                                    }
-                                }}
-                                className="mt-4 w-full rounded-lg border border-gray-700 bg-[#1a1d23] px-3 py-2 text-white focus:outline-none focus:border-[#1D976C]"
-                            />
-                            {inviteMessage && <p className="mt-3 text-sm text-gray-300">{inviteMessage}</p>}
-                            <div className="mt-6 flex justify-end gap-3">
-                                <button onClick={() => setInviteModal(null)} className="rounded-lg bg-gray-700 px-4 py-2 text-sm text-gray-300">Close</button>
-                                <button onClick={inviteCollaborator} disabled={!inviteEmail || inviteSaving} className="rounded-lg bg-[#1D976C] px-4 py-2 text-sm font-semibold text-black disabled:opacity-50">
-                                    {inviteSaving ? 'Sending...' : 'Send invite'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                <Dialog
+                    open={createProjectModal.isOpen}
+                    onOpenChange={open => { if (!open) setCreateProjectModal({ isOpen: false, name: '' }); }}
+                >
+                    <DialogContent className='max-w-sm'>
+                        <DialogHeader>
+                            <DialogTitle>Create new project</DialogTitle>
+                            <DialogDescription>Enter a name for your new project.</DialogDescription>
+                        </DialogHeader>
+                        <input
+                            type='text'
+                            placeholder='Project name'
+                            value={createProjectModal.name}
+                            onChange={(e) => setCreateProjectModal({ ...createProjectModal, name: e.target.value })}
+                            onKeyDown={(e) => { if (e.key === 'Enter') confirmCreateProject(); }}
+                            className='w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-[#1D976C]'
+                            autoFocus
+                        />
+                        <DialogFooter>
+                            <Button type='button' variant='outline' onClick={() => setCreateProjectModal({ isOpen: false, name: '' })} disabled={saving}>Cancel</Button>
+                            <Button type='button' onClick={() => confirmCreateProject()} disabled={saving} className='bg-[#1D976C] text-black hover:bg-[#1D976C]/90'>
+                                {saving ? 'Creating...' : 'Create'}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+                <Dialog
+                    open={Boolean(inviteModal)}
+                    onOpenChange={open => { if (!open) setInviteModal(null); }}
+                >
+                    <DialogContent className='max-w-md'>
+                        <DialogHeader>
+                            <DialogTitle>Invite to {inviteModal?.projectTitle}</DialogTitle>
+                            <DialogDescription>Enter the email address of the user you want to invite.</DialogDescription>
+                        </DialogHeader>
+                        <input
+                            type='email'
+                            autoFocus
+                            placeholder='collaborator@example.com'
+                            value={inviteEmail}
+                            onChange={(event) => setInviteEmail(event.target.value)}
+                            onKeyDown={(event) => { if (event.key === 'Enter' && inviteEmail && !inviteSaving) inviteCollaborator(); }}
+                            className='w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-[#1D976C]'
+                        />
+                        {inviteMessage && <p className='text-sm text-gray-600'>{inviteMessage}</p>}
+                        <DialogFooter>
+                            <Button type='button' variant='outline' onClick={() => setInviteModal(null)} disabled={inviteSaving}>Close</Button>
+                            <Button type='button' onClick={inviteCollaborator} disabled={!inviteEmail || inviteSaving} className='bg-[#1D976C] text-black hover:bg-[#1D976C]/90'>
+                                {inviteSaving ? 'Sending...' : 'Send invite'}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </main>
         </div>
     );

@@ -31,6 +31,8 @@ import { useAIGeneration } from './functions/useAIGeneration';
 import { normalizeSiteSlug } from '../lib/tenant';
 import { persistGeneratedCms } from '../utils/generatedCms';
 import { Page } from '../types/builder';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface UserData {
   id: string;
@@ -1076,26 +1078,23 @@ export const TopBar: React.FC = () => {
         </div>
       </header>
 
-      {isCodeModalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
-          onClick={() => setIsCodeModalOpen(false)}
-        >
-          <div
-            className="flex h-[calc(100vh-4rem)] w-full max-w-6xl flex-col overflow-hidden border border-gray-800 bg-[#111114] shadow-2xl"
-            onClick={event => event.stopPropagation()}
-          >
+      <Dialog open={isCodeModalOpen} onOpenChange={setIsCodeModalOpen}>
+        <DialogContent showCloseButton={false} className="flex h-[calc(100vh-4rem)] max-w-6xl flex-col overflow-hidden border border-gray-800 bg-[#111114] p-0 text-white">
             <div className="flex items-center justify-between border-b border-gray-800 px-4 py-3">
-              <div>
-                <div className="text-sm font-semibold text-white">Project Code</div>
+              <DialogHeader className="gap-0">
+                <DialogTitle className="text-sm font-semibold text-white">Project Code</DialogTitle>
                 <div className="text-xs text-gray-400">{selectedCodeFile?.path || 'No files available'}</div>
-              </div>
-              <button
+              </DialogHeader>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
                 onClick={() => setIsCodeModalOpen(false)}
-                className="rounded-md px-3 py-2 text-xs font-medium text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
+                className="text-gray-300 hover:bg-gray-800 hover:text-white"
               >
                 <X size={14} />
-              </button>
+                <span className="sr-only">Close</span>
+              </Button>
             </div>
             <div className="flex flex-1 overflow-hidden">
               <div className="hidden w-72 flex-col border-r border-gray-800 bg-[#111114] p-4 md:flex">
@@ -1134,23 +1133,22 @@ export const TopBar: React.FC = () => {
                 )}
               </div>
             </div>
-          </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
-      {inputPrompt && (
-        <div className='fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4' onClick={() => closeInputPrompt(null)}>
-          <div role='dialog' aria-modal='true' aria-labelledby='input-prompt-title' className='w-full max-w-md rounded-xl border border-gray-700 bg-[#17171c] p-5 shadow-2xl' onClick={event => event.stopPropagation()}>
-            <h2 id='input-prompt-title' className='text-base font-semibold text-white'>{inputPrompt.title}</h2>
-            {inputPrompt.message && <p className='mt-2 text-sm text-gray-400'>{inputPrompt.message}</p>}
-            <input autoFocus type={inputPrompt.type} value={inputPromptValue} onChange={event => setInputPromptValue(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') closeInputPrompt(inputPromptValue); }} placeholder={inputPrompt.placeholder} className='mt-4 w-full rounded-lg border border-gray-700 bg-[#111114] px-3 py-2 text-sm text-white outline-none focus:border-blue-400' />
-            <div className='mt-4 flex justify-end gap-2'>
-              <button type='button' onClick={() => closeInputPrompt(null)} className='rounded-lg border border-gray-700 px-3 py-2 text-sm text-gray-300 hover:bg-gray-800'>Cancel</button>
-              <button type='button' onClick={() => closeInputPrompt(inputPromptValue)} className='rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-500'>Continue</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Dialog open={Boolean(inputPrompt)} onOpenChange={open => { if (!open) closeInputPrompt(null); }}>
+        <DialogContent className='max-w-md border-gray-700 bg-[#17171c] text-white'>
+          <DialogHeader>
+            <DialogTitle className='text-white'>{inputPrompt?.title}</DialogTitle>
+            {inputPrompt?.message && <DialogDescription className='text-gray-400'>{inputPrompt.message}</DialogDescription>}
+          </DialogHeader>
+            <input autoFocus type={inputPrompt?.type || 'text'} value={inputPromptValue} onChange={event => setInputPromptValue(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') closeInputPrompt(inputPromptValue); }} placeholder={inputPrompt?.placeholder} className='mt-4 w-full rounded-lg border border-gray-700 bg-[#111114] px-3 py-2 text-sm text-white outline-none focus:border-blue-400' />
+          <DialogFooter>
+            <Button type='button' variant='outline' onClick={() => closeInputPrompt(null)} className='border-gray-700 bg-transparent text-gray-300 hover:bg-gray-800 hover:text-white'>Cancel</Button>
+            <Button type='button' onClick={() => closeInputPrompt(inputPromptValue)} className='bg-blue-600 text-white hover:bg-blue-500'>Continue</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

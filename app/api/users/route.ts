@@ -61,3 +61,41 @@ export async function PATCH(request: Request) {
         return NextResponse.json({ error: 'Invalid request data' }, { status: 400 });
     }
 }
+
+export async function DELETE() {
+    const session = await auth();
+    if (!session?.user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userId = session.user.id || session.user.email;
+    if (!userId) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    try {
+        const { error: projectsError } = await supabaseServer
+            .from('projects')
+            .delete()
+            .eq('user_id', userId);
+        if (projectsError) throw projectsError;
+
+        const { error: credentialsError } = await supabaseServer
+            .from('account_ai_credentials')
+            .delete()
+            .eq('user_id', userId);
+        if (credentialsError) throw credentialsError;
+
+        const { error: userError } = await supabaseServer
+            .schema('next_auth')
+            .from('users')
+            .delete()
+            .eq('id', userId);
+        if (userError) throw userError;
+
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting user account:', error);
+        return NextResponse.json({ error: 'Unable to delete your account.' }, { status: 500 });
+    }
+}
