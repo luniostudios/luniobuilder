@@ -121,6 +121,8 @@ const nodeToBuilderElement = (
     ? 'cmsMap'
     : element.hasAttribute('data-lunio-shop-checkout')
       ? 'button'
+      : element.hasAttribute('data-lunio-icon')
+        ? 'icon'
       : mapHtmlTagToElementType(tagName);
   if (!elementType) return null;
 
@@ -374,8 +376,13 @@ const extractPropsFromElement = (element: HTMLElement, tagName: string): Record<
     props.href = element.getAttribute('href') || '#';
     props.text = element.textContent || 'Link';
   } else if (tagName === 'button') {
-    props.text = element.textContent || 'Button';
-    props.href = element.getAttribute('onclick') || '#';
+    const iconName = element.getAttribute('data-lunio-icon');
+    if (iconName) {
+      props.iconName = iconName;
+    } else {
+      props.text = element.textContent || 'Button';
+      props.href = element.getAttribute('onclick') || '#';
+    }
   } else if (tagName === 'img') {
     props.src = element.getAttribute('src') || '';
     props.alt = element.getAttribute('alt') || 'Image';
