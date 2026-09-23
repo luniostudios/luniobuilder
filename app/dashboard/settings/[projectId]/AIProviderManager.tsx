@@ -12,6 +12,7 @@ const providerLabels: Record<AIProvider, string> = {
   openai: 'OpenAI',
   claude: 'Anthropic Claude',
   groq: 'Groq',
+  vercel: 'Vercel',
 };
 
 export default function AIProviderManager() {

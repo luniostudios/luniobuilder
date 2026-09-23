@@ -28,6 +28,8 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const getGeminiApiUrl = (model: 'gemini-3.6-flash' | 'gemini-pro') =>
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
+const VERCEL_AI_API_KEY = process.env.VERCEL_AI_API_KEY;
+
 type ProviderCredential = { provider: AIProvider; apiKey: string; isPlatform: boolean };
 
 const getAccountCredentials = async (userId: string) => {
@@ -75,6 +77,17 @@ const getTextFromProvider = async (provider: AIProvider, apiKey: string, systemP
         const data = await response.json();
         if (!response.ok) throw new Error(data?.error?.message || 'Groq generation failed');
         return data?.choices?.[0]?.message?.content || '';
+    }
+
+    if (provider === 'vercel') {
+        const response = await fetch('https://api.vercel.com/v2/ai/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${VERCEL_AI_API_KEY}` },
+            body: JSON.stringify({ model: 'gpt-4o-mini', input: systemPrompt, temperature: 0.2 }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data?.error?.message || 'Vercel AI generation failed');
+        return data?.output?.[0]?.content || '';
     }
 
     if (provider === 'gemini-3.6-flash' || provider === 'gemini-pro') {
@@ -187,13 +200,13 @@ export async function POST(req: NextRequest): Promise<NextResponse<GenerateRespo
                 systemPrompt += `\n\nUSER REQUIREMENTS (implement every item):\n---\n${prompt}\n---`;
             }
         } else if (prompt) {
-                systemPrompt += `\n\nUSER REQUIREMENTS (implement every item):\n---\n${prompt}\n---`;
+            systemPrompt += `\n\nUSER REQUIREMENTS (implement every item):\n---\n${prompt}\n---`;
         }
         if (context) {
-                systemPrompt += `\n\nSELECTED ELEMENT TO EDIT (preserve its role and improve it):\n---\n${context}\n---\nReturn only the replacement fragment. Keep the same semantic category whenever practical and implement every applicable user requirement in that fragment.`;
+            systemPrompt += `\n\nSELECTED ELEMENT TO EDIT (preserve its role and improve it):\n---\n${context}\n---\nReturn only the replacement fragment. Keep the same semantic category whenever practical and implement every applicable user requirement in that fragment.`;
         }
 
-            systemPrompt += `\n\nFINAL GENERATION RULE: Complete the implementation before optimizing decoration. Do not return a plan, explanation, TODO, placeholder, or feature description. Return the finished builder-compatible HTML only.`;
+        systemPrompt += `\n\nFINAL GENERATION RULE: Complete the implementation before optimizing decoration. Do not return a plan, explanation, TODO, placeholder, or feature description. Return the finished builder-compatible HTML only.`;
 
         const platformCredential: ProviderCredential | null = GEMINI_API_KEY
             ? { provider: 'gemini-3.6-flash', apiKey: GEMINI_API_KEY, isPlatform: true }
@@ -223,10 +236,12 @@ export async function POST(req: NextRequest): Promise<NextResponse<GenerateRespo
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': candidate.apiKey },
                         body: JSON.stringify({
-                            contents: [{ parts: [
-                                { text: systemPrompt },
-                                ...imageReferences.map(reference => ({ inline_data: { mime_type: reference.mimeType, data: reference.data } })),
-                            ] }],
+                            contents: [{
+                                parts: [
+                                    { text: systemPrompt },
+                                    ...imageReferences.map(reference => ({ inline_data: { mime_type: reference.mimeType, data: reference.data } })),
+                                ]
+                            }],
                             generationConfig: { temperature: 0, top_p: 0.95, max_output_tokens: 8192 },
                         }),
                     });

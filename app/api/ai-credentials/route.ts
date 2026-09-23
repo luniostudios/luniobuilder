@@ -4,7 +4,7 @@ import { supabaseServer } from '../../lib/supabaseServer';
 import { AIProvider, decryptApiKey, encryptApiKey, maskApiKey } from '../../lib/aiCredentials';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const providers: AIProvider[] = ['gemini-3.6-flash', 'gemini-pro', 'openai', 'claude', 'groq'];
+const providers: AIProvider[] = ['gemini-3.6-flash', 'gemini-pro', 'openai', 'claude', 'groq', 'vercel'];
 
 const getUserId = async () => {
   const session = await auth();

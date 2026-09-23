@@ -178,6 +178,7 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
                   <option value='openai'>OpenAI</option>
                   <option value='claude'>Claude</option>
                   <option value='groq'>Groq</option>
+                  <option value='vercel'>Vercel</option>
                 </select>
               </div>
               <button type='submit' disabled={loading || (!prompt.trim() && imageReferences.length === 0)} className='inline-flex items-center gap-2 rounded-xl bg-[#b8f36b] px-4 py-2.5 text-sm font-semibold text-[#10150c] transition hover:bg-[#d0ff91] disabled:cursor-not-allowed disabled:opacity-35'>
