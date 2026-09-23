@@ -168,7 +168,7 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
             <div className='flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-2 pt-3 sm:px-3'>
               <div className='flex items-center gap-2'>
                 <label className='inline-flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm text-white/45 transition hover:bg-white/6 hover:text-white'>
-                  <ImagePlus size={17} /> 
+                  <ImagePlus size={17} />
                   <h1 className='flex text-sm font-medium max-md:hidden'>Add reference</h1>
                   <input type='file' accept='image/*' multiple className='sr-only' onChange={event => { selectImages(event.target.files); event.currentTarget.value = ''; }} />
                 </label>
@@ -199,7 +199,7 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
 
         {(status || error) && <div className={`mx-auto mt-7 flex max-w-3xl items-center justify-center gap-2 text-sm ${error ? 'text-rose-300' : 'text-[#9de9da]'}`}>
           {loading && <WandSparkles size={15} className='animate-pulse' />}
-          {error || status}
+          {status || error}
         </div>}
 
         <div className='mt-16 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-xs text-white/30'>

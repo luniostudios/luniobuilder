@@ -139,7 +139,6 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
           fontWeight: '600',
           borderRadius: '8px',
           cursor: 'pointer',
-          border: 'none',
           transition: 'all 0.2s ease',
         },
       };

@@ -357,12 +357,11 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
   };
   const safeCssStyles: React.CSSProperties = {
     ...cssStyles,
-    ...stylesToCSS(interactionStyles),
     boxSizing: 'border-box',
     maxWidth: '100%',
     minWidth: 0,
   };
-  const { border: _border, borderTop: _borderTop, borderRight: _borderRight, borderBottom: _borderBottom, borderLeft: _borderLeft, ...leafWrapperStyles } = safeCssStyles;
+
   const safeTextStyles: React.CSSProperties = {
     ...safeCssStyles,
     overflowWrap: 'break-word',
@@ -759,7 +758,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
         ) : (
           <button
             ref={(node) => setEditingRef(node as HTMLElement | null)}
-            style={leafWrapperStyles}
+            style={isEditing ? editingTextStyles : safeTextStyles}
             onClick={(e) => {
               if (isPreview && hrefValue) {
                 handleButtonClick(e, hrefValue);
