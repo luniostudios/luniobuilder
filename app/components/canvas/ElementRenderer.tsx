@@ -40,6 +40,45 @@ interface CmsRecordContextValue {
 
 const CmsRecordContext = createContext<CmsRecordContextValue | null>(null);
 
+const omitBoxShorthands = (styles: React.CSSProperties): React.CSSProperties => {
+  const {
+    border,
+    borderWidth,
+    borderStyle,
+    borderColor,
+    margin,
+    padding,
+    background,
+    ...longhands
+  } = styles;
+  return longhands;
+};
+
+const nestedBoxReset: React.CSSProperties = {
+  marginTop: 0,
+  marginRight: 0,
+  marginBottom: 0,
+  marginLeft: 0,
+  paddingTop: 0,
+  paddingRight: 0,
+  paddingBottom: 0,
+  paddingLeft: 0,
+  borderTopWidth: 0,
+  borderRightWidth: 0,
+  borderBottomWidth: 0,
+  borderLeftWidth: 0,
+  borderTopStyle: 'none',
+  borderRightStyle: 'none',
+  borderBottomStyle: 'none',
+  borderLeftStyle: 'none',
+  borderTopColor: 'transparent',
+  borderRightColor: 'transparent',
+  borderBottomColor: 'transparent',
+  borderLeftColor: 'transparent',
+  boxShadow: 'none',
+  outline: 'none',
+};
+
 export const CmsRecordProvider: React.FC<{ record: CmsRecordContextValue | null; detailSettings?: CmsDetailSettings; children: React.ReactNode }> = ({ record, detailSettings, children }) => {
   const parentRecord = useContext(CmsRecordContext);
   const contextValue = record
@@ -369,9 +408,39 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     wordBreak: 'break-word',
   };
 
+  const isTextFill = safeCssStyles.backgroundClip === 'text' || safeCssStyles.WebkitBackgroundClip === 'text';
+  const nestedFillStyles: React.CSSProperties = isTextFill ? {} : {
+    backgroundColor: 'transparent',
+    backgroundImage: 'none',
+  };
+  const nestedContentStyles: React.CSSProperties = {
+    ...omitBoxShorthands(safeTextStyles),
+    ...nestedBoxReset,
+    ...nestedFillStyles,
+    width: '100%',
+  };
+  const nestedLeafStyles: React.CSSProperties = {
+    ...nestedContentStyles,
+    height: '100%',
+    appearance: 'none',
+    WebkitAppearance: 'none',
+    cursor: 'inherit',
+    borderRadius: 'inherit',
+    display: 'inline-flex',
+    alignItems: 'inherit',
+    justifyContent: 'inherit',
+  };
+  const nestedContainerStyles: React.CSSProperties = {
+    ...omitBoxShorthands(safeCssStyles),
+    ...nestedBoxReset,
+    ...nestedFillStyles,
+    width: '100%',
+    height: '100%',
+  };
+
   const editingRef = useRef<HTMLElement | null>(null);
   const editingTextStyles: React.CSSProperties = {
-    ...safeTextStyles,
+    ...nestedContentStyles,
     outline: 'none',
     whiteSpace: 'pre-wrap',
     minWidth: 0,
@@ -462,13 +531,23 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
   const isSelected = selectedElementId === element.id;
   const isHovered = hoveredElementId === element.id;
   const isDropTarget = dropTargetId === element.id;
-  const hasCustomBorder = Boolean(
-    cssStyles.border ||
-    cssStyles.borderTop ||
-    cssStyles.borderRight ||
-    cssStyles.borderBottom ||
-    cssStyles.borderLeft
-  );
+  const hasVisibleBorderValue = (value: unknown) => {
+    if (value === undefined || value === null || value === '' || value === 'none') return false;
+    const text = String(value).trim();
+    return text !== '0' && text !== '0px' && text !== 'none';
+  };
+  const hasCustomBorder = [
+    cssStyles.border,
+    cssStyles.borderTop,
+    cssStyles.borderRight,
+    cssStyles.borderBottom,
+    cssStyles.borderLeft,
+    cssStyles.borderWidth,
+    cssStyles.borderTopWidth,
+    cssStyles.borderRightWidth,
+    cssStyles.borderBottomWidth,
+    cssStyles.borderLeftWidth,
+  ].some(hasVisibleBorderValue);
 
   const runInteraction = (interaction: ElementInteraction) => {
     const targetId = interaction.action === 'animate' ? element.id : interaction.targetElementId || element.id;
@@ -700,7 +779,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
         return (
           <Tag
             ref={(node) => setEditingRef(node as HTMLElement | null)}
-            style={isEditing ? editingTextStyles : safeTextStyles}
+            style={isEditing ? editingTextStyles : nestedContentStyles}
             onClick={handleClick}
             onDoubleClick={handleDoubleClick}
             onBlur={isEditing ? handleContentBlur : undefined}
@@ -718,7 +797,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
         return (
           <p
             ref={(node) => setEditingRef(node as HTMLElement | null)}
-            style={isEditing ? editingTextStyles : safeTextStyles}
+            style={isEditing ? editingTextStyles : nestedContentStyles}
             onClick={handleClick}
             onDoubleClick={handleDoubleClick}
             onBlur={isEditing ? handleContentBlur : undefined}
@@ -738,13 +817,13 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
           : null;
 
         if (element.props.shopCheckout === true && !isEditing) {
-          return <ShopCheckoutButton element={element} projectId={projectId} isPreview={isPreview || isPublishedSite} onClick={handleClick} style={safeTextStyles} />;
+          return <ShopCheckoutButton element={element} projectId={projectId} isPreview={isPreview || isPublishedSite} onClick={handleClick} style={nestedLeafStyles} />;
         }
 
         return isEditing ? (
           <span
             ref={(node) => setEditingRef(node as HTMLElement | null)}
-            style={editingTextStyles}
+            style={{ ...nestedLeafStyles, outline: 'none', whiteSpace: 'pre-wrap', minWidth: 0 }}
             onClick={handleClick}
             onDoubleClick={handleDoubleClick}
             onBlur={handleContentBlur}
@@ -758,7 +837,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
         ) : (
           <button
             ref={(node) => setEditingRef(node as HTMLElement | null)}
-            style={isEditing ? editingTextStyles : safeTextStyles}
+            style={nestedLeafStyles}
             onClick={(e) => {
               if (isPreview && hrefValue) {
                 handleButtonClick(e, hrefValue);
@@ -782,7 +861,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
           <a
             ref={(node) => setEditingRef(node as HTMLElement | null)}
             href={isPreview ? hrefValue : undefined}
-            style={isEditing ? editingTextStyles : safeTextStyles}
+            style={isEditing ? editingTextStyles : nestedContentStyles}
             onClick={handleClick}
             onDoubleClick={handleDoubleClick}
             onKeyDown={editableKeyDownHandler}
@@ -799,7 +878,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
           <img
             src={srcValue}
             alt={altValue || ''}
-            style={{ ...safeCssStyles, maxWidth: '100%', height: 'auto' }}
+            style={{ ...nestedContentStyles, maxWidth: '100%', height: 'auto', display: 'block' }}
             onClick={handleClick}
             className={isPreview ? '' : 'cursor-pointer'}
             draggable={false}
@@ -810,7 +889,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
         return (
           <video
             src={srcValue}
-            style={{ ...safeCssStyles, maxWidth: '100%', height: 'auto' }}
+            style={{ ...nestedContentStyles, maxWidth: '100%', height: 'auto', display: 'block' }}
             controls={element.props.controls}
             onClick={handleClick}
             autoPlay={element.props.autoPlay}
@@ -825,16 +904,16 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
             src={element.props.src}
             title={String(element.props.title || 'Embedded content')}
             loading="lazy"
-            style={{ ...safeCssStyles, width: '100%', height: '100%', border: 'none' }}
+            style={{ ...nestedContentStyles, height: '100%' }}
             onClick={handleClick}
           />
         );
 
       case 'calendar':
-        return <CalendarElement element={element} isPreview={isPreview} onClick={handleClick} style={safeCssStyles} />;
+        return <CalendarElement element={element} isPreview={isPreview} onClick={handleClick} style={nestedContentStyles} />;
 
       case 'table':
-        return <CmsTableElement element={element} projectId={projectId} onClick={handleClick} style={safeCssStyles} />;
+        return <CmsTableElement element={element} projectId={projectId} onClick={handleClick} style={nestedContentStyles} />;
 
       case 'custom':
         return (
@@ -842,20 +921,20 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
             srcDoc={`<!doctype html><html><head><style>${String(element.props.css || '')}</style></head><body>${String(element.props.html || '')}<script>${String(element.props.javascript || '').replace(/<\/script/gi, '<\\/script')}</script></body></html>`}
             title="Custom code"
             sandbox="allow-scripts"
-            style={{ ...safeCssStyles, width: '100%', minHeight: '120px', border: 'none', background: 'transparent' }}
+            style={{ ...nestedContentStyles, minHeight: '120px' }}
             onClick={handleClick}
           />
         );
 
       case 'divider':
-        return <hr style={safeCssStyles} onClick={handleClick} />;
+        return <hr style={nestedContentStyles} onClick={handleClick} />;
 
       case 'spacer':
         return (
           <div
-            style={safeCssStyles}
+            style={nestedContentStyles}
             onClick={handleClick}
-            className={isPreview ? '' : 'border-dashed border border-gray-200 flex items-center justify-center text-xs text-gray-400'}
+            className={isPreview || hasCustomBorder ? '' : 'border-dashed border border-gray-200 flex items-center justify-center text-xs text-gray-400'}
           >
             {!isPreview && 'spacer'}
           </div>
@@ -872,7 +951,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
             <input
               type={element.props.type || 'text'}
               placeholder={element.props.placeholder}
-              style={safeCssStyles}
+              style={{ ...nestedLeafStyles, display: 'block' }}
               readOnly={!isPreview}
             />
           </div>
@@ -888,7 +967,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
             )}
             <textarea
               placeholder={element.props.placeholder}
-              style={safeCssStyles}
+              style={{ ...nestedLeafStyles, display: 'block' }}
               readOnly={!isPreview}
             />
           </div>
@@ -897,14 +976,14 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
       case 'icon': {
         const iconName = (element.props.iconName as string) || 'Star';
         const IconComp = (LucideIcons as unknown as Record<string, React.ComponentType<{ style?: React.CSSProperties; onClick?: (e: React.MouseEvent) => void }>>)[iconName];
-        if (!IconComp) return <div style={safeCssStyles} onClick={handleClick}>?</div>;
+        if (!IconComp) return <div style={nestedContentStyles} onClick={handleClick}>?</div>;
         const isMenuToggle = iconName === 'Menu' && navbarMenu;
         return isMenuToggle ? (
           <button
             type="button"
             aria-label="Toggle navigation menu"
             aria-expanded={navbarMenu.isOpen}
-            style={{ ...safeCssStyles, border: 'none', background: 'transparent', paddingTop: 0, paddingRight: 0, paddingBottom: 0, paddingLeft: 0 }}
+            style={nestedLeafStyles}
             onClick={event => {
               handleClick(event);
               navbarMenu.toggle(event);
@@ -913,14 +992,14 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
           >
             <IconComp style={{ width: '100%', height: '100%' }} />
           </button>
-        ) : <IconComp style={safeCssStyles} onClick={handleClick} />;
+        ) : <IconComp style={{ ...nestedContentStyles, height: '100%' }} onClick={handleClick} />;
       }
 
       case 'listItem':
         return (
           <li
             ref={(node) => setEditingRef(node as HTMLElement | null)}
-            style={isEditing ? editingTextStyles : safeTextStyles}
+            style={isEditing ? editingTextStyles : nestedContentStyles}
             onClick={handleClick}
             onDoubleClick={handleDoubleClick}
             onBlur={isEditing ? handleContentBlur : undefined}
@@ -984,6 +1063,10 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     zIndex: containerStyle.zIndex || 101,
   } : containerStyle;
 
+  const innerContainerStyle: React.CSSProperties = isMenuTarget && navbarMenu?.isOpen
+    ? menuStyle
+    : nestedContainerStyles;
+
   const renderChildren = (children = element.children) => (
     <>
       {children.map(child => (
@@ -1001,7 +1084,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     switch (element.type) {
       case 'list':
         return (
-          <ul style={menuStyle} onClick={handleClick} className={isPreview ? '' : 'cursor-pointer'}>
+          <ul style={innerContainerStyle} onClick={handleClick} className={isPreview ? '' : 'cursor-pointer'}>
             {renderChildren()}
           </ul>
         );
@@ -1029,7 +1112,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
           };
           return (
             <NavbarMenuContext.Provider value={{ isOpen: isMenuOpen, toggle: toggleMenu, menuIds }}>
-              <nav style={containerStyle} onClick={handleClick} className={isPreview ? '' : 'cursor-pointer'}>
+              <nav style={innerContainerStyle} onClick={handleClick} className={isPreview ? '' : 'cursor-pointer'}>
                 {renderChildren(!isMenuOpen ? element.children.filter(child => !hiddenMenuIds.has(child.id)) : element.children)}
               </nav>
             </NavbarMenuContext.Provider>
@@ -1037,13 +1120,13 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
         }
       case 'form':
         return (
-          <form style={isMenuTarget ? menuStyle : containerStyle} onClick={handleClick} onSubmit={e => e.preventDefault()} className={isPreview ? '' : 'cursor-pointer'}>
+          <form style={innerContainerStyle} onClick={handleClick} onSubmit={e => e.preventDefault()} className={isPreview ? '' : 'cursor-pointer'}>
             {renderChildren()}
           </form>
         );
       default:
         return (
-          <div style={isMenuTarget ? menuStyle : containerStyle} onClick={handleClick} className={isPreview ? '' : 'cursor-pointer'}>
+          <div style={innerContainerStyle} onClick={handleClick} className={isPreview ? '' : 'cursor-pointer'}>
             {renderChildren()}
           </div>
         );
