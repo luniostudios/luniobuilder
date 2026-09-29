@@ -418,6 +418,7 @@ const getElementName = (type: ElementType): string => {
     div: 'Container',
     heading: 'Heading',
     select: 'Select',
+    option: 'Option',
     paragraph: 'Paragraph',
     button: 'Button',
     image: 'Image',
