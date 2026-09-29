@@ -25,7 +25,9 @@ export type ElementType =
   | 'calendar'
   | 'table'
   | 'cmsMap'
-  | 'custom';
+  | 'custom'
+  | 'select'  
+  | 'option';  
 
 export interface StyleProperties {
   // Layout

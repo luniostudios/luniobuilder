@@ -417,6 +417,7 @@ const getElementName = (type: ElementType): string => {
     section: 'Section',
     div: 'Container',
     heading: 'Heading',
+    select: 'Select',
     paragraph: 'Paragraph',
     button: 'Button',
     image: 'Image',
@@ -439,7 +440,7 @@ const getElementName = (type: ElementType): string => {
     calendar: 'Calendar',
     table: 'CMS Table',
     cmsMap: 'CMS Map',
-    custom: ''
+    custom: ' ',
   };
 
   return names[type] || 'Element';

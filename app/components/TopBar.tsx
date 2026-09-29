@@ -21,6 +21,7 @@ import {
   Laptop,
   Globe,
   Rocket,
+  ChevronDown,
 } from 'lucide-react';
 import { useBuilderStore } from '../stores/builderStore';
 import {
@@ -71,8 +72,6 @@ interface InputPromptRequest {
   type?: 'text' | 'password';
   resolve: (value: string | null) => void;
 }
-
-const collaboratorColors = ['#27c3f3', '#8bdc2f', '#ffb526', '#ff6868', '#a78bfa'];
 
 const textEncoder = new TextEncoder();
 const crc32Table = new Uint32Array(256);
@@ -857,7 +856,7 @@ export const TopBar: React.FC = () => {
           {/* Logo */}
           <div className="flex items-center gap-2 mr-2">
             <Link href="/dashboard" className="text-white font-semibold text-sm tracking-tight">
-              LUNI<Rocket size={12} className='inline-block ml-1 -mt-0.5' /> Builder
+              LUNI<Rocket size={12} className='inline-block -mt-0.5' /> Builder
             </Link>
           </div>
 
@@ -875,7 +874,7 @@ export const TopBar: React.FC = () => {
                     key={collaborator.id}
                     title={collaborator.name}
                     className="relative -ml-1 h-7 w-7 overflow-hidden rounded-full border-2 border-[#0d1117] text-center text-[10px] font-semibold leading-5 text-white first:ml-0"
-                    style={{ backgroundColor: collaboratorColors[index % collaboratorColors.length] }}
+                    style={{ zIndex: 50 - index, backgroundColor: 'white' }}
                   >
                     {collaborator.avatar ? (
                       <img src={collaborator.avatar} alt={collaborator.name} className="h-full w-full object-cover" />
@@ -892,7 +891,7 @@ export const TopBar: React.FC = () => {
             </div>
           </div>
           {/* History */}
-          <div className="flex items-center gap-1 border-r border-gray-800 pr-3">
+          <div className="flex items-center gap-1 pr-3">
             <button
               onClick={undo}
               disabled={!canUndo}
@@ -935,7 +934,7 @@ export const TopBar: React.FC = () => {
             ))}
           </div>
           {/* Zoom */}
-          <div className="flex items-center gap-1 border-x border-gray-800 px-3">
+          <div className="flex items-center gap-1 border-gray-800 px-3">
             <button
               onClick={zoomOut}
               className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded-md transition-colors"
@@ -955,17 +954,6 @@ export const TopBar: React.FC = () => {
               <ZoomIn size={13} />
             </button>
           </div>
-          {/* Preview */}
-          <button
-            onClick={() => setPreviewMode(!isPreviewMode)}
-            className={`flex items-center ml-2 gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${isPreviewMode
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-800 text-gray-300 hover:text-white hover:bg-gray-700 border border-gray-700'
-              }`}
-          >
-            {isPreviewMode ? <EyeOff size={13} /> : <Eye size={13} />}
-            {isPreviewMode ? 'Editor' : 'Preview'}
-          </button>
         </div>
 
         <div className='flex flex-row gap-3 align-middle items-center'>
@@ -995,8 +983,19 @@ export const TopBar: React.FC = () => {
             onClick={openCodeModal}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all bg-gray-800 text-gray-300 hover:text-white hover:bg-gray-700 border border-gray-700"
           >
-            <Code size={13} />
+            <Code size={14} />
             Code
+          </button>
+
+          {/* Preview */}
+          <button
+            onClick={() => setPreviewMode(!isPreviewMode)}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium ${isPreviewMode
+              ? 'bg-blue-600 text-white border-blue-500 hover:bg-blue-500'
+              : 'bg-gray-800 text-gray-300 hover:text-white hover:bg-gray-700 border border-gray-700'
+              }`}
+          >
+            {isPreviewMode ? <Play size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" />}
           </button>
 
           {/* Publish */}
@@ -1005,7 +1004,7 @@ export const TopBar: React.FC = () => {
               <button
                 onClick={() => setShowPublishMenu(!showPublishMenu)}
                 disabled={isPublishing}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${published
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${published
                   ? 'bg-green-600 text-white'
                   : 'bg-blue-600 hover:bg-blue-500 text-white'
                   } ${isPublishing ? 'opacity-70 cursor-wait' : ''}`}
@@ -1022,8 +1021,8 @@ export const TopBar: React.FC = () => {
                   </>
                 ) : (
                   <>
-                    <Play size={12} fill="currentColor" />
                     Publish
+                    <ChevronDown size={14} />
                   </>
                 )}
               </button>

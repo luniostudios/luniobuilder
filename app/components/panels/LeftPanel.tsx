@@ -40,6 +40,7 @@ const COMPONENT_ICONS: Record<string, React.ReactNode> = {
   table: <Table2 size={25} />,
   cmsMap: <ListTree size={25} />,
   custom: <Code2 size={25} />,
+  select: <ChevronsDownUp size={25} />,
 };
 
 export const LeftPanel: React.FC = () => {

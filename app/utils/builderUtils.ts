@@ -142,6 +142,25 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
           transition: 'all 0.2s ease',
         },
       };
+    case 'select':
+      return {
+        name: 'Select',
+        props: { options: ['Option 1', 'Option 2', 'Option 3'], placeholder: 'Select an option'},
+        styles: {
+          display: 'flex',
+          width: '100%',
+          paddingTop: '10px',
+          paddingBottom: '10px',
+          paddingLeft: '14px',
+          paddingRight: '14px',
+          fontSize: '14px',
+          border: '1px solid #e5e7eb',
+          borderRadius: '8px',
+          color: '#111827',
+          backgroundColor: '#ffffff',
+          outline: 'none',
+        },
+      };
     case 'image':
       return {
         name: 'Image',
@@ -1427,7 +1446,7 @@ export const COMPONENT_CATEGORIES = {
   Typography: ['heading', 'paragraph', 'link', 'list', 'listItem'],
   CMS: ['cmsMap', 'table'],
   Media: ['image', 'video', 'icon', 'iframe', 'calendar'],
-  Forms: ['form', 'input', 'textarea', 'button'],
+  Forms: ['form', 'input', 'textarea', 'button', 'select'],
   Misc: ['divider', 'spacer'],
 } as const;
 
@@ -1438,6 +1457,8 @@ export const COMPONENT_LABELS: Record<ElementType, string> = {
   heading: 'Heading',
   paragraph: 'Paragraph',
   button: 'Button',
+  select: 'Select',
+  option: 'Option',
   image: 'Image',
   link: 'Link',
   navbar: 'Navbar',

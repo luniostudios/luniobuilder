@@ -1851,6 +1851,26 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
         </div>
       )}
 
+      {element.type === 'select' && (
+        <div>
+          <label className="text-xs text-gray-500 block mb-1">Placeholder</label>
+          <input
+            value={element.props.placeholder}
+            onChange={e => update('placeholder', e.target.value.split('\n').map(opt => opt.trim()).filter(opt => opt))}
+            placeholder={element.props.placeholder}
+            className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg mb-1 px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          />
+          <label className="text-xs text-gray-500 block mb-1">Options (one per line)</label>
+          <textarea
+            value={element.props.options?.join('\n') || ''}
+            onChange={e => update('options', e.target.value.split('\n').map(opt => opt.trim()).filter(opt => opt))}
+            placeholder="Option 1&#10;Option 2&#10;Option 3"
+            className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            rows={4}
+          />
+        </div>    
+      )}
+
       {element.type === 'image' && (
         <>
           <div>

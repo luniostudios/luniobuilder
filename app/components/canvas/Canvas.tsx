@@ -77,9 +77,18 @@ export const Canvas: React.FC = () => {
     widescreen: '1920px',
     desktop: `1280px`,
     laptop: `1024px`,
-    tablet: `768px`,
-    mobileLandscape: `480px`,
-    mobile: `320px`,
+    tablet: `991px`,
+    mobileLandscape: `767px`,
+    mobile: `479px`,
+  }[breakpoint];
+
+  const prevbreakpointWidth = {
+    widescreen: '100%',
+    desktop: `1280px`,
+    laptop: `1024px`,
+    tablet: `991px`,
+    mobileLandscape: `767px`,
+    mobile: `479px`,
   }[breakpoint];
 
   const handleCanvasClick = (e: React.MouseEvent) => {
@@ -141,12 +150,12 @@ export const Canvas: React.FC = () => {
       <div className="flex-1 overflow-auto bg-gray-300">
         <div
           style={{
-            width: breakpointWidth,
+            width: prevbreakpointWidth,
             minHeight: '100%',
             margin: '0 auto',
             transition: 'width 0.3s ease',
           }}
-          className="bg-white min-h-screen pb-10 relative scroll-"
+          className="bg-white min-h-screen relative scroll-"
         >
           {page.elements.map(el => (
             <ElementRenderer key={el.id} element={el} isPreview />

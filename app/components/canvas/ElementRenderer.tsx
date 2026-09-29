@@ -898,6 +898,21 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
           />
         );
 
+      case 'select':
+        return (
+          <select
+            style={{ ...nestedLeafStyles, display: 'block' }}
+            onClick={handleClick}
+          >
+            <option value="">{element.props.placeholder || 'Select an option'}</option>
+            {Array.isArray(element.props.options) && element.props.options.map((option, index) => (
+              <option key={index} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        );
+
       case 'iframe':
         return (
           <iframe
