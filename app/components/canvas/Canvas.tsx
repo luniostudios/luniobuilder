@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useBuilderStore } from '../../stores/builderStore';
 import { ElementRenderer } from './ElementRenderer';
 import { ElementType } from '../../types/builder';
+import { Rocket } from 'lucide-react';
 
 export const Canvas: React.FC = () => {
   const {
@@ -67,9 +68,9 @@ export const Canvas: React.FC = () => {
       target="_blank"
       rel="noopener noreferrer"
       onClick={event => event.stopPropagation()}
-      className="fixed bottom-4 right-4 z-2147483647 rounded-md border border-slate-300/40 bg-slate-900/90 px-3 py-2 text-xs font-semibold text-white shadow-lg transition-colors hover:bg-blue-600"
+      className="fixed bottom-4 right-4 z-2147483647 rounded-md border border-slate-300/40 bg-slate-900/90 px-4 py-4 text-xs font-semibold text-white shadow-lg"
     >
-      Built with LUNIO Builder
+      Built with LUNI<Rocket size={12} className='inline-block -mt-0.5' /> Builder
     </a>
   ) : null;
 

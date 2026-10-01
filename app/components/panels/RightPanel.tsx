@@ -1786,6 +1786,31 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
         />
       </div>
 
+      {element.type === 'form' && (
+        <>
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">Success message</label>
+            <input
+              type="text"
+              value={String(element.props.successMessage || '')}
+              onChange={event => update('successMessage', event.target.value)}
+              placeholder="Thanks! Your message was sent."
+              className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">Error message</label>
+            <input
+              type="text"
+              value={String(element.props.errorMessage || '')}
+              onChange={event => update('errorMessage', event.target.value)}
+              placeholder="Unable to submit form."
+              className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+        </>
+      )}
+
       {element.type === 'heading' && (
         <div>
           <label className="text-xs text-gray-500 block mb-1">Heading Level</label>

@@ -405,7 +405,7 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
     case 'form':
       return {
         name: 'Form',
-        props: { formName: 'Newsletter signup', submitLabel: 'Subscribe', successMessage: 'Thanks for subscribing!' },
+        props: { formName: 'Newsletter signup', submitLabel: 'Subscribe', successMessage: 'Thanks for subscribing!', errorMessage: 'Unable to submit form. Please try again.' },
         styles: {
           display: 'flex',
           flexDirection: 'column',
@@ -436,7 +436,7 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
             type: 'button',
             name: 'Submit button',
             props: { text: 'Subscribe', type: 'submit' },
-            styles: { desktop: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', paddingTop: '12px', paddingRight: '20px', paddingBottom: '12px', paddingLeft: '20px', backgroundColor: '#2563eb', color: '#ffffff', fontSize: '14px', fontWeight: '600', borderRadius: '8px', cursor: 'pointer' }, tablet: {}, mobile: {}, widescreen: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', paddingTop: '12px', paddingRight: '20px', paddingBottom: '12px', paddingLeft: '20px', backgroundColor: '#2563eb', color: '#ffffff', fontSize: '14px', fontWeight: '600', borderRadius: '8px', cursor: 'pointer' }, laptop: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', paddingTop: '12px', paddingRight: '20px', paddingBottom: '12px', paddingLeft: '20px', backgroundColor: '#2563eb', color: '#ffffff', fontSize: '14px', fontWeight: '600', borderRadius: '8px', cursor: 'pointer' }, mobileLandscape: {} },
+            styles: { desktop: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', paddingTop: '12px', paddingRight: '20px', paddingBottom: '12px', paddingLeft: '20px', backgroundColor: '#2563eb', color: '#ffffff', fontSize: '14px', fontWeight: '600', borderRadius: '8px', cursor: 'pointer' }, tablet: {}, mobile: {}, widescreen: {}, laptop: {}, mobileLandscape: {} },
             children: [],
             parentId: null,
             locked: false,

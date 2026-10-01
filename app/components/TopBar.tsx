@@ -51,18 +51,18 @@ interface UserData {
 }
 
 interface ProjectRecord {
-    id: string;
-    user_id?: string;
-    title: string;
-    slug: string;
-    created_at: Date;
-    updated_at: Date;
-    vercelUrl: string;
-    status: string;
-    content?: {
-        pages?: Page[];
-        currentPageId?: string;
-    };
+  id: string;
+  user_id?: string;
+  title: string;
+  slug: string;
+  created_at: Date;
+  updated_at: Date;
+  vercelUrl: string;
+  status: string;
+  content?: {
+    pages?: Page[];
+    currentPageId?: string;
+  };
 }
 
 interface InputPromptRequest {
@@ -349,20 +349,20 @@ export const TopBar: React.FC = () => {
   }
 
   const fetchProjects = async () => {
-        setLoading(true);
-        setError(null);
+    setLoading(true);
+    setError(null);
 
-        const response = await fetch('/api/projects');
-        if (!response.ok) {
-            setError('Unable to load projects.');
-            setLoading(false);
-            return;
-        }
+    const response = await fetch('/api/projects');
+    if (!response.ok) {
+      setError('Unable to load projects.');
+      setLoading(false);
+      return;
+    }
 
-        const data = await response.json();
-        setProjects(data || []);
-        setLoading(false);
-    };
+    const data = await response.json();
+    setProjects(data || []);
+    setLoading(false);
+  };
 
   const fetchProjectData = async () => {
     setLoading(true);
@@ -855,7 +855,7 @@ export const TopBar: React.FC = () => {
   return (
     <>
       <header className="h-12 bg-[#0d1117] border-b border-gray-800 flex justify-between items-center px-4 gap-3 z-50 shrink-0">
-        <div className='flex flex-row'>
+        <div className='flex flex-row items-center gap-3'>
           {/* Logo */}
           <div className="flex items-center gap-2 mr-2">
             <Link href="/dashboard" className="text-white font-semibold text-sm tracking-tight">
@@ -864,8 +864,32 @@ export const TopBar: React.FC = () => {
           </div>
 
           {/* Project name */}
-          <div className="text-gray-400 text-xs border-l border-gray-800 pl-3">
+          <div className="text-gray-400 text-xs border-x border-gray-800 px-3">
             <span className="text-gray-500">/</span> {page.name || 'Untitled Project'}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {projectId && (
+              <div>
+                <Link
+                  href={`/dashboard/settings/${projectId}/submissions`}
+                  className='rounded-full border border-blue-500/40 bg-blue-500/10 px-4 py-2 text-xs font-medium text-blue-200 transition hover:bg-blue-500/20'
+                >
+                  FORMS
+                </Link>
+              </div>
+            )}
+
+            {projectId && (
+              <div>
+                <Link
+                  href={`/dashboard/settings/${projectId}/cms`}
+                  className='rounded-full border border-blue-500/40 bg-blue-500/10 px-4 py-2 text-xs font-medium text-blue-200 transition hover:bg-blue-500/20'
+                >
+                  CMS
+                </Link>
+              </div>
+            )}
           </div>
         </div>
         <div className='flex flex-row'>
@@ -1100,47 +1124,47 @@ export const TopBar: React.FC = () => {
 
       <Dialog open={isCodeModalOpen} onOpenChange={setIsCodeModalOpen}>
         <DialogContent showCloseButton={false} className="inset-2! left-2! top-2! h-auto! w-auto! max-w-none! translate-x-0! translate-y-0! flex flex-col gap-0 overflow-hidden border border-[#30363d] bg-[#0d1117] p-0 text-[#c9d1d9] shadow-2xl shadow-black/60 sm:inset-4! sm:left-4! sm:top-4!">
-            <div className="flex h-11 shrink-0 items-center justify-between border-b border-[#30363d] bg-[#161b22] px-4">
-              <DialogHeader className="flex-row items-center gap-3 space-y-0">
-                <div className="flex items-center gap-1.5" aria-hidden="true">
-                  <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                </div>
-                <DialogTitle className="text-xs font-medium text-[#c9d1d9]">Project Code</DialogTitle>
-                <DialogDescription className="sr-only">Read-only generated project source code.</DialogDescription>
-              </DialogHeader>
-              <div className="flex items-center gap-2 text-[10px] text-[#8b949e]">
-                <span>{codeFiles.length} files</span>
-                <Button type="button" variant="ghost" size="icon-sm" onClick={() => setIsCodeModalOpen(false)} className="text-[#8b949e] hover:bg-[#30363d] hover:text-white">
-                  <X size={14} />
-                  <span className="sr-only">Close code viewer</span>
-                </Button>
+          <div className="flex h-11 shrink-0 items-center justify-between border-b border-[#30363d] bg-[#161b22] px-4">
+            <DialogHeader className="flex-row items-center gap-3 space-y-0">
+              <div className="flex items-center gap-1.5" aria-hidden="true">
+                <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
               </div>
+              <DialogTitle className="text-xs font-medium text-[#c9d1d9]">Project Code</DialogTitle>
+              <DialogDescription className="sr-only">Read-only generated project source code.</DialogDescription>
+            </DialogHeader>
+            <div className="flex items-center gap-2 text-[10px] text-[#8b949e]">
+              <span>{codeFiles.length} files</span>
+              <Button type="button" variant="ghost" size="icon-sm" onClick={() => setIsCodeModalOpen(false)} className="text-[#8b949e] hover:bg-[#30363d] hover:text-white">
+                <X size={14} />
+                <span className="sr-only">Close code viewer</span>
+              </Button>
             </div>
-            <div className="flex min-h-0 flex-1 overflow-hidden">
-              <aside className="hidden w-64 shrink-0 flex-col border-r border-[#30363d] bg-[#0d1117] md:flex">
-                <div className="flex items-center justify-between border-b border-[#21262d] px-3 py-2.5">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8b949e]">Explorer</span>
-                  <span className="text-[10px] text-[#484f58]">SRC</span>
-                </div>
-                <label className="relative mx-3 mt-3 block">
-                  <Search size={13} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[#6e7681]" />
-                  <input value={codeSearch} onChange={event => setCodeSearch(event.target.value)} placeholder="Filter files" aria-label="Filter files" className="w-full rounded-md border border-[#30363d] bg-[#161b22] py-1.5 pl-8 pr-2 text-xs text-[#c9d1d9] outline-none placeholder:text-[#6e7681] focus:border-[#58a6ff]" />
-                </label>
-                <div className="mt-3 flex-1 overflow-y-auto px-2 pb-3">
-                  {renderTreeNodes(codeTree)}
-                </div>
-              </aside>
-              <main className="flex min-w-0 flex-1 flex-col bg-[#0d1117]">
-                <div className="flex h-10 shrink-0 items-end border-b border-[#30363d] bg-[#161b22]">
-                  {selectedCodeFile && <div className="flex h-full items-center gap-2 border-r border-[#30363d] border-t-2 border-t-[#58a6ff] bg-[#0d1117] px-4 text-xs text-[#c9d1d9]">
-                    {getFileIcon(selectedCodeFile.path)}
-                    <span>{selectedCodeFile.path.split('/').pop()}</span>
-                    <span className="ml-2 text-[10px] text-[#484f58]">read-only</span>
-                  </div>}
-                </div>
-                <div className="min-h-0 flex-1 overflow-hidden bg-[#0d1117]">
+          </div>
+          <div className="flex min-h-0 flex-1 overflow-hidden">
+            <aside className="hidden w-64 shrink-0 flex-col border-r border-[#30363d] bg-[#0d1117] md:flex">
+              <div className="flex items-center justify-between border-b border-[#21262d] px-3 py-2.5">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8b949e]">Explorer</span>
+                <span className="text-[10px] text-[#484f58]">SRC</span>
+              </div>
+              <label className="relative mx-3 mt-3 block">
+                <Search size={13} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[#6e7681]" />
+                <input value={codeSearch} onChange={event => setCodeSearch(event.target.value)} placeholder="Filter files" aria-label="Filter files" className="w-full rounded-md border border-[#30363d] bg-[#161b22] py-1.5 pl-8 pr-2 text-xs text-[#c9d1d9] outline-none placeholder:text-[#6e7681] focus:border-[#58a6ff]" />
+              </label>
+              <div className="mt-3 flex-1 overflow-y-auto px-2 pb-3">
+                {renderTreeNodes(codeTree)}
+              </div>
+            </aside>
+            <main className="flex min-w-0 flex-1 flex-col bg-[#0d1117]">
+              <div className="flex h-10 shrink-0 items-end border-b border-[#30363d] bg-[#161b22]">
+                {selectedCodeFile && <div className="flex h-full items-center gap-2 border-r border-[#30363d] border-t-2 border-t-[#58a6ff] bg-[#0d1117] px-4 text-xs text-[#c9d1d9]">
+                  {getFileIcon(selectedCodeFile.path)}
+                  <span>{selectedCodeFile.path.split('/').pop()}</span>
+                  <span className="ml-2 text-[10px] text-[#484f58]">read-only</span>
+                </div>}
+              </div>
+              <div className="min-h-0 flex-1 overflow-hidden bg-[#0d1117]">
                 {selectedCodeFile ? (
                   <Editor
                     height="100%"
@@ -1174,13 +1198,13 @@ export const TopBar: React.FC = () => {
                     No generated code available.
                   </div>
                 )}
-                </div>
-                <div className="flex h-6 shrink-0 items-center justify-between border-t border-[#30363d] bg-[#161b22] px-3 text-[10px] text-[#8b949e]">
-                  <div className="flex items-center gap-4"><span className="flex items-center gap-1.5"><GitBranch size={12} /> generated</span><span>UTF-8</span><span>LF</span></div>
-                  <span>{selectedCodeFile ? `${selectedCodeFile.content.split('\n').length} lines` : 'No file selected'}</span>
-                </div>
-              </main>
-            </div>
+              </div>
+              <div className="flex h-6 shrink-0 items-center justify-between border-t border-[#30363d] bg-[#161b22] px-3 text-[10px] text-[#8b949e]">
+                <div className="flex items-center gap-4"><span className="flex items-center gap-1.5"><GitBranch size={12} /> generated</span><span>UTF-8</span><span>LF</span></div>
+                <span>{selectedCodeFile ? `${selectedCodeFile.content.split('\n').length} lines` : 'No file selected'}</span>
+              </div>
+            </main>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -1190,7 +1214,7 @@ export const TopBar: React.FC = () => {
             <DialogTitle className='text-white'>{inputPrompt?.title}</DialogTitle>
             {inputPrompt?.message && <DialogDescription className='text-gray-400'>{inputPrompt.message}</DialogDescription>}
           </DialogHeader>
-            <input autoFocus type={inputPrompt?.type || 'text'} value={inputPromptValue} onChange={event => setInputPromptValue(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') closeInputPrompt(inputPromptValue); }} placeholder={inputPrompt?.placeholder} className='mt-4 w-full rounded-lg border border-gray-700 bg-[#111114] px-3 py-2 text-sm text-white outline-none focus:border-blue-400' />
+          <input autoFocus type={inputPrompt?.type || 'text'} value={inputPromptValue} onChange={event => setInputPromptValue(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') closeInputPrompt(inputPromptValue); }} placeholder={inputPrompt?.placeholder} className='mt-4 w-full rounded-lg border border-gray-700 bg-[#111114] px-3 py-2 text-sm text-white outline-none focus:border-blue-400' />
           <DialogFooter>
             <Button type='button' variant='outline' onClick={() => closeInputPrompt(null)} className='border-gray-700 bg-transparent text-gray-300 hover:bg-gray-800 hover:text-white'>Cancel</Button>
             <Button type='button' onClick={() => closeInputPrompt(inputPromptValue)} className='bg-blue-600 text-white hover:bg-blue-500'>Continue</Button>

@@ -590,10 +590,10 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
 
       form.reset();
       setFormStatus('success');
-      setFormMessage(data?.message || element.props.successMessage || 'Thanks! Your message was sent.');
+      setFormMessage(String(element.props.successMessage || data?.message || 'Thanks! Your message was sent.'));
     } catch (error) {
       setFormStatus('error');
-      setFormMessage(error instanceof Error ? error.message : 'Unable to submit form.');
+      setFormMessage(String(element.props.errorMessage || (error instanceof Error ? error.message : 'Unable to submit form.')));
     }
   };
 
@@ -777,20 +777,27 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
   const selectionTooltip = isSelected && !element.locked ? (
     <div className="absolute -top-10 left-0 z-50 flex items-center gap-1 rounded-md border border-slate-600 bg-[#1b1d22] p-1 text-xs text-white whitespace-nowrap pointer-events-auto shadow-xl">
       <span className="px-2 font-medium text-slate-100">{element.name}</span>
-      <form onMouseDown={event => event.stopPropagation()} onPointerDown={event => event.stopPropagation()} onClick={event => event.stopPropagation()} onSubmit={event => { event.preventDefault(); event.stopPropagation(); editWithAi(); }} className="flex items-center gap-1 rounded-sm border border-slate-500 bg-[#282b33] pl-2 focus-within:border-blue-400">
+      <div onMouseDown={event => event.stopPropagation()} onPointerDown={event => event.stopPropagation()} onClick={event => event.stopPropagation()} className="flex items-center gap-1 rounded-sm border border-slate-500 bg-[#282b33] pl-2 focus-within:border-blue-400">
         <input
           value={quickAiPrompt}
           onChange={event => setQuickAiPrompt(event.target.value)}
           onMouseDown={event => event.stopPropagation()}
           onClick={event => event.stopPropagation()}
+          onKeyDown={event => {
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              event.stopPropagation();
+              editWithAi();
+            }
+          }}
           placeholder="Quick AI prompt..."
           aria-label="Quick AI prompt"
           className="w-36 bg-transparent py-1 text-[11px] text-white outline-none placeholder:text-slate-400"
         />
-        <button type="submit" onMouseDown={event => event.stopPropagation()} onPointerDown={event => event.stopPropagation()} onClick={event => event.stopPropagation()} title={isQuickAiGenerating ? 'Generating' : 'Apply AI prompt'} aria-label={isQuickAiGenerating ? 'Generating' : 'Apply AI prompt'} className="rounded-sm bg-blue-600 p-1.5 text-white transition-colors hover:bg-blue-500 disabled:opacity-50" disabled={!quickAiPrompt.trim() || isQuickAiGenerating}>
+        <button type="button" onMouseDown={event => event.stopPropagation()} onPointerDown={event => event.stopPropagation()} onClick={event => { event.stopPropagation(); editWithAi(); }} title={isQuickAiGenerating ? 'Generating' : 'Apply AI prompt'} aria-label={isQuickAiGenerating ? 'Generating' : 'Apply AI prompt'} className="rounded-sm bg-blue-600 p-1.5 text-white transition-colors hover:bg-blue-500 disabled:opacity-50" disabled={!quickAiPrompt.trim() || isQuickAiGenerating}>
           {isQuickAiGenerating ? <LoaderCircle aria-hidden className="animate-spin" style={{ width: '1em', height: '1em' }} /> : <ArrowUp aria-hidden style={{ width: '1em', height: '1em' }} />}
         </button>
-      </form>
+      </div>
       {element.type !== 'link' && <button
         type="button"
         onMouseDown={event => event.stopPropagation()}
