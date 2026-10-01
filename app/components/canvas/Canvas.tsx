@@ -37,7 +37,7 @@ export const Canvas: React.FC = () => {
       if (width >= 1920) return 'widescreen' as const;
       return 'desktop' as const;
     };
-    const updateBreakpoint = () => setBreakpoint(getBreakpoint(window.innerWidth));
+    const updateBreakpoint = () => setBreakpoint('desktop');
     updateBreakpoint();
     window.addEventListener('resize', updateBreakpoint);
     return () => window.removeEventListener('resize', updateBreakpoint);
@@ -61,18 +61,6 @@ export const Canvas: React.FC = () => {
       isMounted = false;
     };
   }, []);
-
-  const watermark = showWatermark ? (
-    <a
-      href="https://www.luniobuilder.com"
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={event => event.stopPropagation()}
-      className="fixed bottom-4 right-4 z-2147483647 rounded-md border border-slate-300/40 bg-slate-900/90 px-4 py-4 text-xs font-semibold text-white shadow-lg"
-    >
-      Built with LUNI<Rocket size={12} className='inline-block -mt-0.5' /> Builder
-    </a>
-  ) : null;
 
   const breakpointWidth = {
     widescreen: '1920px',
@@ -161,7 +149,6 @@ export const Canvas: React.FC = () => {
           {page.elements.map(el => (
             <ElementRenderer key={el.id} element={el} isPreview />
           ))}
-          {watermark}
         </div>
       </div>
     );
@@ -206,9 +193,6 @@ export const Canvas: React.FC = () => {
               <p className="text-sm text-gray-400 mt-1">Double click components from the left panel</p>
             </div>
           )}
-
-          {watermark}
-
         </div>
       </div>
 

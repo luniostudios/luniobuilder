@@ -450,7 +450,7 @@ export default function Dashboard() {
                         )}
                         <div className="px-4">
 
-                        <SignOut />
+                            <SignOut />
                         </div>
                     </nav>
                 </div>
@@ -498,14 +498,14 @@ export default function Dashboard() {
                     <div className="flex items-center gap-3 sm:gap-4">
                         <Popover>
                             <PopoverTrigger className='outline-none'>
-                                <a className="relative p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-full transition-colors">
+                                <a className="relative p-2 text-gray-400 hover:text-gray-900 rounded-full transition-colors">
                                     <Bell size={20} />
                                     <span className="absolute top-3 right-1.5 h-4 w-4 justify-center align-middle items-center bg-red-500 rounded-full text-white text-xs">
                                         {notifications.length}
                                     </span>
                                 </a>
                             </PopoverTrigger>
-                            <PopoverContent className="bg-white text-white border border-white/20 mr-6 mt-4">
+                            <PopoverContent className="bg-white text-white border border-white/20 mr-6">
                                 <PopoverHeader className="ml-4">
                                     {notifications.length > 0 ? (
                                         <ul className="space-y-2">
@@ -681,7 +681,7 @@ export default function Dashboard() {
                                             <div className="p-5 flex flex-col flex-1 justify-between">
                                                 <div className="flex items-start justify-between">
                                                     <div className="overflow-hidden pr-2">
-                                                        <h3 className="font-semibold text-[#102022] truncate">{project.title}</h3>
+                                                        <h3 className="font-semibold text-[#102022] text-lg truncate">{project.title}</h3>
                                                         {userData && (userData.role == 'ADMIN' || userData.role?.toLowerCase() === 'owner') && project.user_id && (
                                                             <div className="text-xs text-gray-500 mt-1">Owner: {userData.id === project.user_id ? userData.name : project.user_id}</div>
                                                         )}
@@ -760,6 +760,14 @@ export default function Dashboard() {
                                                         </DialogContent>
                                                     </Dialog>
                                                 </div>
+
+                                                {project.status === 'published' && project.slug && (
+                                                    <Link href={`https://${projects.find((p) => p.id === project.id)?.title || 'untitled'}.luniobuilder.com`} target="_blank" rel="noreferrer">
+                                                        <p className="text-xs text-gray-500 hover:underline">
+                                                            {` ${projects.find((p) => p.id === project.id)?.title || 'untitled'}.luniobuilder.com`}
+                                                        </p>
+                                                    </Link>
+                                                )}
 
                                                 <div className="flex items-center justify-between text-xs text-gray-400 mt-4 border-t border-gray-100 pt-3">
                                                     <span>

@@ -7,6 +7,7 @@ import { useBuilderStore } from '../../stores/builderStore';
 import { ElementInteraction, PageInteraction, StyleProperties } from '../../types/builder';
 import { getEffectiveStyles } from '../../utils/builderUtils';
 import { GOOGLE_FONT_OPTIONS, loadGoogleFont } from '../../utils/googleFonts';
+import { Slider } from '@/components/ui/slider';
 
 type BuilderElement = any;
 
@@ -957,129 +958,132 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
       </Section>
 
       {/* Typography */}
-      <Section title="Typography">
-        <InputRow
-          label="Font"
-          value={styles.fontFamily || ''}
-          onChange={v => update('fontFamily', v)}
-          options={GOOGLE_FONT_OPTIONS}
-        />
-        <div className="mb-3 rounded-lg border border-gray-800 bg-[#14161a] p-2.5">
-          <div className="mb-1 flex items-center justify-between">
-            <span className="text-[11px] font-medium text-gray-300">Font size</span>
-            <span className="font-mono text-[10px] text-gray-400">{styles.fontSize || '16px'}</span>
-          </div>
-          <input aria-label="Font size" type="range" min="8" max="96" step="1" value={rangeFontSize} onChange={event => update('fontSize', `${event.target.value}px`)} className="h-5 w-full cursor-pointer accent-sky-400" />
-          <div className="mt-1 flex items-center justify-between text-[9px] text-gray-600"><span>8px</span><span>96px</span></div>
-          <InputRow label="Custom size" value={styles.fontSize || ''} onChange={v => update('fontSize', v)} placeholder="16px" />
-        </div>
-        <InputRow
-          label="Weight"
-          value={styles.fontWeight || ''}
-          onChange={v => update('fontWeight', v)}
-          options={['300', '400', '500', '600', '700', '800', '900']}
-        />
-        <InputRow label="Line H" value={styles.lineHeight || ''} onChange={v => update('lineHeight', v)} placeholder="1.5" />
-        <InputRow label="Spacing" value={styles.letterSpacing || ''} onChange={v => update('letterSpacing', v)} placeholder="0em" />
-        <div className="mb-2 flex items-center gap-2">
-          <span className="w-18.5 shrink-0 text-[11px] text-gray-400">Align</span>
-          <div role="group" aria-label="Text alignment" className="grid h-8 flex-1 grid-cols-4 rounded-md border border-gray-700/80 bg-[#191b20] p-0.5">
-            {[
-              { value: 'left', label: 'Align left', icon: <AlignLeft size={13} /> },
-              { value: 'center', label: 'Align center', icon: <AlignCenter size={13} /> },
-              { value: 'right', label: 'Align right', icon: <AlignRight size={13} /> },
-              { value: 'justify', label: 'Justify', icon: <AlignJustify size={13} /> },
-            ].map(option => (
-              <button key={option.value} type="button" aria-label={option.label} aria-pressed={(styles.textAlign || 'left') === option.value} title={option.label} onClick={() => update('textAlign', option.value)} className={`flex items-center justify-center rounded transition-colors ${(styles.textAlign || 'left') === option.value ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-200'}`}>
-                {option.icon}
-              </button>
-            ))}
-          </div>
-        </div>
-        {isTextElement && (
-          <BackgroundFillInput
-            label="Text fill"
-            colorValue={styles.color || ''}
-            gradientValue={styles.textGradient || ''}
-            onChangeColor={(v) => {
-              update('color', v);
-              if (v) update('textGradient', '');
-            }}
-            onChangeGradient={(v) => {
-              update('textGradient', v);
-              if (v) update('color', '');
-            }}
+      {element.type === 'heading' || element.type === 'paragraph' || element.type === 'button' || element.type === 'link' || element.type === 'listItem' ? (
+        <Section title="Typography">
+          <InputRow
+            label="Font"
+            value={styles.fontFamily || ''}
+            onChange={v => update('fontFamily', v)}
+            options={GOOGLE_FONT_OPTIONS}
           />
-        )}
-
-        {isTextElement && (
-          <>
-            <InputRow
-              label="Text image"
-              value={extractUrlFromCssBackgroundImage(styles.textClipImage)}
-              onChange={v => update('textClipImage', toCssBackgroundImageValue(v))}
-              placeholder="https://..."
-            />
-
-            <div className="flex gap-2 mb-2">
-              <button
-                type="button"
-                onClick={() => setTextClipImageTab('value')}
-                className={`flex-1 text-xs px-3 py-2 rounded-lg border transition-colors ${textClipImageTab === 'value'
-                  ? 'bg-blue-300/10 text-blue-200 border-blue-300/40'
-                  : 'bg-gray-900 text-gray-400 border-gray-800 hover:text-gray-200'
-                  }`}
-              >
-                URL
-              </button>
-              <button
-                type="button"
-                onClick={() => setTextClipImageTab('unsplash')}
-                className={`flex-1 text-xs px-3 py-2 rounded-lg border transition-colors ${textClipImageTab === 'unsplash'
-                  ? 'bg-blue-300/10 text-blue-200 border-blue-300/40'
-                  : 'bg-gray-900 text-gray-400 border-gray-800 hover:text-gray-200'
-                  }`}
-              >
-                Unsplash
-              </button>
-              <button
-                type="button"
-                onClick={() => setTextClipImageTab('uploads')}
-                className={`flex-1 text-xs px-3 py-2 rounded-lg border transition-colors ${textClipImageTab === 'uploads'
-                  ? 'bg-blue-300/10 text-blue-200 border-blue-300/40'
-                  : 'bg-gray-900 text-gray-400 border-gray-800 hover:text-gray-200'
-                  }`}
-              >
-                My uploads
-              </button>
+          <div className="mb-3 rounded-lg border border-gray-800 bg-[#14161a] p-2.5">
+            <div className="mb-1 flex items-center justify-between">
+              <span className="text-[11px] font-medium text-gray-300">Font size</span>
+              <span className="font-mono text-[10px] text-gray-400">{styles.fontSize || '16px'}</span>
             </div>
+            <Slider min={8} max={96} step={1} value={[rangeFontSize]}
+              onValueChange={(value) => update('fontSize', `${value[0]}px`)} className="mx-auto w-full max-w-xs" />
+            <div className="mt-1 mb-1 flex items-center justify-between text-[9px] text-gray-600"><span>8px</span><span>96px</span></div>
+            <InputRow label="Custom size" value={styles.fontSize || ''} onChange={v => update('fontSize', v)} placeholder="16px" />
+          </div>
+          <InputRow
+            label="Weight"
+            value={styles.fontWeight || ''}
+            onChange={v => update('fontWeight', v)}
+            options={['300', '400', '500', '600', '700', '800', '900']}
+          />
+          <InputRow label="Line H" value={styles.lineHeight || ''} onChange={v => update('lineHeight', v)} placeholder="1.5" />
+          <InputRow label="Spacing" value={styles.letterSpacing || ''} onChange={v => update('letterSpacing', v)} placeholder="0em" />
+          <div className="mb-2 flex items-center gap-2">
+            <span className="w-18.5 shrink-0 text-[11px] text-gray-400">Align</span>
+            <div role="group" aria-label="Text alignment" className="grid h-8 flex-1 grid-cols-4 rounded-md border border-gray-700/80 bg-[#191b20] p-0.5">
+              {[
+                { value: 'left', label: 'Align left', icon: <AlignLeft size={13} /> },
+                { value: 'center', label: 'Align center', icon: <AlignCenter size={13} /> },
+                { value: 'right', label: 'Align right', icon: <AlignRight size={13} /> },
+                { value: 'justify', label: 'Justify', icon: <AlignJustify size={13} /> },
+              ].map(option => (
+                <button key={option.value} type="button" aria-label={option.label} aria-pressed={(styles.textAlign || 'left') === option.value} title={option.label} onClick={() => update('textAlign', option.value)} className={`flex items-center justify-center rounded transition-colors ${(styles.textAlign || 'left') === option.value ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-200'}`}>
+                  {option.icon}
+                </button>
+              ))}
+            </div>
+          </div>
+          {isTextElement && (
+            <BackgroundFillInput
+              label="Text fill"
+              colorValue={styles.color || ''}
+              gradientValue={styles.textGradient || ''}
+              onChangeColor={(v) => {
+                update('color', v);
+                if (v) update('textGradient', '');
+              }}
+              onChangeGradient={(v) => {
+                update('textGradient', v);
+                if (v) update('color', '');
+              }}
+            />
+          )}
 
-            {textClipImageTab === 'unsplash' && (
-              <UnsplashPicker
-                onPick={(photo) => {
-                  update('textClipImage', toCssBackgroundImageValue(photo.urls.regular));
-                }}
+          {isTextElement && (
+            <>
+              <InputRow
+                label="Text image"
+                value={extractUrlFromCssBackgroundImage(styles.textClipImage)}
+                onChange={v => update('textClipImage', toCssBackgroundImageValue(v))}
+                placeholder="https://..."
               />
-            )}
-            {textClipImageTab === 'uploads' && (
-              <UserImagePicker onPick={(url) => update('textClipImage', toCssBackgroundImageValue(url))} />
-            )}
-          </>
-        )}
-        <InputRow
-          label="Transform"
-          value={styles.textTransform || ''}
-          onChange={v => update('textTransform', v)}
-          options={['none', 'uppercase', 'lowercase', 'capitalize']}
-        />
-        <InputRow
-          label="Decoration"
-          value={styles.textDecoration || ''}
-          onChange={v => update('textDecoration', v)}
-          options={['none', 'underline', 'line-through', 'overline']}
-        />
-        {!isTextElement && <ColorInput label="Color" value={styles.color || ''} onChange={v => update('color', v)} />}
-      </Section>
+
+              <div className="flex gap-2 mb-2">
+                <button
+                  type="button"
+                  onClick={() => setTextClipImageTab('value')}
+                  className={`flex-1 text-xs px-3 py-2 rounded-lg border transition-colors ${textClipImageTab === 'value'
+                    ? 'bg-blue-300/10 text-blue-200 border-blue-300/40'
+                    : 'bg-gray-900 text-gray-400 border-gray-800 hover:text-gray-200'
+                    }`}
+                >
+                  URL
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTextClipImageTab('unsplash')}
+                  className={`flex-1 text-xs px-3 py-2 rounded-lg border transition-colors ${textClipImageTab === 'unsplash'
+                    ? 'bg-blue-300/10 text-blue-200 border-blue-300/40'
+                    : 'bg-gray-900 text-gray-400 border-gray-800 hover:text-gray-200'
+                    }`}
+                >
+                  Unsplash
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTextClipImageTab('uploads')}
+                  className={`flex-1 text-xs px-3 py-2 rounded-lg border transition-colors ${textClipImageTab === 'uploads'
+                    ? 'bg-blue-300/10 text-blue-200 border-blue-300/40'
+                    : 'bg-gray-900 text-gray-400 border-gray-800 hover:text-gray-200'
+                    }`}
+                >
+                  My uploads
+                </button>
+              </div>
+
+              {textClipImageTab === 'unsplash' && (
+                <UnsplashPicker
+                  onPick={(photo) => {
+                    update('textClipImage', toCssBackgroundImageValue(photo.urls.regular));
+                  }}
+                />
+              )}
+              {textClipImageTab === 'uploads' && (
+                <UserImagePicker onPick={(url) => update('textClipImage', toCssBackgroundImageValue(url))} />
+              )}
+            </>
+          )}
+          <InputRow
+            label="Transform"
+            value={styles.textTransform || ''}
+            onChange={v => update('textTransform', v)}
+            options={['none', 'uppercase', 'lowercase', 'capitalize']}
+          />
+          <InputRow
+            label="Decoration"
+            value={styles.textDecoration || ''}
+            onChange={v => update('textDecoration', v)}
+            options={['none', 'underline', 'line-through', 'overline']}
+          />
+          {!isTextElement && <ColorInput label="Color" value={styles.color || ''} onChange={v => update('color', v)} />}
+        </Section>
+      ) : null}
 
       {/* Background */}
       <Section title="Background">

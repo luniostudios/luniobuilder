@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { JSX, useEffect, useState } from 'react';
 import { CmsRecordProvider, ElementRenderer } from '../components/canvas/ElementRenderer';
 import { useBuilderStore } from '../stores/builderStore';
 import type { Breakpoint, Page } from '../types/builder';
 import type { CmsRecord } from '../types/cms';
+import { Rocket } from 'lucide-react';
 
 interface TenantSiteProps {
   projectId: string;
@@ -22,6 +23,17 @@ export default function TenantSite({ projectId, projectName, pages, currentPageI
   const storePages = useBuilderStore(state => state.pages);
   const storeCurrentPageId = useBuilderStore(state => state.currentPageId);
   const loadedProjectId = useBuilderStore(state => state.projectId);
+
+  const watermark = (
+    <a href="https://www.luniobuilder.com"
+        target="_blank"
+        rel="noopener noreferrer" className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-4 text-sm text-slate-100 backdrop-blur-md">
+      <span className="text-xs text-slate-400">Built with</span>
+      <span>
+        LUNIO<Rocket size={12} className='inline-block -mt-0.5' /> Builder
+      </span>
+    </a>
+  );
 
   useEffect(() => {
     loadProject(projectId, pages, currentPageId, projectName);
@@ -63,6 +75,7 @@ export default function TenantSite({ projectId, projectName, pages, currentPageI
           <ElementRenderer key={element.id} element={element} isPreview isPublishedSite />
         ))}
       </CmsRecordProvider>
+      {watermark}
     </main>
   );
 }
