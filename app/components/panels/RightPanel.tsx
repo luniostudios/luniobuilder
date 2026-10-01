@@ -6,7 +6,7 @@ import ColorPicker from 'react-best-gradient-color-picker';
 import { useBuilderStore } from '../../stores/builderStore';
 import { ElementInteraction, PageInteraction, StyleProperties } from '../../types/builder';
 import { getEffectiveStyles } from '../../utils/builderUtils';
-import { GOOGLE_FONT_OPTIONS } from './GoogleFonts';
+import { GOOGLE_FONT_OPTIONS, loadGoogleFont } from '../../utils/googleFonts';
 
 type BuilderElement = any;
 
@@ -24,29 +24,6 @@ const BUTTON_ICON_OPTIONS = [
   ['ShoppingCart', 'Shopping cart'],
   ['Star', 'Star'],
 ] as const;
-
-const loadedGoogleFonts = new Set<string>();
-
-const normalizeGoogleFontFamily = (fontFamily: string) => {
-  return String(fontFamily)
-    .split(',')[0]
-    .trim()
-    .replace(/^['"]+|['"]+$/g, '');
-};
-
-const loadGoogleFont = (fontFamily: string) => {
-  const fontName = normalizeGoogleFontFamily(fontFamily);
-  if (!fontName || loadedGoogleFonts.has(fontName)) return;
-  const match = GOOGLE_FONT_OPTIONS.find(option => option.startsWith(fontName));
-  if (!match) return;
-  const formattedName = encodeURIComponent(fontName).replace(/%20/g, '+');
-  const href = `https://fonts.googleapis.com/css2?family=${formattedName}:wght@300;400;500;600;700;800;900&display=swap`;
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = href;
-  document.head.appendChild(link);
-  loadedGoogleFonts.add(fontName);
-};
 
 export const RightPanel: React.FC = () => {
   const { selectedElementId, rightPanelTab, setRightPanelTab, getElementById, breakpoint, getCurrentPage } = useBuilderStore() as any;

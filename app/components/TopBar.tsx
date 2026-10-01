@@ -37,6 +37,7 @@ import { useOthers } from '@liveblocks/react';
 import { useAIGeneration } from './functions/useAIGeneration';
 import { normalizeSiteSlug } from '../lib/tenant';
 import { persistGeneratedCms } from '../utils/generatedCms';
+import { getGoogleFontStylesheetUrls } from '../utils/googleFonts';
 import { Page } from '../types/builder';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -684,6 +685,7 @@ export const TopBar: React.FC = () => {
       ? page.elements.map(element => renderElementToHtml(element)).join('')
       : '<div style="padding:32px;font-family:system-ui,sans-serif;color:#4b5563;">No content to export.</div>';
     const pageStyles = generateCssForPage(page);
+    const googleFontLinks = getGoogleFontStylesheetUrls([page]).map(url => `<link rel="stylesheet" href="${url}">`).join('\n  ');
 
     // Collect in-document <style> contents and attempt to fetch linked stylesheets.
     const collectedCssParts: string[] = [];
@@ -726,6 +728,7 @@ export const TopBar: React.FC = () => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${page.seo.title}</title>
   <meta name="description" content="${page.seo.description}">
+  ${googleFontLinks}
   ${headLinkTags.join('\n  ')}
   <style>${combinedStyles}</style>
 </head>

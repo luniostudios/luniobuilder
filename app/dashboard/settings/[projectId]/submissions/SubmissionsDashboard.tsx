@@ -62,44 +62,46 @@ export default function SubmissionsDashboard({ projectId }: { projectId: string 
 
   if (loading) {
     return (
-      <div className='rounded-3xl border border-gray-800 bg-[#111214] p-6'>
-        <p className='text-sm text-gray-400'>Loading submissions...</p>
-      </div>
+      <section className='w-full overflow-hidden rounded-xl border border-gray-200 bg-white text-[#172033] shadow-sm'>
+        <p className='p-5 text-sm text-gray-500'>Loading submissions...</p>
+      </section>
     );
   }
 
   return (
-    <div className='mt-8 rounded-3xl border border-gray-800 bg-[#111214] p-6'>
-      <div className='mb-5 flex items-center justify-between gap-3'>
+    <section className='w-full overflow-hidden rounded-xl border border-gray-200 bg-white text-[#172033] shadow-sm'>
+      <div className='flex flex-wrap items-start justify-between gap-4 border-b border-gray-200 px-5 py-4'>
         <div>
           <div className='flex items-center gap-2'>
-            <Mail className='h-4 w-4 text-blue-300' />
-            <h2 className='text-xl font-semibold text-white'>Lead submissions</h2>
+            <Mail className='h-4 w-4 text-emerald-800' />
+            <h2 className='text-xl font-semibold'>Lead submissions</h2>
           </div>
-          <p className='mt-1 text-sm text-gray-400'>All collected form entries from this project.</p>
+          <p className='mt-1 text-sm text-gray-500'>All collected form entries from this project.</p>
         </div>
-        <div className='rounded-full border border-gray-700 bg-[#0f1218] px-3 py-1.5 text-xs font-medium text-gray-300'>
+        <div className='rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-600'>
           {submissions.length} {submissions.length === 1 ? 'lead' : 'leads'}
         </div>
       </div>
 
-      {error && <div className='mb-4 rounded-xl border border-red-700 bg-red-950/20 p-4 text-sm text-red-200'>{error}</div>}
+      {error && <div role='alert' className='mx-5 mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700'>{error}</div>}
 
       {submissions.length === 0 ? (
-        <div className='rounded-2xl border border-dashed border-gray-700 bg-[#0f1218] p-8 text-center'>
-          <FileText className='mx-auto h-8 w-8 text-gray-500' />
-          <p className='mt-3 text-sm text-gray-400'>No submissions yet.</p>
-          <p className='mt-1 text-xs text-gray-500'>Published forms on your site will appear here automatically.</p>
+        <div className='p-5'>
+          <div className='rounded-lg border border-dashed border-gray-200 bg-gray-50 p-8 text-center'>
+            <FileText className='mx-auto h-8 w-8 text-gray-400' />
+            <p className='mt-3 text-sm text-gray-600'>No submissions yet.</p>
+            <p className='mt-1 text-xs text-gray-500'>Published forms on your site will appear here automatically.</p>
+          </div>
         </div>
       ) : (
         <div className='overflow-x-auto'>
-          <table className='min-w-full border-separate border-spacing-y-2 text-left'>
-            <thead>
-              <tr className='text-xs uppercase tracking-wider text-gray-500'>
-                <th className='px-3 py-2'>Lead</th>
-                <th className='px-3 py-2'>Form</th>
-                <th className='px-3 py-2'>Page</th>
-                <th className='px-3 py-2'>Submitted</th>
+          <table className='min-w-full text-left'>
+            <thead className='bg-gray-50'>
+              <tr className='border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500'>
+                <th className='px-4 py-3 font-semibold'>Lead</th>
+                <th className='px-4 py-3 font-semibold'>Form</th>
+                <th className='px-4 py-3 font-semibold'>Page</th>
+                <th className='px-4 py-3 font-semibold'>Submitted</th>
               </tr>
             </thead>
             <tbody>
@@ -110,36 +112,34 @@ export default function SubmissionsDashboard({ projectId }: { projectId: string 
                   .slice(0, 3);
 
                 return (
-                  <tr key={submission.id} className='rounded-2xl bg-[#0f1218] text-sm text-gray-200'>
-                    <td className='rounded-l-2xl px-3 py-3 align-top'>
+                  <tr key={submission.id} className='border-b border-gray-100 text-sm last:border-b-0'>
+                    <td className='px-4 py-3 align-top'>
                       <div className='flex items-start gap-3'>
-                        <div className='mt-0.5 rounded-full bg-blue-500/10 p-2 text-blue-300'>
+                        <div className='mt-0.5 rounded-md bg-emerald-50 p-2 text-emerald-800'>
                           <Mail className='h-3.5 w-3.5' />
                         </div>
                         <div>
-                          <div className='font-medium text-white'>{formatValue(primaryField || Object.values(submission.fields || {})[0] || 'No value')}</div>
+                          <div className='font-medium text-[#172033]'>{formatValue(primaryField || Object.values(submission.fields || {})[0] || 'No value')}</div>
                           {detailFields.length > 0 && (
-                            <div className='mt-2 space-y-1 text-xs text-gray-400'>
-                              {detailFields.map(([key, value]) => (
-                                <div key={key}><span className='text-gray-500'>{key}:</span> {formatValue(value)}</div>
-                              ))}
+                            <div className='mt-2 space-y-1 text-xs text-gray-600'>
+                              {detailFields.map(([key, value]) => <div key={key}><span className='text-gray-400'>{key}:</span> {formatValue(value)}</div>)}
                             </div>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td className='px-3 py-3 align-top'>
-                      <div className='inline-flex items-center gap-2 rounded-full border border-gray-700 bg-[#111214] px-2.5 py-1 text-xs text-gray-300'>
-                        <ArrowUpRight className='h-3 w-3 text-gray-500' />
+                    <td className='px-4 py-3 align-top'>
+                      <div className='inline-flex items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs text-gray-600'>
+                        <ArrowUpRight className='h-3 w-3 text-gray-400' />
                         {submission.form_id}
                       </div>
                     </td>
-                    <td className='px-3 py-3 align-top text-xs text-gray-400'>
+                    <td className='px-4 py-3 align-top text-xs text-gray-600'>
                       {submission.page_id || 'unknown'}
                     </td>
-                    <td className='rounded-r-2xl px-3 py-3 align-top text-xs text-gray-400'>
-                      <div className='flex items-center gap-2'>
-                        <CalendarDays className='h-3.5 w-3.5 text-gray-500' />
+                    <td className='px-4 py-3 align-top text-xs text-gray-600'>
+                      <div className='flex items-center gap-2 whitespace-nowrap'>
+                        <CalendarDays className='h-3.5 w-3.5 text-gray-400' />
                         {new Date(submission.created_at).toLocaleString()}
                       </div>
                     </td>
@@ -150,6 +150,6 @@ export default function SubmissionsDashboard({ projectId }: { projectId: string 
           </table>
         </div>
       )}
-    </div>
+    </section>
   );
 }

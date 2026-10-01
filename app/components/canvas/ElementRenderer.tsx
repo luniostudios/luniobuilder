@@ -5,6 +5,7 @@ import { BuilderElement, ElementInteraction, ElementType, PageInteraction } from
 import type { CmsDetailSettings } from '../../types/cms';
 import { useBuilderStore } from '../../stores/builderStore';
 import { canHaveChildren, getEffectiveStyles, stylesToCSS } from '../../utils/builderUtils';
+import { loadGoogleFont } from '../../utils/googleFonts';
 import * as LucideIcons from 'lucide-react';
 import { ArrowUp, ComponentIcon, Link2, LoaderCircle, X } from 'lucide-react';
 
@@ -401,6 +402,10 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
   const pageInteraction = (page.interactions || []).find((interaction: PageInteraction) => interaction.trigger === 'load');
   const styles = getEffectiveStyles(element, breakpoint);
   const cssStyles = stylesToCSS(styles);
+  useEffect(() => {
+    if (styles.fontFamily) loadGoogleFont(styles.fontFamily);
+  }, [styles.fontFamily]);
+
   const runtimeInteraction = activeInteraction || triggeredInteraction;
   const runtimeOpacity = opacityOverride || (runtimeInteraction && 'opacity' in runtimeInteraction ? runtimeInteraction.opacity : undefined);
   const interactionStyles = {
