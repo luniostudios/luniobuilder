@@ -1,1 +1,0 @@
-export { GOOGLE_FONT_OPTIONS } from '../../utils/googleFonts';
