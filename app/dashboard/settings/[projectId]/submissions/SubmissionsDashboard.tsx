@@ -74,12 +74,12 @@ export default function SubmissionsDashboard({ projectId }: { projectId: string 
         <div>
           <div className='flex items-center gap-2'>
             <Mail className='h-4 w-4 text-emerald-800' />
-            <h2 className='text-xl font-semibold'>Lead submissions</h2>
+            <h2 className='text-xl font-semibold'>Form Submissions</h2>
           </div>
           <p className='mt-1 text-sm text-gray-500'>All collected form entries from this project.</p>
         </div>
         <div className='rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-600'>
-          {submissions.length} {submissions.length === 1 ? 'lead' : 'leads'}
+          {submissions.length} {submissions.length === 1 ? 'submission' : 'submissions'}
         </div>
       </div>
 
@@ -98,7 +98,7 @@ export default function SubmissionsDashboard({ projectId }: { projectId: string 
           <table className='min-w-full text-left'>
             <thead className='bg-gray-50'>
               <tr className='border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500'>
-                <th className='px-4 py-3 font-semibold'>Lead</th>
+                <th className='px-4 py-3 font-semibold'>Content</th>
                 <th className='px-4 py-3 font-semibold'>Form</th>
                 <th className='px-4 py-3 font-semibold'>Page</th>
                 <th className='px-4 py-3 font-semibold'>Submitted</th>

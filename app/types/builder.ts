@@ -9,6 +9,10 @@ export type ElementType =
   | 'link'
   | 'navbar'
   | 'hero'
+  | 'slider'
+  | 'slide'
+  | 'sliderArrow'
+  | 'sliderPagination'
   | 'card'
   | 'grid'
   | 'columns'
@@ -47,6 +51,7 @@ export interface StyleProperties {
   gridTemplateRows?: string;
   backdropFilter?: string;
   visibility?: string;
+  transform?: string;
 
   // Spacing
   padding?: string;

@@ -29,6 +29,7 @@ interface BuilderStore extends BuilderState {
   // Element manipulation
   addElement: (type: ElementType, parentId: string | null, index?: number) => string;
   addElementFromPalette: (type: ElementType, targetId: string, position: 'before' | 'after' | 'inside') => void;
+  addElementTreeFromPalette: (element: BuilderElement, targetId: string, position: 'before' | 'after' | 'inside') => void;
   addComponentFromPalette: (componentId: string, targetId: string, position: 'before' | 'after' | 'inside') => void;
   moveElement: (elementId: string, targetId: string, position: 'before' | 'after' | 'inside') => void;
   deleteElement: (id: string) => void;
@@ -232,6 +233,46 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
       }
 
       return { pages, selectedElementId: id };
+    });
+
+    get().pushHistory();
+  },
+
+  addElementTreeFromPalette: (element, targetId, position) => {
+    const newElement = deepClone(element);
+    const setParentIds = (current: BuilderElement, parentId: string | null) => {
+      current.parentId = parentId;
+      current.children.forEach(child => setParentIds(child, current.id));
+    };
+
+    set(state => {
+      const pages = deepClone(state.pages);
+      const page = pages.find(currentPage => currentPage.id === state.currentPageId)!;
+      const insert = (elements: BuilderElement[], parentId: string | null): boolean => {
+        for (let index = 0; index < elements.length; index++) {
+          if (elements[index].id === targetId) {
+            if (position === 'inside') {
+              setParentIds(newElement, targetId);
+              elements[index].children.push(newElement);
+            } else {
+              setParentIds(newElement, parentId);
+              elements.splice(position === 'after' ? index + 1 : index, 0, newElement);
+            }
+            return true;
+          }
+          if (insert(elements[index].children, elements[index].id)) return true;
+        }
+        return false;
+      };
+
+      if (targetId === 'canvas-root') {
+        setParentIds(newElement, null);
+        page.elements.push(newElement);
+      } else {
+        insert(page.elements, null);
+      }
+
+      return { pages, selectedElementId: newElement.id };
     });
 
     get().pushHistory();

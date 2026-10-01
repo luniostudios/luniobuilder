@@ -868,12 +868,12 @@ export const TopBar: React.FC = () => {
             <span className="text-gray-500">/</span> {page.name || 'Untitled Project'}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {projectId && (
               <div>
                 <Link
                   href={`/dashboard/settings/${projectId}/submissions`}
-                  className='rounded-full border border-blue-500/40 bg-blue-500/10 px-4 py-2 text-xs font-medium text-blue-200 transition hover:bg-blue-500/20'
+                  className='flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all bg-gray-800 text-gray-300 hover:text-white hover:bg-gray-700 border border-gray-700'
                 >
                   FORMS
                 </Link>
@@ -884,7 +884,7 @@ export const TopBar: React.FC = () => {
               <div>
                 <Link
                   href={`/dashboard/settings/${projectId}/cms`}
-                  className='rounded-full border border-blue-500/40 bg-blue-500/10 px-4 py-2 text-xs font-medium text-blue-200 transition hover:bg-blue-500/20'
+                  className='flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all bg-gray-800 text-gray-300 hover:text-white hover:bg-gray-700 border border-gray-700'
                 >
                   CMS
                 </Link>
@@ -909,7 +909,7 @@ export const TopBar: React.FC = () => {
                       collaborator.name.slice(0, 1).toUpperCase()
                     )}
                   </div>
-                  <span className="absolute top-0 left-0 h-2 w-2 z-40 rounded-full border border-[#0d1117] bg-emerald-400" />
+                  <span className="absolute top-0 left-0 h-2 w-2 z-400 rounded-full border border-[#0d1117] bg-emerald-400" />
                 </div>
               ))}
               {collaborators.length > 5 && (

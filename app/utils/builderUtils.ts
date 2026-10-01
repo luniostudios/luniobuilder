@@ -25,6 +25,14 @@ export const createDefaultElement = (
   parentId: string | null
 ): BuilderElement => {
   const defaults = getElementDefaults(type);
+  const children = defaults.children || [];
+  const setParentIds = (elements: BuilderElement[], currentParentId: string) => {
+    elements.forEach(child => {
+      child.parentId = currentParentId;
+      setParentIds(child.children, child.id);
+    });
+  };
+  setParentIds(children, id);
   return {
     id,
     type,
@@ -38,7 +46,7 @@ export const createDefaultElement = (
       laptop: {},
       mobileLandscape: {},
     },
-    children: defaults.children || [],
+    children,
     parentId,
     locked: false,
     hidden: false,
@@ -335,6 +343,97 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
             hidden: false,
           },
         ],
+      };
+    case 'slider': {
+      const firstSlide = createDefaultElement('slide', generateId(), null);
+      const secondSlide = createDefaultElement('slide', generateId(), null);
+      firstSlide.children[0].props.text = 'A clear headline for your first slide';
+      secondSlide.children[0].props.text = 'Make room for your next idea';
+      secondSlide.children[1].props.text = 'Add images, buttons, and any other elements to each slide.';
+      return {
+        name: 'Slider',
+        props: { autoplay: false, interval: 5000, loop: true, transition: 'slide', duration: 500, showArrows: true, showPagination: true },
+        styles: {
+          display: 'block',
+          position: 'relative',
+          width: '100%',
+          minHeight: '420px',
+          overflow: 'hidden',
+        },
+        children: [
+          firstSlide,
+          secondSlide,
+          createDefaultElement('sliderArrow', generateId(), null),
+          (() => {
+            const arrow = createDefaultElement('sliderArrow', generateId(), null);
+            arrow.name = 'Next arrow';
+            arrow.props.direction = 'next';
+            arrow.styles.desktop.left = 'auto';
+            arrow.styles.desktop.right = '16px';
+            return arrow;
+          })(),
+          createDefaultElement('sliderPagination', generateId(), null),
+        ],
+      };
+    }
+    case 'slide':
+      return {
+        name: 'Slide',
+        props: {},
+        styles: {
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '420px',
+          paddingTop: '64px',
+          paddingRight: '64px',
+          paddingBottom: '64px',
+          paddingLeft: '64px',
+          backgroundColor: '#f1f5f9',
+        },
+        children: [
+          createDefaultElement('heading', generateId(), null),
+          createDefaultElement('paragraph', generateId(), null),
+        ],
+      };
+    case 'sliderArrow':
+      return {
+        name: 'Previous arrow',
+        props: { direction: 'previous', label: 'Previous slide' },
+        styles: {
+          display: 'inline-flex',
+          position: 'absolute',
+          top: '50%',
+          left: '16px',
+          transform: 'translateY(-50%)',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '44px',
+          height: '44px',
+          border: '0',
+          borderRadius: '999px',
+          backgroundColor: '#ffffff',
+          color: '#111827',
+          cursor: 'pointer',
+          zIndex: '2',
+        },
+      };
+    case 'sliderPagination':
+      return {
+        name: 'Pagination',
+        props: { activeColor: '#111827', inactiveColor: '#94a3b8', dotSize: '10px', dotRadius: '999px', dotBorderColor: 'transparent', dotBorderWidth: '0px' },
+        styles: {
+          display: 'flex',
+          position: 'absolute',
+          left: '50%',
+          bottom: '16px',
+          transform: 'translateX(-50%)',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px',
+          zIndex: '2',
+        },
       };
     case 'card':
       return {
@@ -1465,11 +1564,11 @@ export const generateNextProjectFiles = (
   return files;
 };
 export const canHaveChildren = (type: ElementType): boolean => {
-  return ['section', 'div', 'navbar', 'hero', 'card', 'grid', 'columns', 'form', 'list', 'cmsMap'].includes(type);
+  return ['section', 'div', 'navbar', 'hero', 'slider', 'slide', 'card', 'grid', 'columns', 'form', 'list', 'cmsMap'].includes(type);
 };
 
 export const COMPONENT_CATEGORIES = {
-  Layout: ['section', 'div', 'hero', 'navbar', 'columns', 'grid', 'card', 'custom'],
+  Layout: ['section', 'div', 'hero', 'slider', 'navbar', 'columns', 'grid', 'card', 'custom'],
   Typography: ['heading', 'paragraph', 'link', 'list', 'listItem'],
   CMS: ['cmsMap', 'table'],
   Media: ['image', 'video', 'icon', 'iframe', 'calendar'],
@@ -1490,6 +1589,10 @@ export const COMPONENT_LABELS: Record<ElementType, string> = {
   link: 'Link',
   navbar: 'Navbar',
   hero: 'Hero',
+  slider: 'Slider',
+  slide: 'Slide',
+  sliderArrow: 'Slider Arrow',
+  sliderPagination: 'Slider Pagination',
   card: 'Card',
   grid: 'Grid',
   columns: 'Columns',

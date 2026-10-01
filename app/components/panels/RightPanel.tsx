@@ -110,10 +110,9 @@ const InteractionsEditor: React.FC<{ element?: BuilderElement; page: any }> = ({
           <option value='animate'>Animate this element</option><option value='show'>Show another element</option><option value='visibility'>Toggle element visibility</option><option value='opacity'>Change element opacity</option>
         </select>
         {(interaction.action || 'animate') !== 'animate' && <div className='mt-2 flex items-center gap-2'>
-          <button type='button' onClick={() => beginInteractionTargetSelection(element.id, index)} className={`flex-1 rounded border px-2 py-1.5 text-left text-xs ${interactionTargetSelection?.sourceId === element.id && interactionTargetSelection?.interactionIndex === index ? 'border-blue-400 bg-blue-500/20 text-blue-200' : 'border-gray-700 bg-gray-800 text-gray-300 hover:border-blue-400'}`}>
+          <button type='button' onClick={() => beginInteractionTargetSelection(element.id, index)} onDoubleClick={cancelInteractionTargetSelection} className={`flex-1 rounded border px-2 py-1.5 text-left text-xs ${interactionTargetSelection?.sourceId === element.id && interactionTargetSelection?.interactionIndex === index ? 'border-blue-400 bg-blue-500/20 text-blue-200' : 'border-gray-700 bg-gray-800 text-gray-300 hover:border-blue-400'}`}>
             {interactionTargetSelection?.sourceId === element.id && interactionTargetSelection?.interactionIndex === index ? 'Click an element on the canvas...' : interaction.targetElementId ? `Target: ${targetElements.find(target => target.id === interaction.targetElementId)?.name || 'Selected element'}` : 'Select target on canvas'}
           </button>
-          {interactionTargetSelection?.sourceId === element.id && interactionTargetSelection?.interactionIndex === index && <button type='button' onClick={cancelInteractionTargetSelection} className='rounded border border-gray-700 px-2 py-1.5 text-xs text-gray-400 hover:text-white'>Cancel</button>}
         </div>}
         {(interaction.action || 'animate') === 'visibility' && <select value={interaction.visibilityMode || 'toggle'} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, visibilityMode: event.target.value as ElementInteraction['visibilityMode'] } : item))} className='mt-2 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white'>
           <option value='toggle'>Toggle visibility</option><option value='show'>Show target</option><option value='hide'>Hide target</option>
@@ -1365,6 +1364,15 @@ const findCmsMapAncestor = (elements: BuilderElement[], targetId: string, ancest
   return null;
 };
 
+const findSliderAncestor = (elements: BuilderElement[], targetId: string, ancestor: BuilderElement | null = null): BuilderElement | null => {
+  for (const element of elements) {
+    if (element.id === targetId) return element.type === 'slider' ? element : ancestor;
+    const found = findSliderAncestor(element.children || [], targetId, element.type === 'slider' ? element : ancestor);
+    if (found) return found;
+  }
+  return null;
+};
+
 type UnsplashPhoto = {
   id: string;
   width: number;
@@ -1711,7 +1719,7 @@ const CalendarEventEditor: React.FC<{ events: CalendarEvent[]; onChange: (events
 };
 
 const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
-  const { updateElementProps, updateElementName, projectId, getCurrentPage } = useBuilderStore();
+  const { updateElementProps, updateElementName, projectId, getCurrentPage, addElement, selectElement } = useBuilderStore();
 
   const update = (key: string, value: unknown) => {
     updateElementProps(element.id, { [key]: value });
@@ -1723,6 +1731,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
   const [cmsCollections, setCmsCollections] = useState<Array<{ id: string; name: string; slug?: string; fields: string[] }>>([]);
   const page = getCurrentPage();
   const cmsMapAncestor = useMemo(() => findCmsMapAncestor(page.elements, element.id), [page.elements, element.id]);
+  const slider = useMemo(() => element.type === 'slider' ? element : findSliderAncestor(page.elements, element.id), [page.elements, element, element.id]);
   const cmsFieldSource = element.type === 'cmsMap' ? element : cmsMapAncestor;
   const cmsCollectionKey = String(cmsFieldSource?.props.collectionId || cmsFieldSource?.props.collectionSlug || (page.cmsDetail?.enabled ? page.cmsDetail.collectionId : '') || '');
   const isCmsDetailPage = page.cmsDetail?.enabled === true;
@@ -1785,6 +1794,94 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
           className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
       </div>
+
+      {slider && (
+        <div className="space-y-3 border-b border-gray-800 pb-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Slider</p>
+          {element.type === 'slider' && <>
+            <label className="flex items-center justify-between gap-2 text-xs text-gray-300">
+              Autoplay
+              <input type="checkbox" checked={element.props.autoplay === true} onChange={event => update('autoplay', event.target.checked)} />
+            </label>
+            <label className="flex items-center justify-between gap-2 text-xs text-gray-300">
+              Loop slides
+              <input type="checkbox" checked={element.props.loop !== false} onChange={event => update('loop', event.target.checked)} />
+            </label>
+            <label className="flex items-center justify-between gap-2 text-xs text-gray-300">
+              Show arrows
+              <input type="checkbox" checked={element.props.showArrows !== false} onChange={event => update('showArrows', event.target.checked)} />
+            </label>
+            <label className="flex items-center justify-between gap-2 text-xs text-gray-300">
+              Show pagination
+              <input type="checkbox" checked={element.props.showPagination !== false} onChange={event => update('showPagination', event.target.checked)} />
+            </label>
+            <label className="block text-xs text-gray-500">
+              Transition
+              <select value={String(element.props.transition || 'slide')} onChange={event => update('transition', event.target.value)} className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-xs text-gray-200">
+                <option value="slide">Slide</option>
+                <option value="fade">Fade</option>
+              </select>
+            </label>
+            <label className="block text-xs text-gray-500">
+              Transition duration (ms)
+              <input type="number" min="0" value={Number(element.props.duration ?? 500)} onChange={event => update('duration', Number(event.target.value))} className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-xs text-gray-200" />
+            </label>
+            <label className="block text-xs text-gray-500">
+              Autoplay interval (ms)
+              <input type="number" min="500" value={Number(element.props.interval ?? 5000)} onChange={event => update('interval', Number(event.target.value))} className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-xs text-gray-200" />
+            </label>
+          </>}
+          {!['sliderArrow', 'sliderPagination'].includes(element.type) && <button
+            type="button"
+            onClick={() => {
+              if (!slider) return;
+              selectElement(addElement('slide', slider.id));
+            }}
+            className="flex w-full items-center justify-center gap-2 rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-xs font-medium text-gray-200 transition-colors hover:border-blue-400 hover:text-blue-200"
+          >
+            <Plus size={14} /> Add slide ({slider.children.filter((child: BuilderElement) => child.type === 'slide').length})
+          </button>}
+          {element.type === 'sliderArrow' && <>
+            <label className="block text-xs text-gray-500">
+              Direction
+              <select value={String(element.props.direction || 'previous')} onChange={event => update('direction', event.target.value)} className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-xs text-gray-200">
+                <option value="previous">Previous</option>
+                <option value="next">Next</option>
+              </select>
+            </label>
+            <label className="block text-xs text-gray-500">
+              Accessible label
+              <input value={String(element.props.label || '')} onChange={event => update('label', event.target.value)} className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-xs text-gray-200" />
+            </label>
+          </>}
+          {element.type === 'sliderPagination' && <>
+            <label className="block text-xs text-gray-500">
+              Active dot color
+              <input type="color" value={String(element.props.activeColor || '#111827')} onChange={event => update('activeColor', event.target.value)} className="mt-1 h-8 w-full rounded border border-gray-700 bg-gray-800 p-1" />
+            </label>
+            <label className="block text-xs text-gray-500">
+              Inactive dot color
+              <input type="color" value={String(element.props.inactiveColor || '#94a3b8')} onChange={event => update('inactiveColor', event.target.value)} className="mt-1 h-8 w-full rounded border border-gray-700 bg-gray-800 p-1" />
+            </label>
+            <label className="block text-xs text-gray-500">
+              Dot size
+              <input value={String(element.props.dotSize || '10px')} onChange={event => update('dotSize', event.target.value)} className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-xs text-gray-200" />
+            </label>
+            <label className="block text-xs text-gray-500">
+              Dot corner radius
+              <input value={String(element.props.dotRadius || '999px')} onChange={event => update('dotRadius', event.target.value)} className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-xs text-gray-200" />
+            </label>
+            <label className="block text-xs text-gray-500">
+              Dot border color
+              <input type="color" value={String(element.props.dotBorderColor || '#94a3b8')} onChange={event => update('dotBorderColor', event.target.value)} className="mt-1 h-8 w-full rounded border border-gray-700 bg-gray-800 p-1" />
+            </label>
+            <label className="block text-xs text-gray-500">
+              Dot border width
+              <input value={String(element.props.dotBorderWidth || '0px')} onChange={event => update('dotBorderWidth', event.target.value)} className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-xs text-gray-200" />
+            </label>
+          </>}
+        </div>
+      )}
 
       {element.type === 'form' && (
         <>

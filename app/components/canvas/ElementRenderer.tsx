@@ -7,7 +7,7 @@ import { useBuilderStore } from '../../stores/builderStore';
 import { canHaveChildren, getEffectiveStyles, stylesToCSS } from '../../utils/builderUtils';
 import { loadGoogleFont } from '../../utils/googleFonts';
 import * as LucideIcons from 'lucide-react';
-import { ArrowUp, ComponentIcon, Link2, LoaderCircle, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUp, ComponentIcon, Link2, LoaderCircle, X } from 'lucide-react';
 
 interface ElementRendererProps {
   element: BuilderElement;
@@ -22,6 +22,80 @@ interface NavbarMenuContextValue {
 }
 
 const NavbarMenuContext = createContext<NavbarMenuContextValue | null>(null);
+
+interface SliderRuntimeContextValue {
+  activeIndex: number;
+  slideIds: string[];
+  loop: boolean;
+  transition: string;
+  duration: number;
+  showArrows: boolean;
+  showPagination: boolean;
+  goTo: (index: number) => void;
+}
+
+const SliderRuntimeContext = createContext<SliderRuntimeContextValue | null>(null);
+
+const SliderContainer: React.FC<{
+  element: BuilderElement;
+  style: React.CSSProperties;
+  onClick: (event: React.MouseEvent) => void;
+  children: React.ReactNode;
+  isInteractive: boolean;
+}> = ({ element, style, onClick, children, isInteractive }) => {
+  const slideIds = element.children.filter(child => child.type === 'slide').map(slide => slide.id);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const selectedElementId = useBuilderStore(state => state.selectedElementId);
+  const loop = element.props.loop !== false;
+  const duration = Math.max(0, Number(element.props.duration) || 500);
+  const selectedSlideIndex = isInteractive ? -1 : slideIds.findIndex(slideId => {
+    const slide = element.children.find(child => child.id === slideId);
+    const containsSelection = (current: BuilderElement): boolean => current.id === selectedElementId || current.children.some(containsSelection);
+    return Boolean(slide && containsSelection(slide));
+  });
+  const visibleIndex = selectedSlideIndex >= 0 ? selectedSlideIndex : (slideIds.length ? activeIndex % slideIds.length : 0);
+  const goTo = (index: number) => {
+    if (slideIds.length === 0) return;
+    const nextIndex = loop
+      ? (index + slideIds.length) % slideIds.length
+      : Math.min(Math.max(index, 0), slideIds.length - 1);
+    setActiveIndex(nextIndex);
+  };
+
+  useEffect(() => {
+    if (!isInteractive || element.props.autoplay !== true || slideIds.length < 2) return;
+    const interval = Math.max(500, Number(element.props.interval) || 5000);
+    const timer = window.setInterval(() => {
+      setActiveIndex(current => loop ? (current + 1) % slideIds.length : Math.min(current + 1, slideIds.length - 1));
+    }, interval);
+    return () => window.clearInterval(timer);
+  }, [element.props.autoplay, element.props.interval, isInteractive, loop, slideIds.length]);
+
+  const contextValue: SliderRuntimeContextValue = {
+    activeIndex: visibleIndex,
+    slideIds,
+    loop,
+    transition: String(element.props.transition || 'slide'),
+    duration,
+    showArrows: element.props.showArrows !== false,
+    showPagination: element.props.showPagination !== false,
+    goTo,
+  };
+
+  return (
+    <SliderRuntimeContext.Provider value={contextValue}>
+      <div
+        role="region"
+        aria-roledescription="carousel"
+        aria-label={String(element.props.label || element.name || 'Slider')}
+        style={{ ...style, position: style.position || 'relative' }}
+        onClick={onClick}
+      >
+        {children}
+      </div>
+    </SliderRuntimeContext.Provider>
+  );
+};
 
 interface CalendarEvent {
   date: string;
@@ -475,6 +549,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     minWidth: 0,
   };
   const navbarMenu = useContext(NavbarMenuContext);
+  const sliderRuntime = useContext(SliderRuntimeContext);
   const cmsRecord = useContext(CmsRecordContext);
   const isMenuTarget = navbarMenu?.menuIds.has(element.id) ?? false;
 
@@ -1093,6 +1168,65 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
         ) : <IconComp style={{ ...nestedContentStyles, height: '100%' }} onClick={handleClick} />;
       }
 
+      case 'sliderArrow': {
+        if (!sliderRuntime || !sliderRuntime.showArrows) return null;
+        const isNext = element.props.direction === 'next';
+        const ArrowIcon = isNext ? ArrowRight : ArrowLeft;
+        const label = String(element.props.label || (isNext ? 'Next slide' : 'Previous slide'));
+        return (
+          <div
+            aria-label={label}
+            title={label}
+            style={nestedLeafStyles}
+            onClick={event => {
+              event.stopPropagation();
+              sliderRuntime.goTo(sliderRuntime.activeIndex + (isNext ? 1 : -1));
+              if (!isPreview) handleClick(event);
+            }}
+            onDoubleClick={handleDoubleClick}
+          >
+            <ArrowIcon aria-hidden="true" size={18} />
+          </div>
+        );
+      }
+
+      case 'sliderPagination': {
+        if (!sliderRuntime || !sliderRuntime.showPagination) return null;
+        const dotSize = String(element.props.dotSize || '10px');
+        const activeColor = String(element.props.activeColor || '#111827');
+        const inactiveColor = String(element.props.inactiveColor || '#94a3b8');
+        const dotRadius = String(element.props.dotRadius || '999px');
+        const dotBorderWidth = String(element.props.dotBorderWidth || '0px');
+        const dotBorderColor = String(element.props.dotBorderColor || 'transparent');
+        return (
+          <div style={nestedContainerStyles} onClick={handleClick}>
+            {sliderRuntime.slideIds.map((slideId, index) => (
+              <div
+                key={slideId}
+                aria-label={`Go to slide ${index + 1}`}
+                aria-current={sliderRuntime.activeIndex === index ? 'true' : undefined}
+                onClick={event => {
+                  event.stopPropagation();
+                  sliderRuntime.goTo(index);
+                  if (!isPreview) handleClick(event);
+                }}
+                style={{
+                  width: dotSize,
+                  height: dotSize,
+                  minWidth: dotSize,
+                  padding: 0,
+                  border: `${dotBorderWidth} solid ${dotBorderColor}`,
+                  borderRadius: dotRadius,
+                  backgroundColor: sliderRuntime.activeIndex === index ? activeColor : inactiveColor,
+                  cursor: 'pointer',
+                  transition: `background-color ${sliderRuntime.duration}ms ease`,
+                }}
+              />
+            ))}
+          </div>
+        );
+      }
+
       case 'listItem':
         return (
           <li
@@ -1165,6 +1299,20 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     ? menuStyle
     : nestedContainerStyles;
 
+  const sliderSlideIndex = sliderRuntime?.slideIds.indexOf(element.id) ?? -1;
+  const sliderSlideStyles: React.CSSProperties = element.type === 'slide' && sliderRuntime && sliderSlideIndex >= 0
+    ? {
+      position: 'absolute',
+      inset: 0,
+      width: '100%',
+      transform: sliderRuntime.transition === 'slide' ? `translateX(${(sliderSlideIndex - sliderRuntime.activeIndex) * 100}%)` : undefined,
+      opacity: sliderRuntime.transition === 'fade' && sliderRuntime.activeIndex !== sliderSlideIndex ? 0 : 1,
+      transition: `transform ${sliderRuntime.duration}ms ease, opacity ${sliderRuntime.duration}ms ease`,
+      pointerEvents: sliderRuntime.activeIndex === sliderSlideIndex ? 'auto' : 'none',
+      zIndex: sliderRuntime.activeIndex === sliderSlideIndex ? 1 : 0,
+    }
+    : {};
+
   const renderChildren = (children = element.children) => (
     <>
       {children.map(child => (
@@ -1216,6 +1364,17 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
             </NavbarMenuContext.Provider>
           );
         }
+      case 'slider':
+        return (
+          <SliderContainer
+            element={element}
+            style={innerContainerStyle}
+            onClick={handleClick}
+            isInteractive={isPreview || isPublishedSite}
+          >
+            {renderChildren()}
+          </SliderContainer>
+        );
       case 'form':
         return (
           <form
@@ -1250,7 +1409,12 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
       ref={ref}
       style={element.type === 'cmsMap'
         ? { width: '100%', minWidth: 0, ...interactionStyles }
-        : { ...safeCssStyles, ...interactionStyles, ...(isMenuTarget && navbarMenu?.isOpen ? { display: 'contents' } : {}) }}
+        : { ...safeCssStyles, ...interactionStyles, ...sliderSlideStyles, ...(isMenuTarget && navbarMenu?.isOpen ? { display: 'contents' } : {}) }}
+      role={element.type === 'slide' && sliderSlideIndex >= 0 ? 'group' : undefined}
+      aria-roledescription={element.type === 'slide' && sliderSlideIndex >= 0 ? 'slide' : undefined}
+      aria-label={element.type === 'slide' && sliderSlideIndex >= 0 ? `${sliderSlideIndex + 1} of ${sliderRuntime?.slideIds.length || 0}` : undefined}
+      aria-hidden={element.type === 'slide' && sliderSlideIndex >= 0 ? sliderRuntime?.activeIndex !== sliderSlideIndex : undefined}
+      inert={element.type === 'slide' && sliderSlideIndex >= 0 && sliderRuntime?.activeIndex !== sliderSlideIndex}
       className={wrapperClasses}
       draggable={!isPreview && !element.locked}
       onDragStart={handleDragStart}

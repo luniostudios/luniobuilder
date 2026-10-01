@@ -8,7 +8,7 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-
 import { CSS } from '@dnd-kit/utilities';
 import { useBuilderStore } from '../../stores/builderStore';
 import { ElementType, BuilderElement, Page } from '../../types/builder';
-import { COMPONENT_CATEGORIES, COMPONENT_LABELS, canHaveChildren, getComponentElements } from '../../utils/builderUtils';
+import { COMPONENT_CATEGORIES, COMPONENT_LABELS, canHaveChildren, createDefaultElement, generateId, getComponentElements } from '../../utils/builderUtils';
 import type { CmsCollection, CmsRecord } from '../../types/cms';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogDescription, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -23,6 +23,7 @@ const COMPONENT_ICONS: Record<string, React.ReactNode> = {
   link: <Link size={25} />,
   navbar: <LayoutPanelTop size={25} />,
   hero: <LayoutIcon size={25} />,
+  slider: <ImagesIcon size={25} />,
   card: <IdCard size={25} />,
   grid: <Grid size={25} />,
   columns: <Columns size={25} />,
@@ -396,11 +397,12 @@ const CmsTab: React.FC = () => {
 };
 
 const ComponentsTab: React.FC = () => {
-  const { setDraggedElementType, addElementFromPalette, selectedElementId, getElementById } = useBuilderStore();
+  const { setDraggedElementType, addElementFromPalette, addElementTreeFromPalette, selectedElementId, getElementById } = useBuilderStore();
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set(Object.keys(COMPONENT_CATEGORIES))
   );
   const [search, setSearch] = useState('');
+  const [activePaletteTab, setActivePaletteTab] = useState<'elements' | 'sections'>('elements');
 
   const toggleCategory = (cat: string) => {
     setExpandedCategories(prev => {
@@ -422,9 +424,22 @@ const ComponentsTab: React.FC = () => {
     setDraggedElementType(null);
   };
 
-  const handleDoubleClick = (type: ElementType) => {
+  const getInsertTarget = () => {
     const selectedElement = selectedElementId ? getElementById(selectedElementId) : null;
-    addElementFromPalette(type, selectedElement && canHaveChildren(selectedElement.type) ? selectedElement.id : 'canvas-root', 'inside');
+    if (selectedElement?.type === 'slider') {
+      return selectedElement.children.find(child => child.type === 'slide') || selectedElement;
+    }
+    return selectedElement && canHaveChildren(selectedElement.type) ? selectedElement : null;
+  };
+
+  const handleDoubleClick = (type: ElementType) => {
+    addElementFromPalette(type, getInsertTarget()?.id || 'canvas-root', 'inside');
+  };
+
+  const addPreset = (presetId: string) => {
+    const preset = createSectionPreset(presetId);
+    if (!preset) return;
+    addElementTreeFromPalette(preset, getInsertTarget()?.id || 'canvas-root', 'inside');
   };
 
   const filteredCategories = Object.entries(COMPONENT_CATEGORIES).map(([cat, types]) => ({
@@ -436,55 +451,139 @@ const ComponentsTab: React.FC = () => {
 
   return (
     <div className="p-3">
-      <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Components</span>
-      <div className="relative mb-3 mt-3">
-        <input
-          type="text"
-          placeholder="Search components..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 border border-gray-700"
-        />
+      <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Elements</span>
+      <div role="tablist" aria-label="Element palette" className="mt-3 grid grid-cols-2 rounded-md border border-gray-800 bg-gray-950 p-1">
+        {(['elements', 'sections'] as const).map(tab => (
+          <button
+            key={tab}
+            type="button"
+            role="tab"
+            aria-selected={activePaletteTab === tab}
+            onClick={() => setActivePaletteTab(tab)}
+            className={`rounded px-2 py-1.5 text-xs font-medium capitalize transition-colors ${activePaletteTab === tab ? 'bg-gray-800 text-gray-100' : 'text-gray-500 hover:text-gray-300'}`}
+          >
+            {tab}
+          </button>
+        ))}
       </div>
 
-      {filteredCategories.map(({ cat, types }) => (
-        <div key={cat} className="mb-2">
-          <button
-            onClick={() => toggleCategory(cat)}
-            className="w-full flex items-center justify-between px-1 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-200 transition-colors"
-          >
-            {cat}
-            {expandedCategories.has(cat) ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-          </button>
+      {activePaletteTab === 'elements' ? (
+        <>
+          <div className="relative mb-3 mt-3">
+            <input
+              type="text"
+              placeholder="Search elements..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+          {filteredCategories.map(({ cat, types }) => (
+            <div key={cat} className="mb-2">
+              <button
+                onClick={() => toggleCategory(cat)}
+                className="flex w-full items-center justify-between px-1 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400 transition-colors hover:text-gray-200"
+              >
+                {cat}
+                {expandedCategories.has(cat) ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+              </button>
 
-          {expandedCategories.has(cat) && (
-            <div className="grid grid-cols-2 gap-1.5 mt-1">
-              {(types as ElementType[]).map(type => (
-                <div
-                  key={type}
-                  draggable
-                  onDragStart={e => handleDragStart(e, type)}
-                  onDragEnd={handleDragEnd}
-                  onDoubleClick={() => handleDoubleClick(type)}
-                  className="flex flex-col items-center gap-2 bg-gray-800/60 hover:bg-gray-700/80 border border-gray-700/50 hover:border-gray-600 rounded-lg px-2.5 py-2 cursor-grab active:cursor-grabbing transition-all group"
-                  title={`Double-click to add, drag to place`}
-                >
-                  <span className="text-gray-400 group-hover:text-blue-300 transition-colors shrink-0">
-                    {COMPONENT_ICONS[type] || <Square size={14} />}
-                  </span>
-                  <span className="text-[10px] text-gray-300 group-hover:text-white transition-colors truncate">
-                    {COMPONENT_LABELS[type]}
-                  </span>
+              {expandedCategories.has(cat) && (
+                <div className="mt-1 grid grid-cols-2 gap-1.5">
+                  {(types as ElementType[]).map(type => (
+                    <div
+                      key={type}
+                      draggable
+                      onDragStart={e => handleDragStart(e, type)}
+                      onDragEnd={handleDragEnd}
+                      onDoubleClick={() => handleDoubleClick(type)}
+                      className="group flex cursor-grab flex-col items-center gap-2 rounded-lg border border-gray-700/50 bg-gray-800/60 px-2.5 py-2 transition-all hover:border-gray-600 hover:bg-gray-700/80 active:cursor-grabbing"
+                      title="Double-click to add, drag to place"
+                    >
+                      <span className="shrink-0 text-gray-400 transition-colors group-hover:text-blue-300">
+                        {COMPONENT_ICONS[type] || <Square size={14} />}
+                      </span>
+                      <span className="truncate text-[10px] text-gray-300 transition-colors group-hover:text-white">
+                        {COMPONENT_LABELS[type]}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
-          )}
+          ))}
+          <p className="mt-4 text-center text-xs text-gray-600">Drag or double-click to add</p>
+        </>
+      ) : (
+        <div className="mt-3 space-y-2">
+          {SECTION_PRESETS.map(preset => (
+            <div key={preset.id} className="flex items-center gap-2 rounded-md border border-gray-800 bg-gray-900/70 p-2.5">
+              <span className="text-gray-400">{preset.icon}</span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-medium text-gray-200">{preset.label}</p>
+                <p className="mt-0.5 text-[10px] text-gray-500">{preset.description}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => addPreset(preset.id)}
+                aria-label={`Add ${preset.label}`}
+                title={`Add ${preset.label}`}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-gray-400 transition-colors hover:bg-blue-500/15 hover:text-blue-300"
+              >
+                <Plus size={15} />
+              </button>
+            </div>
+          ))}
         </div>
-      ))}
-
-      <p className="text-xs text-gray-600 text-center mt-4">Drag or double-click to add</p>
+      )}
     </div>
   );
+};
+
+const SECTION_PRESETS = [
+  { id: 'hero', label: 'Hero section', description: 'Headline, copy, and call to action', icon: <LayoutIcon size={18} /> },
+  { id: 'newsletter', label: 'Newsletter form', description: 'Email field and subscribe button', icon: <Form size={18} /> },
+  { id: 'feature-grid', label: 'Feature grid', description: 'Three cards with editable content', icon: <Grid size={18} /> },
+  { id: 'two-columns', label: 'Two-column section', description: 'Side-by-side content areas', icon: <Columns size={18} /> },
+];
+
+const createSectionPreset = (presetId: string): BuilderElement | null => {
+  if (presetId === 'hero') {
+    const hero = createDefaultElement('hero', generateId(), null);
+    const button = createDefaultElement('button', generateId(), hero.id);
+    button.name = 'Hero call to action';
+    button.props.text = 'Get started';
+    button.styles.desktop.marginTop = '8px';
+    hero.children.push(button);
+    return hero;
+  }
+  if (presetId === 'newsletter') return createDefaultElement('form', generateId(), null);
+  if (presetId === 'two-columns') return createDefaultElement('columns', generateId(), null);
+  if (presetId !== 'feature-grid') return null;
+
+  const grid = createDefaultElement('grid', generateId(), null);
+  grid.name = 'Feature grid';
+  grid.styles.desktop.gridTemplateColumns = 'repeat(3, minmax(0, 1fr))';
+  grid.styles.desktop.gap = '24px';
+  grid.styles.tablet.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))';
+  grid.styles.mobile.gridTemplateColumns = '1fr';
+  grid.children = ['Simple to use', 'Made for teams', 'Ready to grow'].map((title, index) => {
+    const card = createDefaultElement('card', generateId(), grid.id);
+    card.name = `Feature ${index + 1}`;
+    const heading = createDefaultElement('heading', generateId(), card.id);
+    heading.name = `Feature ${index + 1} heading`;
+    heading.props.text = title;
+    heading.props.level = 3;
+    heading.styles.desktop.fontSize = '20px';
+    heading.styles.desktop.marginBottom = '12px';
+    const paragraph = createDefaultElement('paragraph', generateId(), card.id);
+    paragraph.name = `Feature ${index + 1} description`;
+    paragraph.props.text = 'Add a short description for this feature.';
+    paragraph.styles.desktop.marginBottom = '0';
+    card.children = [heading, paragraph];
+    return card;
+  });
+  return grid;
 };
 
 const ComponentLibraryTab: React.FC = () => {
