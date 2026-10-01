@@ -376,6 +376,28 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
   const isRevealed = useBuilderStore(state => Boolean(state.revealedElementIds[element.id]));
   const visibilityOverride = useBuilderStore(state => state.visibilityOverrides[element.id]);
   const opacityOverride = useBuilderStore(state => state.opacityOverrides[element.id]);
+  const scrollIntoViewInteraction = (element.interactions || []).find(interaction => interaction.trigger === 'scroll-into-view');
+
+  useEffect(() => {
+    if ((!isPreview && !isPublishedSite) || !scrollIntoViewInteraction || !ref.current || typeof IntersectionObserver === 'undefined') return;
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry?.isIntersecting) return;
+
+      const targetId = scrollIntoViewInteraction.action === 'animate'
+        ? element.id
+        : scrollIntoViewInteraction.targetElementId || element.id;
+      applyElementInteraction(targetId, scrollIntoViewInteraction);
+      if (targetId === element.id && scrollIntoViewInteraction.action === 'animate') {
+        setActiveInteraction(scrollIntoViewInteraction);
+      }
+      observer.disconnect();
+    }, { threshold: 0.1 });
+
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [applyElementInteraction, element.id, isPreview, isPublishedSite, scrollIntoViewInteraction]);
+
   const pageInteraction = (page.interactions || []).find((interaction: PageInteraction) => interaction.trigger === 'load');
   const styles = getEffectiveStyles(element, breakpoint);
   const cssStyles = stylesToCSS(styles);
@@ -1134,7 +1156,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
   const renderChildren = (children = element.children) => (
     <>
       {children.map(child => (
-        <ElementRenderer key={child.id} element={child} isPreview={isPreview} />
+        <ElementRenderer key={child.id} element={child} isPreview={isPreview} isPublishedSite={isPublishedSite} />
       ))}
       {!isPreview && children.length === 0 && (
         <div className="w-full py-8 flex items-center justify-center text-gray-300 text-sm border-2 border-dashed border-gray-200 rounded-lg pointer-events-none">

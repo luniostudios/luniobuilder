@@ -122,7 +122,7 @@ const InteractionsEditor: React.FC<{ element?: BuilderElement; page: any }> = ({
       {elementInteractions.map((interaction, index) => <div key={`${interaction.trigger}-${index}`} className='mb-2 rounded-lg border border-gray-700 bg-gray-900/60 p-3'>
         <div className='flex items-center justify-between gap-2'>
           <select value={interaction.trigger} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, trigger: event.target.value as ElementInteraction['trigger'] } : item))} className='min-w-0 flex-1 rounded border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white'>
-            <option value='hover'>While hovering</option><option value='click'>On click</option>
+            <option value='hover'>While hovering</option><option value='click'>On click</option><option value='scroll-into-view'>When scrolled into view</option>
           </select>
           <button type='button' onClick={() => updateElement(elementInteractions.filter((_, itemIndex) => itemIndex !== index))} title='Remove trigger' className='p-1 text-gray-500 hover:text-red-300'><Trash2 size={14} /></button>
         </div>

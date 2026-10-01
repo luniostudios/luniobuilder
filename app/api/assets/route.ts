@@ -18,14 +18,21 @@ export async function GET() {
   const userId = await getUser();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { data, error } = await supabaseServer.storage.from(BUCKET).list(getUserFolder(userId), {
-    limit: 100,
-    sortBy: { column: 'created_at', order: 'desc' },
-  });
+  const files = [];
+  const pageSize = 100;
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await supabaseServer.storage.from(BUCKET).list(getUserFolder(userId), {
+      limit: pageSize,
+      offset,
+      sortBy: { column: 'created_at', order: 'desc' },
+    });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    files.push(...(data || []));
+    if (!data || data.length < pageSize) break;
+  }
 
-  const assets = (data || [])
+  const assets = files
     .filter((file) => file.name && file.metadata?.mimetype?.startsWith('image/'))
     .map((file) => {
       const path = `${getUserFolder(userId)}/${file.name}`;
@@ -66,4 +73,24 @@ export async function POST(request: Request) {
   return NextResponse.json({
     asset: { id: path, name: file.name, url: publicUrl.publicUrl },
   });
+}
+
+export async function DELETE(request: Request) {
+  const userId = await getUser();
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const body = await request.json().catch(() => null);
+  const assetId = typeof body?.assetId === 'string' ? body.assetId : '';
+  const userFolder = getUserFolder(userId);
+  const prefix = `${userFolder}/`;
+  const fileName = assetId.startsWith(prefix) ? assetId.slice(prefix.length) : '';
+
+  if (!fileName || fileName.includes('/') || fileName === '.' || fileName === '..') {
+    return NextResponse.json({ error: 'Invalid asset.' }, { status: 400 });
+  }
+
+  const { error } = await supabaseServer.storage.from(BUCKET).remove([assetId]);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  return NextResponse.json({ success: true });
 }

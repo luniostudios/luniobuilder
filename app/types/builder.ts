@@ -179,7 +179,7 @@ export interface PseudoClassStyles {
   focus?: ResponsiveStyles;
 }
 
-export type InteractionTrigger = 'hover' | 'click';
+export type InteractionTrigger = 'hover' | 'click' | 'scroll-into-view';
 
 export interface ElementInteraction {
   trigger: InteractionTrigger;
@@ -242,7 +242,7 @@ export interface BuilderState {
   dropPosition: 'before' | 'after' | 'inside' | null;
   breakpoint: Breakpoint;
   canvasScale: number;
-  leftPanelTab: 'components' | 'library' | 'layers' | 'pages' | 'cms';
+  leftPanelTab: 'components' | 'library' | 'layers' | 'pages' | 'cms' | 'assets';
   rightPanelTab: 'style' | 'content' | 'css' | 'interactions' | 'seo';
   pseudoClassState: 'base' | 'hover' | 'active' | 'focus';
   history: Page[][];

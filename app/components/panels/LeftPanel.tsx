@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { LayoutGrid as Layout, Type, Image, MousePointer, Square, Columns2 as Columns, Grid2x2 as Grid, AlignLeft, Link, Star, Minus, Move, FileText, ChevronRight, ChevronDown, ChevronLeft, Eye, EyeOff, Lock, Unlock, Trash2, Copy, Plus, Layers, Package, Globe, Monitor, Play, Form, List, ListEnd, Laptop, CalendarDays, LayoutIcon, LayoutPanelTop, IdCard, TextInitialIcon, Code2, ChevronsDownUp, Table2, ListTree, Database, ExternalLink, Search, Blocks } from 'lucide-react';
+import { LayoutGrid as Layout, Type, Image, Images as ImagesIcon, MousePointer, Square, Columns2 as Columns, Grid2x2 as Grid, AlignLeft, Link, Star, Minus, Move, FileText, ChevronRight, ChevronDown, ChevronLeft, Eye, EyeOff, Lock, Unlock, Trash2, Copy, Plus, Layers, Package, Globe, Monitor, Play, Form, List, ListEnd, Laptop, CalendarDays, LayoutIcon, LayoutPanelTop, IdCard, TextInitialIcon, Code2, ChevronsDownUp, Table2, ListTree, Database, ExternalLink, Search, Blocks } from 'lucide-react';
 import { DndContext, DragEndEvent, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -53,6 +53,7 @@ export const LeftPanel: React.FC = () => {
     { id: 'layers' as const, label: 'Layers', icon: <Layers size={17} /> },
     { id: 'pages' as const, label: 'Pages', icon: <Globe size={17} /> },
     { id: 'cms' as const, label: 'Data Sources', icon: <Database size={17} /> },
+    { id: 'assets' as const, label: 'Assets', icon: <ImagesIcon size={17} /> },
   ];
 
   return (
@@ -101,7 +102,129 @@ export const LeftPanel: React.FC = () => {
           {leftPanelTab === 'layers' && <LayersTab />}
           {leftPanelTab === 'pages' && <PagesTab />}
           {leftPanelTab === 'cms' && <CmsTab />}
+          {leftPanelTab === 'assets' && <AssetsTab />}
         </div>
+      </div>
+    </div>
+  );
+};
+
+interface UploadedAsset {
+  id: string;
+  name: string;
+  url: string;
+}
+
+const AssetsTab: React.FC = () => {
+  const [assets, setAssets] = useState<UploadedAsset[]>([]);
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [actionError, setActionError] = useState('');
+  const [deletingAssetId, setDeletingAssetId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch('/api/assets', { credentials: 'include', cache: 'no-store' })
+      .then(async response => {
+        const data = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(data?.error || 'Unable to load assets');
+        return data;
+      })
+      .then(data => {
+        if (!cancelled) setAssets(Array.isArray(data?.assets) ? data.assets : []);
+      })
+      .catch(value => {
+        if (!cancelled) setError(value instanceof Error ? value.message : 'Unable to load assets');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, []);
+
+  const filteredAssets = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return query ? assets.filter(asset => asset.name.toLowerCase().includes(query)) : assets;
+  }, [assets, search]);
+
+  const deleteAsset = async (event: React.MouseEvent<HTMLButtonElement>, asset: UploadedAsset) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!window.confirm(`Delete "${asset.name}"?`)) return;
+
+    setDeletingAssetId(asset.id);
+    setActionError('');
+    try {
+      const response = await fetch('/api/assets', {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assetId: asset.id }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(data?.error || 'Unable to delete asset');
+      setAssets(current => current.filter(item => item.id !== asset.id));
+    } catch (value) {
+      setActionError(value instanceof Error ? value.message : 'Unable to delete asset');
+    } finally {
+      setDeletingAssetId(null);
+    }
+  };
+
+  return (
+    <div className="flex h-full min-h-0 flex-col bg-[#111114] text-gray-200">
+      <div className="border-b border-gray-800 px-3 py-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold uppercase tracking-wider text-gray-300">Assets</span>
+          {!loading && !error && <span className="text-[10px] text-gray-500">{assets.length}</span>}
+        </div>
+        <label className="relative mt-3 block">
+          <Search size={13} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-600" />
+          <input
+            value={search}
+            onChange={event => setSearch(event.target.value)}
+            placeholder="Search uploaded images..."
+            aria-label="Search uploaded assets"
+            className="w-full rounded-md border border-gray-700 bg-gray-900 py-1.5 pl-8 pr-2 text-xs text-gray-200 outline-none focus:border-blue-400"
+          />
+        </label>
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto p-2">
+        {actionError && <p role="alert" className="mb-2 rounded-md border border-red-900/60 bg-red-950/30 p-2 text-xs text-red-300">{actionError}</p>}
+        {loading ? (
+          <p className="p-3 text-xs text-gray-500">Loading assets...</p>
+        ) : error ? (
+          <p className="p-3 text-xs text-red-300">{error}</p>
+        ) : filteredAssets.length === 0 ? (
+          <div className="rounded-md border border-dashed border-gray-800 p-4 text-center">
+            <ImagesIcon size={24} className="mx-auto mb-2 text-gray-600" />
+            <p className="text-xs text-gray-400">{assets.length ? 'No matching assets.' : 'No uploaded images yet.'}</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-2">
+            {filteredAssets.map(asset => (
+              <div key={asset.id} className="group relative min-w-0 overflow-hidden rounded-md border border-gray-800 bg-gray-900 hover:border-blue-400/60">
+                <a href={asset.url} target="_blank" rel="noreferrer" title={`Open ${asset.name}`} className="block focus:outline-none focus:ring-1 focus:ring-blue-500">
+                  <img src={asset.url} alt={asset.name} loading="lazy" className="aspect-square w-full object-cover group-hover:opacity-90" />
+                  <span className="block truncate px-2 py-1.5 pr-8 text-[10px] text-gray-400 group-hover:text-gray-200">{asset.name}</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={event => deleteAsset(event, asset)}
+                  disabled={deletingAssetId === asset.id}
+                  aria-label={`Delete ${asset.name}`}
+                  title={`Delete ${asset.name}`}
+                  className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded bg-gray-950/85 text-gray-300 opacity-0 transition hover:bg-red-700 hover:text-white focus:opacity-100 focus:outline-none focus:ring-1 focus:ring-red-400 group-hover:opacity-100 disabled:cursor-wait disabled:opacity-70"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
