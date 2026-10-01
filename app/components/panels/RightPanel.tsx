@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, Plus, Redo2, Trash2, Upload } from 'lucide-react';
+import { AlignCenter, AlignJustify, AlignLeft, AlignRight, ChevronDown, ChevronRight, Grid2x2, LayoutGrid, Link2, Maximize2, Move, Paintbrush, Plus, Redo2, SlidersHorizontal, Sparkles, Square, Trash2, Type, Unlink2, Upload } from 'lucide-react';
 import ColorPicker from 'react-best-gradient-color-picker';
 import { useBuilderStore } from '../../stores/builderStore';
 import { ElementInteraction, PageInteraction, StyleProperties } from '../../types/builder';
@@ -153,16 +153,31 @@ interface SectionProps {
 
 const Section: React.FC<SectionProps> = ({ title, children, defaultOpen = true }) => {
   const [open, setOpen] = useState(defaultOpen);
+  const icons: Record<string, React.ReactNode> = {
+    Layout: <LayoutGrid size={15} />,
+    Size: <Maximize2 size={15} />,
+    Spacing: <Move size={15} />,
+    Typography: <Type size={15} />,
+    Background: <Paintbrush size={15} />,
+    Border: <Square size={15} />,
+    Effects: <Sparkles size={15} />,
+    Animation: <SlidersHorizontal size={15} />,
+  };
   return (
-    <div className="border-b border-gray-800/60">
+    <div className="border-b border-gray-800/70">
       <button
+        type="button"
+        aria-expanded={open}
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-200 transition-colors"
+        className="group flex w-full items-center justify-between px-3.5 py-3 text-left text-xs font-semibold text-gray-300 transition-colors hover:bg-white/2.5 hover:text-white"
       >
-        {title}
-        {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+        <span className="flex items-center gap-2.5">
+          <span className="text-gray-500 transition-colors group-hover:text-sky-300">{icons[title]}</span>
+          {title}
+        </span>
+        {open ? <ChevronDown size={14} className="text-gray-500" /> : <ChevronRight size={14} className="text-gray-500" />}
       </button>
-      {open && <div className="px-4 pb-4">{children}</div>}
+      {open && <div className="px-3.5 pb-4 pt-1">{children}</div>}
     </div>
   );
 };
@@ -179,30 +194,30 @@ interface InputRowProps {
 
 const InputRow: React.FC<InputRowProps> = ({ label, value, onChange, type = 'text', placeholder, unit, options }) => {
   return (
-    <div className="flex w-full items-center gap-2 mb-2">
-      <span className="text-xs text-gray-500 w-20 shrink-0">{label}</span>
+    <label className="mb-2 flex w-full items-center gap-2">
+      <span className="w-18.5 shrink-0 text-[11px] text-gray-400">{label}</span>
       {options ? (
         <select
           value={value}
           onChange={e => onChange(e.target.value)}
-          className="flex-1 bg-gray-800 text-gray-200 text-xs rounded-md px-2 py-1.5 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="h-8 min-w-0 flex-1 rounded-md border border-gray-700/80 bg-[#191b20] px-2 text-xs text-gray-200 outline-none transition-colors hover:border-gray-600 focus:border-sky-400"
         >
           <option value="">—</option>
           {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
         </select>
       ) : (
-        <>
+        <span className="flex h-8 min-w-0 flex-1 items-center rounded-md border border-gray-700/80 bg-[#191b20] px-2 transition-colors focus-within:border-sky-400">
           <input
             type={type}
             value={value}
             onChange={e => onChange(e.target.value)}
             placeholder={placeholder || '—'}
-            className="flex-1 bg-gray-800 text-gray-200 text-xs rounded-md px-2 py-1.5 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 min-w-0"
+            className="h-full min-w-0 flex-1 bg-transparent text-xs text-gray-100 outline-none placeholder:text-gray-600"
           />
-          {unit && <span className="text-xs text-gray-600">{unit}</span>}
-        </>
+          {unit && <span className="ml-1 text-[10px] text-gray-500">{unit}</span>}
+        </span>
       )}
-    </div>
+    </label>
   );
 };
 
@@ -214,24 +229,25 @@ interface ColorInputProps {
 
 const ColorInput: React.FC<ColorInputProps> = ({ label, value, onChange }) => {
   return (
-    <div className="flex items-center gap-2 mb-2">
-      <span className="text-xs text-gray-500 w-20 shrink-0">{label}</span>
-      <div className="flex-1 w-10 flex items-center gap-2 bg-gray-800 border border-gray-700 rounded-md px-2 py-1.5">
+    <label className="mb-2 flex items-center gap-2">
+      <span className="w-18.5 shrink-0 text-[11px] text-gray-400">{label}</span>
+      <span className="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-md border border-gray-700/80 bg-[#191b20] px-2 transition-colors focus-within:border-sky-400">
         <input
           type="color"
           value={value || '#000000'}
+          aria-label={`${label} color picker`}
           onChange={e => onChange(e.target.value)}
-          className="w-4 h-4 rounded cursor-pointer border-0 bg-transparent p-0"
+          className="h-5 w-6 cursor-pointer rounded border-0 bg-transparent p-0"
         />
         <input
           type="text"
           value={value || ''}
           onChange={e => onChange(e.target.value)}
-          placeholder="—"
-          className="flex-1 bg-transparent text-gray-200 text-xs focus:outline-none min-w-0"
+          placeholder="#000000"
+          className="h-full min-w-0 flex-1 bg-transparent font-mono text-[11px] text-gray-100 outline-none placeholder:text-gray-600"
         />
-      </div>
-    </div>
+      </span>
+    </label>
   );
 };
 
@@ -251,7 +267,7 @@ const GradientInput: React.FC<GradientInputProps> = ({ label, value, onChange, p
     <div className="mb-3">
       <div className="flex items-center justify-between gap-2 mb-2">
         <span className="text-xs text-gray-500">{label}</span>
-        <Redo2 size={14} className="text-gray-600 hover:text-gray-400 cursor-pointer" onClick={() => onChange('')} />
+        <button type="button" aria-label={`Reset ${label.toLowerCase()}`} title="Reset" className="text-gray-500 transition hover:text-gray-200" onClick={() => onChange('')}><Redo2 size={13} /></button>
       </div>
       <div className="flex items-center gap-2">
         <input
@@ -261,8 +277,11 @@ const GradientInput: React.FC<GradientInputProps> = ({ label, value, onChange, p
           placeholder={placeholder}
           className="flex-1 bg-gray-800 text-gray-200 text-xs rounded-md px-2 py-1.5 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 min-w-0"
         />
-        <div
-          className="h-9 min-w-18 rounded-md border border-gray-700"
+        <button
+          type="button"
+          aria-label={`${label} gradient picker`}
+          aria-expanded={open}
+          className="h-9 min-w-18 rounded-md border border-gray-700 transition hover:border-gray-500"
           style={{
             backgroundImage: safeValue,
             backgroundSize: 'cover',
@@ -318,7 +337,7 @@ const BackgroundFillInput: React.FC<{
     <div className="mb-3">
       <div className="flex items-center justify-between gap-2 mb-2">
         <span className="text-xs text-gray-500">{label}</span>
-        <Redo2 size={14} className="text-gray-600 hover:text-gray-400 cursor-pointer" onClick={handleReset} />
+        <button type="button" aria-label={`Reset ${label.toLowerCase()}`} title="Reset" className="text-gray-500 transition hover:text-gray-200" onClick={handleReset}><Redo2 size={13} /></button>
       </div>
       <div className="flex items-center gap-2">
         <input
@@ -328,8 +347,11 @@ const BackgroundFillInput: React.FC<{
           placeholder="Color (#fff) or gradient (linear-gradient...)"
           className="flex-1 bg-gray-800 text-gray-200 text-xs rounded-md px-2 py-1.5 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 min-w-0"
         />
-        <div
-          className="h-9 min-w-18 rounded-md border border-gray-700"
+        <button
+          type="button"
+          aria-label={`${label} color picker`}
+          aria-expanded={open}
+          className="h-9 min-w-18 rounded-md border border-gray-700 transition hover:border-gray-500"
           style={{
             // Avoid mixing `background` shorthand with background* longhands.
             backgroundColor: isGradient ? undefined : currentValue,
@@ -370,29 +392,30 @@ const SpacingInput: React.FC<SpacingInputProps> = ({ label, values, onChange }) 
   };
 
   return (
-    <div className="mb-3">
-      <div className="flex items-center justify-between mb-1.5">
-        <span className="text-xs text-gray-500">{label}</span>
-        <button
-          onClick={() => setLinked(!linked)}
-          className={`text-xs px-1.5 py-0.5 rounded ${linked ? 'bg-blue-600/30 text-blue-400' : 'text-gray-600 hover:text-gray-400'}`}
-        >
-          {linked ? '⛓️' : '⛓️'}
-        </button>
+    <div className="mb-3 rounded-lg border border-gray-800 bg-[#14161a] p-2.5">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-[11px] font-medium text-gray-300">{label}</span>
       </div>
-      <div className="grid grid-cols-4 gap-1">
-        {(['top', 'right', 'bottom', 'left'] as const).map(side => (
-          <div key={side} className="flex flex-col items-center gap-0.5">
-            <input
-              type="text"
-              value={values[side]}
-              onChange={e => handleChange(side, e.target.value)}
-              placeholder="0"
-              className="w-full bg-gray-800 text-gray-200 text-xs text-center rounded px-1 py-1 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-            <span className="text-xs text-gray-600">{side[0].toUpperCase()}</span>
-          </div>
-        ))}
+      <div className="grid grid-cols-[1fr_1fr_1fr] grid-rows-[auto_auto_auto] items-center gap-1.5 rounded-md border border-gray-800/80 bg-[#101114] p-2">
+        <span />
+        <input aria-label={`${label} top`} type="text" value={values.top} onChange={e => handleChange('top', e.target.value)} placeholder="0" className="h-7 w-full rounded border border-gray-700/80 bg-[#1a1c21] text-center text-[11px] text-gray-100 outline-none focus:border-sky-400" />
+        <span />
+        <input aria-label={`${label} left`} type="text" value={values.left} onChange={e => handleChange('left', e.target.value)} placeholder="0" className="h-7 w-full rounded border border-gray-700/80 bg-[#1a1c21] text-center text-[11px] text-gray-100 outline-none focus:border-sky-400" />
+        <div className="flex h-8 items-center justify-center rounded border border-sky-400/20 bg-sky-400/6 text-[10px] font-medium uppercase tracking-wide text-sky-200/80">
+          <button
+            type="button"
+            onClick={() => setLinked(!linked)}
+            aria-label={linked ? `Unlink ${label.toLowerCase()} sides` : `Link ${label.toLowerCase()} sides`}
+            title={linked ? 'Unlink sides' : 'Link all sides'}
+            className={`flex h-6 w-6 items-center justify-center rounded transition-colors ${linked ? 'bg-sky-400/10 text-sky-300' : 'text-gray-500 hover:bg-gray-800 hover:text-gray-200'}`}
+          >
+            {linked ? <Link2 size={13} /> : <Unlink2 size={13} />}
+          </button>
+        </div>
+        <input aria-label={`${label} right`} type="text" value={values.right} onChange={e => handleChange('right', e.target.value)} placeholder="0" className="h-7 w-full rounded border border-gray-700/80 bg-[#1a1c21] text-center text-[11px] text-gray-100 outline-none focus:border-sky-400" />
+        <span />
+        <input aria-label={`${label} bottom`} type="text" value={values.bottom} onChange={e => handleChange('bottom', e.target.value)} placeholder="0" className="h-7 w-full rounded border border-gray-700/80 bg-[#1a1c21] text-center text-[11px] text-gray-100 outline-none focus:border-sky-400" />
+        <span />
       </div>
     </div>
   );
@@ -445,54 +468,62 @@ const BorderInput: React.FC<BorderInputProps> = ({ values, styles, onChangeWidth
   return (
     <div className="mb-3">
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-xs text-gray-500">Border Sides</span>
-        <button
-          onClick={() => setLinked(!linked)}
-          className={`text-xs px-1.5 py-0.5 rounded ${linked ? 'bg-blue-600/30 text-blue-400' : 'text-gray-600 hover:text-gray-400'}`}
-        >
-          {linked ? '⛓️' : '⛓️'}
-        </button>
+        <span className="text-[11px] font-medium text-gray-300">Border sides</span>
       </div>
-      <div className="grid grid-cols-4 gap-2">
+      <div className="mb-2 rounded-lg border border-gray-800 bg-[#14161a] p-2.5">
+        <p className="mb-2 text-[11px] font-medium text-gray-300">Width</p>
+        <div className="grid grid-cols-[1fr_1fr_1fr] grid-rows-[auto_auto_auto] items-center gap-1.5 rounded-md border border-gray-800/80 bg-[#101114] p-2">
+          <span />
+          <input aria-label="Top border width" type="text" value={values.top} onChange={e => handleWidthChange('top', e.target.value)} placeholder="0" className="h-7 w-full rounded border border-gray-700/80 bg-[#1a1c21] text-center text-[11px] text-gray-100 outline-none focus:border-sky-400" />
+          <span />
+          <input aria-label="Left border width" type="text" value={values.left} onChange={e => handleWidthChange('left', e.target.value)} placeholder="0" className="h-7 w-full rounded border border-gray-700/80 bg-[#1a1c21] text-center text-[11px] text-gray-100 outline-none focus:border-sky-400" />
+          <div className="flex h-8 items-center justify-center rounded border border-sky-400/20 bg-sky-400/6 text-[10px] font-medium uppercase tracking-wide text-sky-200/80">
+            <button
+              type="button"
+              onClick={() => setLinked(!linked)}
+              aria-label={linked ? 'Unlink border sides' : 'Link border sides'}
+              title={linked ? 'Unlink sides' : 'Link all sides'}
+              className={`flex h-6 w-6 items-center justify-center rounded transition-colors ${linked ? 'bg-sky-400/10 text-sky-300' : 'text-gray-500 hover:bg-gray-800 hover:text-gray-200'}`}
+            >
+              {linked ? <Link2 size={13} /> : <Unlink2 size={13} />}
+            </button>
+          </div>
+          <input aria-label="Right border width" type="text" value={values.right} onChange={e => handleWidthChange('right', e.target.value)} placeholder="0" className="h-7 w-full rounded border border-gray-700/80 bg-[#1a1c21] text-center text-[11px] text-gray-100 outline-none focus:border-sky-400" />
+          <span />
+          <input aria-label="Bottom border width" type="text" value={values.bottom} onChange={e => handleWidthChange('bottom', e.target.value)} placeholder="0" className="h-7 w-full rounded border border-gray-700/80 bg-[#1a1c21] text-center text-[11px] text-gray-100 outline-none focus:border-sky-400" />
+          <span />
+        </div>
+      </div>
+      <div className="mb-1 grid grid-cols-[48px_1fr_36px] items-center gap-2 px-1 text-[9px] font-medium uppercase tracking-wide text-gray-500">
+        <span>Side</span><span>Style</span><span>Color</span>
+      </div>
+      <div className="space-y-1">
         {(['top', 'right', 'bottom', 'left'] as const).map(side => {
           const sideKey = side === 'top' ? 'topStyle' : side === 'right' ? 'rightStyle' : side === 'bottom' ? 'bottomStyle' : 'leftStyle';
           const colorKey = side === 'top' ? 'topColor' : side === 'right' ? 'rightColor' : side === 'bottom' ? 'bottomColor' : 'leftColor';
           return (
-            <div key={side} className="flex flex-col gap-1.5">
-              <div className="flex flex-col gap-0.5">
-                <label className="text-[11px] text-gray-600">{side[0].toUpperCase()}W</label>
-                <input
-                  type="text"
-                  value={values[side]}
-                  onChange={e => handleWidthChange(side, e.target.value)}
-                  placeholder="0"
-                  className="w-full bg-gray-800 text-gray-200 text-xs text-center rounded px-1 py-1 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-              <div className="flex flex-col gap-0.5">
-                <label className="text-[11px] text-gray-600">{side[0].toUpperCase()}S</label>
-                <select
-                  value={styles[sideKey as keyof typeof styles] || ''}
-                  onChange={e => handleStyleChange(side, e.target.value)}
-                  className="w-full bg-gray-800 text-gray-200 text-xs rounded px-1 py-1 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value="">—</option>
-                  <option value="solid">Solid</option>
-                  <option value="dashed">Dashed</option>
-                  <option value="dotted">Dotted</option>
-                  <option value="double">Double</option>
-                  <option value="none">None</option>
-                </select>
-              </div>
-              <div className="flex flex-col gap-0.5">
-                <label className="text-[11px] text-gray-600">{side[0].toUpperCase()}C</label>
-                <input
-                  type="color"
-                  value={styles[colorKey as keyof typeof styles] || '#000000'}
-                  onChange={e => handleColorChange(side, e.target.value)}
-                  className="w-full h-6 bg-gray-800 border border-gray-700 rounded cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
+            <div key={side} className="grid grid-cols-[48px_1fr_36px] items-center gap-2 rounded-md px-1 py-1 hover:bg-white/2.5">
+              <span className="text-[10px] capitalize text-gray-400">{side}</span>
+              <select
+                aria-label={`${side} border style`}
+                value={styles[sideKey as keyof typeof styles] || ''}
+                onChange={e => handleStyleChange(side, e.target.value)}
+                className="h-7 w-full rounded border border-gray-700/80 bg-[#191b20] px-2 text-[10px] text-gray-100 outline-none focus:border-sky-400"
+              >
+                <option value="">Default</option>
+                <option value="solid">Solid</option>
+                <option value="dashed">Dashed</option>
+                <option value="dotted">Dotted</option>
+                <option value="double">Double</option>
+                <option value="none">None</option>
+              </select>
+              <input
+                type="color"
+                value={styles[colorKey as keyof typeof styles] || '#000000'}
+                onChange={e => handleColorChange(side, e.target.value)}
+                aria-label={`${side} border color`}
+                className="h-7 w-full cursor-pointer rounded border border-gray-700 bg-[#191b20] p-0.5"
+              />
             </div>
           );
         })}
@@ -726,32 +757,70 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
     const formatted = val && !isNaN(Number(val)) ? `${val}px` : val;
     update(`${prefix}${side.charAt(0).toUpperCase() + side.slice(1)}` as keyof StyleProperties, formatted);
   };
+  const breakpointLabel = ({
+    widescreen: 'Widescreen',
+    desktop: 'Desktop',
+    laptop: 'Laptop',
+    tablet: 'Tablet',
+    mobileLandscape: 'Mobile L',
+    mobile: 'Mobile',
+  } as Record<string, string>)[breakpoint] || breakpoint;
+  const fontSizeValue = Number.parseFloat(String(styles.fontSize || '16'));
+  const rangeFontSize = Number.isFinite(fontSizeValue) ? Math.min(96, Math.max(8, fontSizeValue)) : 16;
 
   return (
-    <div className='flex flex-col'>
-      {/* Pseudo-class State Selector */}
-      <div className="px-4 py-3 border-b border-gray-800 flex gap-1">
-        {(['base', 'hover', 'active', 'focus'] as const).map(state => (
-          <button
-            key={state}
-            onClick={() => setPseudoClassState(state)}
-            className={`flex-1 text-xs py-1.5 px-2 rounded-md font-medium transition-colors ${pseudoClassState === state
-                ? 'bg-blue-600/40 text-blue-200 border border-blue-400/50'
-                : 'bg-gray-900 text-gray-400 border border-gray-700 hover:text-gray-200'
-              }`}
-          >
-            {state === 'base' ? 'Default' : state.charAt(0).toUpperCase() + state.slice(1)}
-          </button>
-        ))}
+    <div className="flex flex-col pb-2">
+      <div className="sticky top-0 z-20 border-b border-gray-800 bg-[#111114]/95 px-3.5 pb-3 pt-3 backdrop-blur">
+        <div className="mb-3 flex min-w-0 items-center gap-2.5">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-sky-400/20 bg-sky-400/8 text-sky-300"><SlidersHorizontal size={15} /></span>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold text-gray-100">Style</p>
+            <p className="truncate text-[10px] text-gray-500">{element.name} <span className="text-gray-700">/</span> {element.type}</p>
+          </div>
+          <span className="shrink-0 rounded border border-gray-700 bg-gray-900 px-1.5 py-1 text-[9px] font-medium uppercase text-gray-400">{breakpointLabel}</span>
+        </div>
+        <div role="group" aria-label="Style state" className="grid grid-cols-4 gap-1 rounded-md border border-gray-800 bg-[#0b0c0f] p-1">
+          {(['base', 'hover', 'active', 'focus'] as const).map(state => (
+            <button
+              key={state}
+              type="button"
+              aria-pressed={pseudoClassState === state}
+              onClick={() => setPseudoClassState(state)}
+              className={`rounded px-1 py-1.5 text-[10px] font-medium transition-colors ${pseudoClassState === state
+                ? 'bg-gray-700 text-white shadow-sm'
+                : 'text-gray-500 hover:bg-gray-800 hover:text-gray-200'
+                }`}
+            >
+              {state === 'base' ? 'Base' : state === 'active' ? 'Pressed' : state.charAt(0).toUpperCase() + state.slice(1)}
+            </button>
+          ))}
+        </div>
       </div>
       {/* Layout */}
       <Section title="Layout">
-        <InputRow
-          label="Display"
-          value={styles.display || ''}
-          onChange={v => update('display', v)}
-          options={['block', 'flex', 'grid', 'inline', 'inline-flex', 'none']}
-        />
+        <div className="mb-2.5">
+          <div className="mb-1.5 flex items-center justify-between">
+            <span className="text-[11px] text-gray-400">Display</span>
+            <span className="text-[10px] font-mono text-gray-600">{styles.display || 'block'}</span>
+          </div>
+          <div className="grid grid-cols-3 gap-1 rounded-md border border-gray-800 bg-[#101114] p-1">
+            {[
+              { value: 'block', label: 'Block', icon: <Square size={13} /> },
+              { value: 'flex', label: 'Flex', icon: <AlignLeft size={13} /> },
+              { value: 'grid', label: 'Grid', icon: <Grid2x2 size={13} /> },
+            ].map(mode => (
+              <button key={mode.value} type="button" aria-pressed={(styles.display || 'block') === mode.value} title={`${mode.label} display`} onClick={() => update('display', mode.value)} className={`flex h-8 items-center justify-center gap-1.5 rounded text-[10px] transition-colors ${(styles.display || 'block') === mode.value ? 'bg-gray-700 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-800 hover:text-gray-200'}`}>
+                {mode.icon}{mode.label}
+              </button>
+            ))}
+          </div>
+          <select aria-label="Other display mode" value={['inline', 'inline-flex', 'none'].includes(styles.display || '') ? styles.display : ''} onChange={event => event.target.value && update('display', event.target.value)} className="mt-1.5 h-7 w-full rounded border border-gray-800 bg-[#191b20] px-2 text-[10px] text-gray-500 outline-none focus:border-sky-400">
+            <option value="">Other display modes...</option>
+            <option value="inline">Inline</option>
+            <option value="inline-flex">Inline flex</option>
+            <option value="none">None</option>
+          </select>
+        </div>
         {styles.display === 'flex' && (
           <>
             <InputRow
@@ -895,7 +964,15 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
           onChange={v => update('fontFamily', v)}
           options={GOOGLE_FONT_OPTIONS}
         />
-        <InputRow label="Size" value={styles.fontSize || ''} onChange={v => update('fontSize', v)} placeholder="16px" />
+        <div className="mb-3 rounded-lg border border-gray-800 bg-[#14161a] p-2.5">
+          <div className="mb-1 flex items-center justify-between">
+            <span className="text-[11px] font-medium text-gray-300">Font size</span>
+            <span className="font-mono text-[10px] text-gray-400">{styles.fontSize || '16px'}</span>
+          </div>
+          <input aria-label="Font size" type="range" min="8" max="96" step="1" value={rangeFontSize} onChange={event => update('fontSize', `${event.target.value}px`)} className="h-5 w-full cursor-pointer accent-sky-400" />
+          <div className="mt-1 flex items-center justify-between text-[9px] text-gray-600"><span>8px</span><span>96px</span></div>
+          <InputRow label="Custom size" value={styles.fontSize || ''} onChange={v => update('fontSize', v)} placeholder="16px" />
+        </div>
         <InputRow
           label="Weight"
           value={styles.fontWeight || ''}
@@ -904,12 +981,21 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
         />
         <InputRow label="Line H" value={styles.lineHeight || ''} onChange={v => update('lineHeight', v)} placeholder="1.5" />
         <InputRow label="Spacing" value={styles.letterSpacing || ''} onChange={v => update('letterSpacing', v)} placeholder="0em" />
-        <InputRow
-          label="Align"
-          value={styles.textAlign || ''}
-          onChange={v => update('textAlign', v)}
-          options={['left', 'center', 'right', 'justify']}
-        />
+        <div className="mb-2 flex items-center gap-2">
+          <span className="w-18.5 shrink-0 text-[11px] text-gray-400">Align</span>
+          <div role="group" aria-label="Text alignment" className="grid h-8 flex-1 grid-cols-4 rounded-md border border-gray-700/80 bg-[#191b20] p-0.5">
+            {[
+              { value: 'left', label: 'Align left', icon: <AlignLeft size={13} /> },
+              { value: 'center', label: 'Align center', icon: <AlignCenter size={13} /> },
+              { value: 'right', label: 'Align right', icon: <AlignRight size={13} /> },
+              { value: 'justify', label: 'Justify', icon: <AlignJustify size={13} /> },
+            ].map(option => (
+              <button key={option.value} type="button" aria-label={option.label} aria-pressed={(styles.textAlign || 'left') === option.value} title={option.label} onClick={() => update('textAlign', option.value)} className={`flex items-center justify-center rounded transition-colors ${(styles.textAlign || 'left') === option.value ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-200'}`}>
+                {option.icon}
+              </button>
+            ))}
+          </div>
+        </div>
         {isTextElement && (
           <BackgroundFillInput
             label="Text fill"
@@ -1967,7 +2053,7 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
             className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
             rows={4}
           />
-        </div>    
+        </div>
       )}
 
       {element.type === 'image' && (

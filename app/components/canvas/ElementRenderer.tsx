@@ -476,6 +476,47 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
   const pageInteraction = (page.interactions || []).find((interaction: PageInteraction) => interaction.trigger === 'load');
   const styles = getEffectiveStyles(element, breakpoint);
   const cssStyles = stylesToCSS(styles);
+  const rendererClassName = `lunio-${element.id}`;
+
+  useEffect(() => {
+    const pseudoClassStyles = element.pseudoClassStyles;
+    if (!pseudoClassStyles || typeof document === 'undefined') return;
+
+    const styleElement = document.createElement('style');
+    document.head.appendChild(styleElement);
+    const stylesheet = styleElement.sheet;
+    if (!stylesheet) {
+      styleElement.remove();
+      return;
+    }
+
+    const propertyName = (property: string) => property.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`);
+    const stateSelectors = {
+      hover: ':hover',
+      active: ':active, :has(:active)',
+      focus: ':focus, :focus-within',
+    } as const;
+
+    (['hover', 'active', 'focus'] as const).forEach(state => {
+      const responsiveStyles = pseudoClassStyles[state];
+      if (!responsiveStyles) return;
+
+      const resolvedStyles = stylesToCSS(getEffectiveStyles({ ...element, styles: responsiveStyles }, breakpoint));
+      const declarations = Object.entries(resolvedStyles).filter(([, value]) => value !== undefined && value !== null && value !== '');
+      if (declarations.length === 0) return;
+
+      stateSelectors[state].split(', ').forEach(selector => {
+        const ruleIndex = stylesheet.insertRule(`.${rendererClassName}${selector}{}`, stylesheet.cssRules.length);
+        const rule = stylesheet.cssRules[ruleIndex] as CSSStyleRule;
+        declarations.forEach(([property, value]) => {
+          rule.style.setProperty(propertyName(property), String(value), 'important');
+        });
+      });
+    });
+
+    return () => styleElement.remove();
+  }, [breakpoint, element, rendererClassName]);
+
   useEffect(() => {
     if (styles.fontFamily) loadGoogleFont(styles.fontFamily);
   }, [styles.fontFamily]);
@@ -497,8 +538,11 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
       animationFillMode: 'both',
     } : {}),
   };
+  const cssStylesWithoutAnimation = Object.fromEntries(
+    Object.entries(cssStyles).filter(([property]) => property !== 'animation')
+  ) as React.CSSProperties;
   const safeCssStyles: React.CSSProperties = {
-    ...cssStyles,
+    ...(interactionStyles.animationName ? cssStylesWithoutAnimation : cssStyles),
     boxSizing: 'border-box',
     maxWidth: '100%',
     minWidth: 0,
@@ -1255,7 +1299,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
       <div
         ref={ref}
         style={{ ...safeCssStyles, ...interactionStyles }}
-        className={wrapperClasses}
+        className={`${rendererClassName} ${wrapperClasses}`}
         draggable={!isPreview && !element.locked && !isEditing}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
@@ -1415,7 +1459,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
       aria-label={element.type === 'slide' && sliderSlideIndex >= 0 ? `${sliderSlideIndex + 1} of ${sliderRuntime?.slideIds.length || 0}` : undefined}
       aria-hidden={element.type === 'slide' && sliderSlideIndex >= 0 ? sliderRuntime?.activeIndex !== sliderSlideIndex : undefined}
       inert={element.type === 'slide' && sliderSlideIndex >= 0 && sliderRuntime?.activeIndex !== sliderSlideIndex}
-      className={wrapperClasses}
+      className={`${rendererClassName} ${wrapperClasses}`}
       draggable={!isPreview && !element.locked}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}

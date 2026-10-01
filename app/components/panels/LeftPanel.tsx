@@ -50,9 +50,9 @@ export const LeftPanel: React.FC = () => {
 
   const tabs = [
     { id: 'components' as const, label: 'Elements', icon: <Package size={17} /> },
-    { id: 'library' as const, label: 'Components', icon: <Blocks size={17} /> },
     { id: 'layers' as const, label: 'Layers', icon: <Layers size={17} /> },
     { id: 'pages' as const, label: 'Pages', icon: <Globe size={17} /> },
+    { id: 'library' as const, label: 'Components', icon: <Blocks size={17} /> },
     { id: 'cms' as const, label: 'Data Sources', icon: <Database size={17} /> },
     { id: 'assets' as const, label: 'Assets', icon: <ImagesIcon size={17} /> },
   ];
