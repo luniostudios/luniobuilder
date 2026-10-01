@@ -404,7 +404,7 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
     case 'form':
       return {
         name: 'Form',
-        props: {},
+        props: { formName: 'Newsletter signup', submitLabel: 'Subscribe', successMessage: 'Thanks for subscribing!' },
         styles: {
           display: 'flex',
           flexDirection: 'column',
@@ -418,6 +418,30 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
           borderRadius: '12px',
           boxShadow: '0 4px 6px -1px rgba(0,0,0,0.07)',
         },
+        children: [
+          {
+            id: generateId(),
+            type: 'input',
+            name: 'Email',
+            props: { type: 'email', name: 'email', placeholder: 'Your email address', label: 'Email', required: true },
+            styles: { desktop: { width: '100%', paddingTop: '12px', paddingBottom: '12px', paddingLeft: '14px', paddingRight: '14px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', backgroundColor: '#ffffff', color: '#111827' }, tablet: {}, mobile: {}, widescreen: { width: '100%', paddingTop: '12px', paddingBottom: '12px', paddingLeft: '14px', paddingRight: '14px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', backgroundColor: '#ffffff', color: '#111827' }, laptop: { width: '100%', paddingTop: '12px', paddingBottom: '12px', paddingLeft: '14px', paddingRight: '14px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', backgroundColor: '#ffffff', color: '#111827' }, mobileLandscape: {} },
+            children: [],
+            parentId: null,
+            locked: false,
+            hidden: false,
+          },
+          {
+            id: generateId(),
+            type: 'button',
+            name: 'Submit button',
+            props: { text: 'Subscribe', type: 'submit' },
+            styles: { desktop: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', paddingTop: '12px', paddingRight: '20px', paddingBottom: '12px', paddingLeft: '20px', backgroundColor: '#2563eb', color: '#ffffff', fontSize: '14px', fontWeight: '600', borderRadius: '8px', cursor: 'pointer' }, tablet: {}, mobile: {}, widescreen: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', paddingTop: '12px', paddingRight: '20px', paddingBottom: '12px', paddingLeft: '20px', backgroundColor: '#2563eb', color: '#ffffff', fontSize: '14px', fontWeight: '600', borderRadius: '8px', cursor: 'pointer' }, laptop: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', paddingTop: '12px', paddingRight: '20px', paddingBottom: '12px', paddingLeft: '20px', backgroundColor: '#2563eb', color: '#ffffff', fontSize: '14px', fontWeight: '600', borderRadius: '8px', cursor: 'pointer' }, mobileLandscape: {} },
+            children: [],
+            parentId: null,
+            locked: false,
+            hidden: false,
+          },
+        ],
       };
     case 'input':
       return {

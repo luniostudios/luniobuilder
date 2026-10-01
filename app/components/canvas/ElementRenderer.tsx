@@ -367,6 +367,8 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
   const [isQuickAiGenerating, setIsQuickAiGenerating] = useState(false);
   const [activeInteraction, setActiveInteraction] = useState<ElementInteraction | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [formMessage, setFormMessage] = useState('');
   const ref = useRef<HTMLDivElement>(null);
 
   const page = useBuilderStore(state => state.getCurrentPage());
@@ -525,6 +527,46 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
       if (href.startsWith('http')) {
         window.open(href, '_blank');
       }
+    }
+  };
+
+  const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    if (!isPreview && !isPublishedSite) {
+      event.preventDefault();
+      return;
+    }
+
+    event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const payload = Object.fromEntries(formData.entries());
+
+    setFormStatus('submitting');
+    setFormMessage('');
+
+    try {
+      const response = await fetch('/api/forms/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId: projectId || useBuilderStore.getState().projectId,
+          pageId: page.id,
+          formId: element.id,
+          fields: payload,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data?.error || 'Unable to submit form.');
+      }
+
+      form.reset();
+      setFormStatus('success');
+      setFormMessage(data?.message || element.props.successMessage || 'Thanks! Your message was sent.');
+    } catch (error) {
+      setFormStatus('error');
+      setFormMessage(error instanceof Error ? error.message : 'Unable to submit form.');
     }
   };
 
@@ -837,6 +879,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
         ) : (
           <button
             ref={(node) => setEditingRef(node as HTMLElement | null)}
+            type={element.props.type === 'button' ? 'button' : 'submit'}
             style={nestedLeafStyles}
             onClick={(e) => {
               if (isPreview && hrefValue) {
@@ -901,8 +944,10 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
       case 'select':
         return (
           <select
+            name={String(element.props.name || element.props.label || 'field')}
             style={{ ...nestedLeafStyles, display: 'block' }}
             onClick={handleClick}
+            required={Boolean(element.props.required)}
           >
             <option value="">{element.props.placeholder || 'Select an option'}</option>
             {Array.isArray(element.props.options) && element.props.options.map((option, index) => (
@@ -965,8 +1010,10 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
             )}
             <input
               type={element.props.type || 'text'}
+              name={String(element.props.name || element.props.label || 'field')}
               placeholder={element.props.placeholder}
               style={{ ...nestedLeafStyles, display: 'block' }}
+              required={Boolean(element.props.required)}
               readOnly={!isPreview}
             />
           </div>
@@ -981,8 +1028,10 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
               </label>
             )}
             <textarea
+              name={String(element.props.name || element.props.label || 'message')}
               placeholder={element.props.placeholder}
               style={{ ...nestedLeafStyles, display: 'block' }}
+              required={Boolean(element.props.required)}
               readOnly={!isPreview}
             />
           </div>
@@ -1037,7 +1086,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     return (
       <div
         ref={ref}
-        style={safeCssStyles}
+        style={{ ...safeCssStyles, ...interactionStyles }}
         className={wrapperClasses}
         draggable={!isPreview && !element.locked && !isEditing}
         onDragStart={handleDragStart}
@@ -1135,8 +1184,22 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
         }
       case 'form':
         return (
-          <form style={innerContainerStyle} onClick={handleClick} onSubmit={e => e.preventDefault()} className={isPreview ? '' : 'cursor-pointer'}>
+          <form
+            style={innerContainerStyle}
+            onClick={handleClick}
+            onSubmit={handleFormSubmit}
+            className={isPreview ? '' : 'cursor-pointer'}
+            noValidate
+          >
             {renderChildren()}
+            {(formStatus === 'success' || formStatus === 'error') && (
+              <div className={`mt-2 text-sm ${formStatus === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
+                {formMessage}
+              </div>
+            )}
+            {formStatus === 'submitting' && (
+              <div className="mt-2 text-sm text-slate-500">Sending...</div>
+            )}
           </form>
         );
       default:
@@ -1152,8 +1215,8 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     <div
       ref={ref}
       style={element.type === 'cmsMap'
-        ? { width: '100%', minWidth: 0 }
-        : { ...safeCssStyles, ...(isMenuTarget && navbarMenu?.isOpen ? { display: 'contents' } : {}) }}
+        ? { width: '100%', minWidth: 0, ...interactionStyles }
+        : { ...safeCssStyles, ...interactionStyles, ...(isMenuTarget && navbarMenu?.isOpen ? { display: 'contents' } : {}) }}
       className={wrapperClasses}
       draggable={!isPreview && !element.locked}
       onDragStart={handleDragStart}
