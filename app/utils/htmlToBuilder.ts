@@ -415,6 +415,8 @@ const getElementName = (type: ElementType): string => {
   const names: Record<ElementType, string> = {
     article: 'Article',
     section: 'Section',
+    tabs: 'Tabs',
+    tab: 'Tab',
     div: 'Container',
     heading: 'Heading',
     select: 'Select',
