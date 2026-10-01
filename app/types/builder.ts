@@ -8,6 +8,8 @@ export type ElementType =
   | 'image'
   | 'link'
   | 'navbar'
+  | 'tabs'
+  | 'tab'
   | 'hero'
   | 'slider'
   | 'slide'
@@ -52,6 +54,7 @@ export interface StyleProperties {
   backdropFilter?: string;
   visibility?: string;
   transform?: string;
+  translate?: string;
 
   // Spacing
   padding?: string;

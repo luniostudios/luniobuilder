@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { LayoutGrid as Layout, Type, Image, Images as ImagesIcon, MousePointer, Square, Columns2 as Columns, Grid2x2 as Grid, AlignLeft, Link, Star, Minus, Move, FileText, ChevronRight, ChevronDown, ChevronLeft, Eye, EyeOff, Lock, Unlock, Trash2, Copy, Plus, Layers, Package, Globe, Monitor, Play, Form, List, ListEnd, Laptop, CalendarDays, LayoutIcon, LayoutPanelTop, IdCard, TextInitialIcon, Code2, ChevronsDownUp, Table2, ListTree, Database, ExternalLink, Search, Blocks } from 'lucide-react';
+import { LayoutGrid as Layout, Type, Image, Images as ImagesIcon, MousePointer, Square, Columns2 as Columns, Grid2x2 as Grid, AlignLeft, Link, Star, Minus, Move, FileText, ChevronRight, ChevronDown, ChevronLeft, Eye, EyeOff, Lock, Unlock, Trash2, Copy, Plus, Layers, Package, Globe, Monitor, Play, Form, List, ListEnd, Laptop, CalendarDays, LayoutIcon, LayoutPanelTop, IdCard, TextInitialIcon, Code2, ChevronsDownUp, Table2, ListTree, Database, ExternalLink, Search, Blocks, PanelsTopLeft } from 'lucide-react';
 import { DndContext, DragEndEvent, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -22,6 +22,7 @@ const COMPONENT_ICONS: Record<string, React.ReactNode> = {
   image: <Image size={25} />,
   link: <Link size={25} />,
   navbar: <LayoutPanelTop size={25} />,
+  tabs: <PanelsTopLeft size={25} />,
   hero: <LayoutIcon size={25} />,
   slider: <ImagesIcon size={25} />,
   card: <IdCard size={25} />,
@@ -428,6 +429,9 @@ const ComponentsTab: React.FC = () => {
     const selectedElement = selectedElementId ? getElementById(selectedElementId) : null;
     if (selectedElement?.type === 'slider') {
       return selectedElement.children.find(child => child.type === 'slide') || selectedElement;
+    }
+    if (selectedElement?.type === 'tabs') {
+      return selectedElement.children.find(child => child.type === 'tab') || selectedElement;
     }
     return selectedElement && canHaveChildren(selectedElement.type) ? selectedElement : null;
   };

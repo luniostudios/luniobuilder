@@ -124,6 +124,14 @@ const omitBoxShorthands = (styles: React.CSSProperties): React.CSSProperties => 
     margin,
     padding,
     background,
+    translate,
+    transform,
+    position,
+    top,
+    right,
+    bottom,
+    left,
+    zIndex,
     ...longhands
   } = styles;
   return longhands;
@@ -430,6 +438,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     interactionTargetSelection,
     selectInteractionTarget,
     updateElementProps,
+    getElementById,
     pushHistory,
     setCurrentPage,
     pages,
@@ -442,11 +451,20 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
   const [isQuickAiGenerating, setIsQuickAiGenerating] = useState(false);
   const [activeInteraction, setActiveInteraction] = useState<ElementInteraction | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [activeTabId, setActiveTabId] = useState(element.children.find(child => child.type === 'tab')?.id || '');
   const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [formMessage, setFormMessage] = useState('');
   const ref = useRef<HTMLDivElement>(null);
 
   const page = useBuilderStore(state => state.getCurrentPage());
+  const tabs = element.type === 'tabs' ? element.children.filter(child => child.type === 'tab') : [];
+  const selectedTab = !isPreview && !isPublishedSite
+    ? tabs.find(tab => {
+      const containsSelection = (current: BuilderElement): boolean => current.id === selectedElementId || current.children.some(containsSelection);
+      return containsSelection(tab);
+    })
+    : undefined;
+  const activeTab = selectedTab || tabs.find(tab => tab.id === activeTabId) || tabs[0];
   const triggeredInteraction = useBuilderStore(state => state.triggeredInteractions[element.id]);
   const isRevealed = useBuilderStore(state => Boolean(state.revealedElementIds[element.id]));
   const visibilityOverride = useBuilderStore(state => state.visibilityOverrides[element.id]);
@@ -808,14 +826,15 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     const elementId = e.dataTransfer.getData('elementId');
     const elementType = e.dataTransfer.getData('elementType') as ElementType;
     const componentId = e.dataTransfer.getData('componentId');
-    const targetPosition = element.type === 'cmsMap' ? 'inside' : (dropPosition || 'after');
+    const targetPosition = element.type === 'cmsMap' || element.type === 'tabs' ? 'inside' : (dropPosition || 'after');
+    const targetId = element.type === 'tabs' && activeTab ? activeTab.id : element.id;
 
     if (elementId && elementId !== element.id) {
-      moveElement(elementId, element.id, targetPosition);
+      moveElement(elementId, targetId, targetPosition);
     } else if (componentId) {
-      addComponentFromPalette(componentId, element.id, targetPosition);
+      addComponentFromPalette(componentId, targetId, targetPosition);
     } else if (elementType) {
-      addElementFromPalette(elementType, element.id, targetPosition);
+      addElementFromPalette(elementType, targetId, targetPosition);
     }
 
     setDropTarget(null, null);
@@ -880,6 +899,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
   };
 
   const componentActionLabel = element.isComponent ? 'Remove component' : 'Make component';
+  const parentElement = element.parentId ? getElementById(element.parentId) : null;
   const editWithAi = () => {
     const prompt = quickAiPrompt.trim();
     if (!prompt || isQuickAiGenerating) return;
@@ -896,6 +916,16 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
   const selectionTooltip = isSelected && !element.locked ? (
     <div className="absolute -top-10 left-0 z-50 flex items-center gap-1 rounded-md border border-slate-600 bg-[#1b1d22] p-1 text-xs text-white whitespace-nowrap pointer-events-auto shadow-xl">
       <span className="px-2 font-medium text-slate-100">{element.name}</span>
+      {parentElement && <button
+        type="button"
+        onMouseDown={event => event.stopPropagation()}
+        onClick={event => { event.stopPropagation(); selectElement(parentElement.id); }}
+        className="rounded-sm bg-slate-600 p-1.5 text-white transition-colors hover:bg-slate-500"
+        title={`Select parent: ${parentElement.name}`}
+        aria-label={`Select parent: ${parentElement.name}`}
+      >
+        <ArrowUp aria-hidden style={{ width: '1em', height: '1em' }} />
+      </button>}
       <div onMouseDown={event => event.stopPropagation()} onPointerDown={event => event.stopPropagation()} onClick={event => event.stopPropagation()} className="flex items-center gap-1 rounded-sm border border-slate-500 bg-[#282b33] pl-2 focus-within:border-blue-400">
         <input
           value={quickAiPrompt}
@@ -1408,6 +1438,70 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
             </NavbarMenuContext.Provider>
           );
         }
+      case 'tabs':
+        return (
+          <div style={{ ...innerContainerStyle, display: 'flex', flexDirection: 'column', gap: '16px' }} onClick={handleClick}>
+            <div
+              role="tablist"
+              aria-label={String(element.props.label || 'Page sections')}
+              style={{
+                display: 'flex',
+                flexDirection: element.props.selectorOrientation === 'vertical' ? 'column' : 'row',
+                flexWrap: 'wrap',
+                gap: String(element.props.selectorGap || '4px'),
+                padding: String(element.props.selectorPadding || '4px'),
+                backgroundColor: String(element.props.selectorBackgroundColor || '#eef2f7'),
+                border: String(element.props.selectorBorder || '1px solid #e2e8f0'),
+                borderRadius: String(element.props.selectorBorderRadius || '12px'),
+              }}
+            >
+              {tabs.map((tab, index) => {
+                const isActive = activeTab?.id === tab.id;
+                const tabStyles = stylesToCSS(getEffectiveStyles(tab, breakpoint));
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    role="tab"
+                    id={`lunio-tab-${tab.id}`}
+                    aria-controls={`lunio-tab-panel-${tab.id}`}
+                    aria-selected={isActive}
+                    onClick={event => {
+                      event.stopPropagation();
+                      setActiveTabId(tab.id);
+                      if (!isPreview && !isPublishedSite) selectElement(tab.id);
+                    }}
+                    style={{
+                      ...tabStyles,
+                      backgroundColor: String(tabStyles.backgroundColor || (isActive ? element.props.activeTabBackgroundColor || '#ffffff' : element.props.inactiveTabBackgroundColor || 'transparent')),
+                      color: String(tabStyles.color || (isActive ? element.props.activeTabColor || '#172033' : element.props.inactiveTabColor || '#64748b')),
+                    }}
+                  >
+                    {String(tab.props.text || `Tab ${index + 1}`)}
+                  </button>
+                );
+              })}
+            </div>
+            {activeTab && (
+              <div
+                role="tabpanel"
+                id={`lunio-tab-panel-${activeTab.id}`}
+                aria-labelledby={`lunio-tab-${activeTab.id}`}
+                style={{
+                  minWidth: 0,
+                  padding: String(element.props.panelPadding || '24px'),
+                  backgroundColor: String(element.props.panelBackgroundColor || 'transparent'),
+                  border: `1px solid ${String(element.props.panelBorderColor || 'transparent')}`,
+                  borderRadius: String(element.props.panelBorderRadius || '12px'),
+                }}
+              >
+                {activeTab.children.length > 0 ? activeTab.children.map(child => (
+                  <ElementRenderer key={child.id} element={child} isPreview={isPreview} isPublishedSite={isPublishedSite} />
+                )) : !isPreview && <div className="flex min-h-20 items-center justify-center rounded-md border border-dashed border-gray-300 text-xs text-gray-400">Add content to this tab</div>}
+              </div>
+            )}
+          </div>
+        );
       case 'slider':
         return (
           <SliderContainer

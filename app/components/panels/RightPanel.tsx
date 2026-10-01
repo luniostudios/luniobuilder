@@ -583,7 +583,7 @@ const buildFilterWithBlur = (filter: string | undefined, blur: string) => {
 };
 
 const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
-  const { updateElementStyles, updateElementPseudoClassStyles, pseudoClassState, setPseudoClassState } = useBuilderStore() as any;
+  const { updateElementStyles, updateElementProps, updateElementPseudoClassStyles, pseudoClassState, setPseudoClassState } = useBuilderStore() as any;
 
   // Get styles based on current pseudo-class state
   let styles: any;
@@ -613,6 +613,41 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
     ];
 
     const updates: Partial<StyleProperties> = { [key]: value };
+
+    const parsePixelOffset = (raw: unknown): number | null => {
+      const normalized = String(raw ?? '').trim();
+      if (!normalized) return 0;
+      const match = normalized.match(/^(-?(?:\d+(?:\.\d*)?|\.\d+))(px)?$/i);
+      if (!match || (!match[2] && Number(match[1]) !== 0)) return null;
+      return Number(match[1]);
+    };
+
+    const positionAxis = { left: 'x', right: 'x', top: 'y', bottom: 'y' } as const;
+    if (
+      pseudoClassState === 'base' &&
+      key in positionAxis &&
+      ['absolute', 'fixed'].includes(String(styles.position || '')) &&
+      element.props.keepChildrenInPlace !== false &&
+      element.children.length > 0
+    ) {
+      const previousOffset = parsePixelOffset(styles[key]);
+      const nextOffset = parsePixelOffset(value);
+      if (previousOffset !== null && nextOffset !== null) {
+        const axis = positionAxis[key as keyof typeof positionAxis];
+        const compensation = ['left', 'top'].includes(key) ? previousOffset - nextOffset : nextOffset - previousOffset;
+        if (compensation !== 0) {
+          element.children.forEach((child: BuilderElement) => {
+            const childStyles = getEffectiveStyles(child, breakpoint as 'widescreen' | 'desktop' | 'laptop' | 'tablet' | 'mobileLandscape' | 'mobile');
+            const currentTranslate = String(childStyles.translate || '').trim();
+            const match = currentTranslate.match(/^(-?(?:\d+(?:\.\d*)?|\.\d+)px)(?:\s+(-?(?:\d+(?:\.\d*)?|\.\d+)px))?$/i);
+            if (currentTranslate && currentTranslate !== 'none' && !match) return;
+            const x = Number.parseFloat(match?.[1] || '0') + (axis === 'x' ? compensation : 0);
+            const y = Number.parseFloat(match?.[2] || '0') + (axis === 'y' ? compensation : 0);
+            updateElementStyles(child.id, { translate: `${x}px ${y}px` });
+          });
+        }
+      }
+    }
 
     // Helper: parse a simple CSS animation shorthand into explicit properties.
     const parseAnimationShorthand = (raw: string) => {
@@ -958,7 +993,7 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
       </Section>
 
       {/* Typography */}
-      {element.type === 'heading' || element.type === 'paragraph' || element.type === 'button' || element.type === 'link' || element.type === 'listItem' ? (
+      {element.type === 'heading' || element.type === 'paragraph' || element.type === 'button' || element.type === 'link' || element.type === 'listItem' || element.type === 'icon' ? (
         <Section title="Typography">
           <InputRow
             label="Font"
@@ -1809,7 +1844,7 @@ const CalendarEventEditor: React.FC<{ events: CalendarEvent[]; onChange: (events
 };
 
 const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
-  const { updateElementProps, updateElementName, projectId, getCurrentPage, addElement, selectElement } = useBuilderStore();
+  const { updateElementProps, updateElementName, projectId, getCurrentPage, addElement, selectElement, deleteElement } = useBuilderStore();
 
   const update = (key: string, value: unknown) => {
     updateElementProps(element.id, { [key]: value });
@@ -1884,6 +1919,75 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
           className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
       </div>
+
+      {element.type === 'tabs' && (
+        <div className="space-y-3 border-b border-gray-800 pb-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Tabs</p>
+            <button
+              type="button"
+              onClick={() => {
+                const count = element.children.filter((child: BuilderElement) => child.type === 'tab').length + 1;
+                const tabId = addElement('tab', element.id);
+                updateElementProps(tabId, { text: `Tab ${count}` });
+                selectElement(tabId);
+              }}
+              title="Add tab"
+              aria-label="Add tab"
+              className="rounded p-1 text-gray-400 transition-colors hover:bg-gray-800 hover:text-white"
+            ><Plus size={15} /></button>
+          </div>
+          {element.children.filter((child: BuilderElement) => child.type === 'tab').map((tab: BuilderElement, index: number) => (
+            <div key={tab.id} className="flex items-center gap-2">
+              <input
+                value={String(tab.props.text || '')}
+                onChange={event => updateElementProps(tab.id, { text: event.target.value })}
+                aria-label={`Tab ${index + 1} label`}
+                className="min-w-0 flex-1 rounded-md border border-gray-700 bg-gray-900 px-2.5 py-2 text-xs text-gray-100 outline-none focus:border-sky-400"
+              />
+              <button
+                type="button"
+                onClick={() => deleteElement(tab.id)}
+                disabled={element.children.filter((child: BuilderElement) => child.type === 'tab').length < 2}
+                title="Remove tab"
+                aria-label={`Remove tab ${index + 1}`}
+                className="rounded p-1.5 text-gray-500 transition-colors hover:bg-red-500/10 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-30"
+              ><Trash2 size={14} /></button>
+            </div>
+          ))}
+          <label className="block text-xs text-gray-500">Selector orientation
+            <select value={String(element.props.selectorOrientation || 'horizontal')} onChange={event => update('selectorOrientation', event.target.value)} className="mt-1 w-full rounded-md border border-gray-700 bg-gray-900 px-2.5 py-2 text-xs text-gray-200">
+              <option value="horizontal">Horizontal</option><option value="vertical">Vertical</option>
+            </select>
+          </label>
+          <p className="pt-1 text-[10px] font-semibold uppercase tracking-wider text-gray-500">Selector surface</p>
+          <div className="grid grid-cols-2 gap-2">
+            {([
+              ['selectorGap', 'Gap'], ['selectorPadding', 'Padding'], ['selectorBorder', 'Border'], ['selectorBorderRadius', 'Radius'],
+              ['selectorBackgroundColor', 'Background'], ['activeTabBackgroundColor', 'Active fill'], ['activeTabColor', 'Active text'],
+              ['inactiveTabBackgroundColor', 'Inactive fill'], ['inactiveTabColor', 'Inactive text'],
+            ] as const).map(([key, label]) => <label key={key} className="min-w-0 text-[10px] text-gray-500">{label}
+              <input value={String(element.props[key] || '')} onChange={event => update(key, event.target.value)} className="mt-1 w-full rounded border border-gray-700 bg-gray-900 px-2 py-1.5 text-[11px] text-gray-200 outline-none focus:border-sky-400" />
+            </label>)}
+          </div>
+          <p className="pt-1 text-[10px] font-semibold uppercase tracking-wider text-gray-500">Panel surface</p>
+          <div className="grid grid-cols-2 gap-2">
+            {([
+              ['panelPadding', 'Padding'], ['panelBorderRadius', 'Radius'], ['panelBackgroundColor', 'Background'], ['panelBorderColor', 'Border color'],
+            ] as const).map(([key, label]) => <label key={key} className="min-w-0 text-[10px] text-gray-500">{label}
+              <input value={String(element.props[key] || '')} onChange={event => update(key, event.target.value)} className="mt-1 w-full rounded border border-gray-700 bg-gray-900 px-2 py-1.5 text-[11px] text-gray-200 outline-none focus:border-sky-400" />
+            </label>)}
+          </div>
+        </div>
+      )}
+
+      {element.type === 'tab' && (
+        <div>
+          <label className="text-xs text-gray-500 block mb-1">Tab label</label>
+          <input value={String(element.props.text || '')} onChange={event => update('text', event.target.value)} className="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-xs text-gray-200 outline-none focus:border-sky-400" />
+          <p className="mt-2 text-[11px] text-gray-500">Select this tab to add and style its panel content.</p>
+        </div>
+      )}
 
       {slider && (
         <div className="space-y-3 border-b border-gray-800 pb-3">

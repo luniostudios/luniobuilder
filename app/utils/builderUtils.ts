@@ -287,6 +287,58 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
           },
         ],
       };
+    case 'tabs': {
+      const firstTab = createDefaultElement('tab', generateId(), null);
+      firstTab.props.text = 'Overview';
+      firstTab.children[0].props.text = 'A clear place to start';
+      firstTab.children[1].props.text = 'Organize related content into focused panels.';
+      const secondTab = createDefaultElement('tab', generateId(), null);
+      secondTab.props.text = 'Details';
+      secondTab.children[0].props.text = 'More details';
+      secondTab.children[1].props.text = 'Give each section its own content and visual style.';
+      return {
+        name: 'Tabs',
+        props: {
+          selectorOrientation: 'horizontal',
+          selectorGap: '4px',
+          selectorPadding: '4px',
+          selectorBackgroundColor: '#eef2f7',
+          selectorBorder: '1px solid #e2e8f0',
+          selectorBorderRadius: '12px',
+          activeTabBackgroundColor: '#ffffff',
+          activeTabColor: '#172033',
+          inactiveTabBackgroundColor: 'transparent',
+          inactiveTabColor: '#64748b',
+          panelPadding: '24px',
+          panelBackgroundColor: '#ffffff',
+          panelBorderColor: '#e2e8f0',
+          panelBorderRadius: '12px',
+        },
+        styles: { display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' },
+        children: [firstTab, secondTab],
+      };
+    }
+    case 'tab':
+      return {
+        name: 'Tab',
+        props: { text: 'New tab' },
+        styles: {
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '10px 16px',
+          border: '1px solid transparent',
+          borderRadius: '8px',
+          fontSize: '14px',
+          fontWeight: '600',
+          cursor: 'pointer',
+          transition: 'all 0.2s ease',
+        },
+        children: [
+          createDefaultElement('heading', generateId(), null),
+          createDefaultElement('paragraph', generateId(), null),
+        ],
+      };
     case 'hero':
       return {
         name: 'Hero',
@@ -963,6 +1015,64 @@ const styleObjectToJsxString = (styles: StyleProperties): string => {
   return entries.join(', ');
 };
 
+const renderTabsExport = (
+  element: BuilderElement,
+  indent: number,
+  mode: 'jsx' | 'html',
+  renderPanelContents: (tab: BuilderElement, indent: number) => string
+): string => {
+  const tabs = element.children.filter(child => child.type === 'tab');
+  const indentation = ' '.repeat(indent);
+  const selectorStyles: StyleProperties = {
+    display: 'flex',
+    flexDirection: element.props.selectorOrientation === 'vertical' ? 'column' : 'row',
+    flexWrap: 'wrap',
+    gap: String(element.props.selectorGap || '4px'),
+    padding: String(element.props.selectorPadding || '4px'),
+    backgroundColor: String(element.props.selectorBackgroundColor || '#eef2f7'),
+    border: String(element.props.selectorBorder || '1px solid #e2e8f0'),
+    borderRadius: String(element.props.selectorBorderRadius || '12px'),
+  };
+  const panelStyles: StyleProperties = {
+    minWidth: '0',
+    padding: String(element.props.panelPadding || '24px'),
+    backgroundColor: String(element.props.panelBackgroundColor || 'transparent'),
+    border: `1px solid ${String(element.props.panelBorderColor || 'transparent')}`,
+    borderRadius: String(element.props.panelBorderRadius || '12px'),
+  };
+  const styleAttribute = (styles: StyleProperties) => mode === 'jsx'
+    ? `style={{ ${styleObjectToJsxString(styles)} }}`
+    : `style="${escapeHtml(styleObjectToCssString(styles))}"`;
+  const classAttribute = (name: string) => mode === 'jsx' ? `className="${name}"` : `class="${name}"`;
+  const activeColor = String(element.props.activeTabColor || '#172033');
+  const inactiveColor = String(element.props.inactiveTabColor || '#64748b');
+  const activeBackground = String(element.props.activeTabBackgroundColor || '#ffffff');
+  const inactiveBackground = String(element.props.inactiveTabBackgroundColor || 'transparent');
+  const root = `<div data-lunio-tabs="${escapeHtml(element.id)}" ${classAttribute(getElementClassName(element))}>`;
+  const selector = `<div role="tablist" aria-label="${escapeHtml(String(element.props.label || 'Page sections'))}" ${styleAttribute(selectorStyles)}>${tabs.map((tab, index) => {
+    const selected = index === 0;
+    const tabId = escapeHtml(`${tab.id}-selector`);
+    const panelId = escapeHtml(`${tab.id}-panel`);
+    const clickHandler = mode === 'jsx'
+      ? `onClick={(event) => { const root = event.currentTarget.closest('[data-lunio-tabs]'); const list = root?.querySelector(':scope > [role=tablist]'); list?.querySelectorAll('[role=tab]').forEach(item => item.setAttribute('aria-selected', 'false')); root?.querySelectorAll(':scope > [role=tabpanel]').forEach(panel => panel.hidden = true); event.currentTarget.setAttribute('aria-selected', 'true'); const panel = root?.querySelector('#${panelId}'); if (panel) panel.hidden = false; }}`
+      : `onclick="const root=this.closest('[data-lunio-tabs]');const list=root.querySelector(':scope > [role=tablist]');list.querySelectorAll('[role=tab]').forEach(item=>item.setAttribute('aria-selected','false'));root.querySelectorAll(':scope > [role=tabpanel]').forEach(panel=>panel.hidden=true);this.setAttribute('aria-selected','true');const panel=root.querySelector('#${panelId}');if(panel)panel.hidden=false;"`;
+    const hasCustomBackground = Object.values(tab.styles).some(styles => Boolean(styles.backgroundColor));
+    const hasCustomColor = Object.values(tab.styles).some(styles => Boolean(styles.color));
+    const buttonStyles: StyleProperties = {
+      ...(hasCustomBackground ? {} : { backgroundColor: selected ? activeBackground : inactiveBackground }),
+      ...(hasCustomColor ? {} : { color: selected ? activeColor : inactiveColor }),
+    };
+    return `<button type="button" role="tab" id="${tabId}" aria-controls="${panelId}" aria-selected=${mode === 'jsx' ? `{${selected}}` : `"${selected}"`} ${classAttribute(getElementClassName(tab))} ${styleAttribute(buttonStyles)} ${clickHandler}>${escapeHtml(String(tab.props.text || `Tab ${index + 1}`))}</button>`;
+  }).join('')}</div>`;
+  const panels = tabs.map((tab, index) => {
+    const tabId = escapeHtml(`${tab.id}-selector`);
+    const panelId = escapeHtml(`${tab.id}-panel`);
+    const hidden = index > 0 ? (mode === 'jsx' ? ' hidden={true}' : ' hidden') : '';
+    return `<div role="tabpanel" id="${panelId}" aria-labelledby="${tabId}" ${styleAttribute(panelStyles)}${hidden}>${renderPanelContents(tab, indent + 2)}</div>`;
+  }).join('');
+  return `${indentation}${root}${selector}${panels}</div>`;
+};
+
 const renderElementToReact = (element: BuilderElement, indent = 2, breakpoint: Breakpoint = 'desktop'): string => {
   const indentation = ' '.repeat(indent);
   const className = getElementClassName(element);
@@ -987,6 +1097,8 @@ const renderElementToReact = (element: BuilderElement, indent = 2, breakpoint: B
       return `${indentation}<section${attrs}>${children}</section>`;
     case 'navbar':
       return `${indentation}<nav${attrs}>${children}</nav>`;
+    case 'tabs':
+      return renderTabsExport(element, indent, 'jsx', (tab, childIndent) => tab.children.map(child => renderElementToReact(child, childIndent, breakpoint)).join('\n'));
     case 'form':
       return `${indentation}<form${attrs}>${children}</form>`;
     case 'list':
@@ -1082,6 +1194,8 @@ export const renderElementToHtml = (element: BuilderElement, breakpoint: Breakpo
       return `<section${attrs}>${renderChildren()}</section>`;
     case 'navbar':
       return `<nav${attrs}>${renderChildren()}</nav>`;
+    case 'tabs':
+      return renderTabsExport(element, 0, 'html', tab => tab.children.map(child => renderElementToHtml(child, breakpoint)).join(''));
     case 'form':
       return `<form${attrs}>${renderChildren()}</form>`;
     case 'list':
@@ -1231,6 +1345,8 @@ export const renderElementToReactWithComponents = (
       return `${indentation}<section${attrs}>${children}</section>`;
     case 'navbar':
       return `${indentation}<nav${attrs}>${children}</nav>`;
+    case 'tabs':
+      return renderTabsExport(element, indent, 'jsx', (tab, childIndent) => tab.children.map(child => renderElementToReactWithComponents(child, componentMap, childIndent, false, breakpoint)).join('\n'));
     case 'form':
       return `${indentation}<form${attrs}>${children}</form>`;
     case 'list':
@@ -1564,11 +1680,11 @@ export const generateNextProjectFiles = (
   return files;
 };
 export const canHaveChildren = (type: ElementType): boolean => {
-  return ['section', 'div', 'navbar', 'hero', 'slider', 'slide', 'card', 'grid', 'columns', 'form', 'list', 'cmsMap'].includes(type);
+  return ['section', 'div', 'navbar', 'tabs', 'tab', 'hero', 'slider', 'slide', 'card', 'grid', 'columns', 'form', 'list', 'cmsMap'].includes(type);
 };
 
 export const COMPONENT_CATEGORIES = {
-  Layout: ['section', 'div', 'hero', 'slider', 'navbar', 'columns', 'grid', 'card', 'custom'],
+  Layout: ['section', 'div', 'hero', 'slider', 'tabs', 'navbar', 'columns', 'grid', 'card', 'custom'],
   Typography: ['heading', 'paragraph', 'link', 'list', 'listItem'],
   CMS: ['cmsMap', 'table'],
   Media: ['image', 'video', 'icon', 'iframe', 'calendar'],
@@ -1588,6 +1704,8 @@ export const COMPONENT_LABELS: Record<ElementType, string> = {
   image: 'Image',
   link: 'Link',
   navbar: 'Navbar',
+  tabs: 'Tabs',
+  tab: 'Tab',
   hero: 'Hero',
   slider: 'Slider',
   slide: 'Slide',
