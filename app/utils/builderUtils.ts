@@ -15,7 +15,7 @@ import { getFormElementDefaults } from './elements/form';
 import { getGridElementDefaults } from './elements/grid';
 import { getHeadingElementDefaults } from './elements/heading';
 import { getHeroElementDefaults } from './elements/hero';
-import { getIconElementDefaults } from './elements/icon';
+import { getIconElementDefaults } from './elements/iconElement';
 import { getIframeElementDefaults } from './elements/iframe';
 import { getImageElementDefaults } from './elements/image';
 import { getInputElementDefaults } from './elements/input';
