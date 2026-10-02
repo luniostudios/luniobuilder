@@ -995,8 +995,47 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
               placeholder="16px" />
           </>
         )}
-      </Section>
 
+        {styles.display === 'grid' && (
+          <>
+            <InputRow
+              label="Columns"
+              value={styles.gridTemplateColumns || ''}
+              onChange={v => update('gridTemplateColumns', v)}
+              placeholder="repeat(3, 1fr)"
+            />
+            <InputRow
+              label="Rows"
+              value={styles.gridTemplateRows || ''}
+              onChange={v => update('gridTemplateRows', v)}
+              placeholder="auto"
+            />
+            <InputRow label="Gap" value={styles.gap || ''} onChange={v => update('gap', v)} placeholder="16px" />
+          </>
+        )}
+        <InputRow
+          label="Position"
+          value={styles.position || ''}
+          onChange={v => update('position', v)}
+          options={['static', 'relative', 'absolute', 'fixed', 'sticky']}
+        />
+        {(styles.position === 'absolute' || styles.position === 'fixed') && (
+          <div className="grid grid-cols-2 gap-2 mt-1">
+            {(['top', 'right', 'bottom', 'left'] as const).map(side => (
+              <div key={side} className="flex items-center">
+                <span className="text-xs text-gray-600 w-3">{side[0].toUpperCase()}</span>
+                <input
+                  type="text"
+                  value={(styles as unknown as Record<string, string>)[side] || ''}
+                  onChange={e => update(side as keyof StyleProperties, e.target.value)}
+                  placeholder="auto"
+                  className="flex-1 w-full bg-gray-800 text-gray-200 text-xs rounded px-1.5 py-1 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </Section>
       {/* Size */}
       <Section title="Size">
         <div className="grid grid-cols-2 gap-2 mb-2">

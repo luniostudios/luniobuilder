@@ -55,6 +55,7 @@ interface ProjectRecord {
   created_at: Date;
   updated_at: Date;
   vercelUrl: string;
+  favicon_url?: string | null;
   status: string;
   content?: {
     pages?: Page[];
@@ -418,6 +419,8 @@ export const TopBar: React.FC = () => {
     return projects.find((p) => p.id === projectId)?.title || 'LUNIO Project';
   };
 
+  const getProjectFavicon = () => projects.find(project => project.id === projectId)?.favicon_url || '';
+
   const saveProject = useCallback(async () => {
     if (!projectId || isPublishingRef.current) return;
 
@@ -683,6 +686,8 @@ export const TopBar: React.FC = () => {
       : '<div style="padding:32px;font-family:system-ui,sans-serif;color:#4b5563;">No content to export.</div>';
     const pageStyles = generateCssForPage(page);
     const googleFontLinks = getGoogleFontStylesheetUrls([page]).map(url => `<link rel="stylesheet" href="${url}">`).join('\n  ');
+    const faviconUrl = getProjectFavicon();
+    const faviconLink = faviconUrl ? `<link rel="icon" href="${faviconUrl.replace(/&/g, '&amp;').replace(/"/g, '&quot;')}">` : '';
 
     // Collect in-document <style> contents and attempt to fetch linked stylesheets.
     const collectedCssParts: string[] = [];
@@ -725,6 +730,7 @@ export const TopBar: React.FC = () => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${page.seo.title}</title>
   <meta name="description" content="${page.seo.description}">
+  ${faviconLink}
   ${googleFontLinks}
   ${headLinkTags.join('\n  ')}
   <style>${combinedStyles}</style>
@@ -746,7 +752,7 @@ export const TopBar: React.FC = () => {
 
   const exportReact = async () => {
     const projectName = page.name || 'LUNIOProject';
-    const files = generateReactProjectFiles(pages, projectName, breakpoint);
+    const files = generateReactProjectFiles(pages, projectName, breakpoint, getProjectFavicon());
 
     // Gather styles from the current preview to include in the generated project
     const collectedCssParts: string[] = [];
@@ -801,7 +807,7 @@ export const TopBar: React.FC = () => {
 
   const openCodeModal = () => {
     const projectName = page.name || 'LUNIOProject';
-    const files = generateReactProjectFiles(pages, projectName, breakpoint);
+    const files = generateReactProjectFiles(pages, projectName, breakpoint, getProjectFavicon());
     setCodeFiles(files);
     setSelectedCodePath(files[0]?.path || '');
     setCodeSearch('');

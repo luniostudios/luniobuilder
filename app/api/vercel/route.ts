@@ -21,12 +21,13 @@ export async function POST(request: Request) {
   const teamId = body?.teamId;
 
   let token = providedToken;
+  let faviconUrl = '';
   if (projectId) {
     const userId = session.user.id || session.user.email;
     if (userId) {
       const { data: project, error: projectError } = await supabaseServer
         .from('projects')
-        .select('vercel_token')
+        .select('vercel_token, favicon_url')
         .eq('id', projectId)
         .eq('user_id', userId)
         .single();
@@ -38,6 +39,7 @@ export async function POST(request: Request) {
       if (project?.vercel_token) {
         token = project.vercel_token as string;
       }
+      faviconUrl = typeof project?.favicon_url === 'string' ? project.favicon_url : '';
     }
   }
 
@@ -62,7 +64,7 @@ export async function POST(request: Request) {
 
   const role = String(user?.role || 'free').toLowerCase();
   const proRoles = new Set(['pro', 'premium', 'team', 'business', 'admin', 'owner']);
-  const files = generateNextProjectFiles(pages, projectName, 'desktop', !proRoles.has(role));
+  const files = generateNextProjectFiles(pages, projectName, 'desktop', !proRoles.has(role), faviconUrl);
   // Sanitize incoming extraCss to remove bundled font URLs that won't work during export
   const extraCss = body?.extraCss;
   const sanitize = (css: any) => {

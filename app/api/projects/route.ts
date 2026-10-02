@@ -55,7 +55,7 @@ export async function GET(request: Request) {
       : [];
     let query = supabaseServer
       .from('projects')
-      .select('id, user_id, title, slug, site_slug, content, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
+      .select('id, user_id, title, slug, site_slug, content, favicon_url, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
       .eq('id', projectId);
 
     // allow admins/owners to fetch any project
@@ -78,7 +78,7 @@ export async function GET(request: Request) {
   // List owned projects and accepted shared projects for regular users.
   let listQuery = supabaseServer
     .from('projects')
-    .select('id, user_id, title, slug, site_slug, content, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
+    .select('id, user_id, title, slug, site_slug, content, favicon_url, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
     .order('updated_at', { ascending: false });
 
   if (role !== 'admin' && role !== 'owner') {
@@ -90,7 +90,7 @@ export async function GET(request: Request) {
 
     const { data: sharedProjects, error: sharedError } = await supabaseServer
       .from('projects')
-      .select('id, user_id, title, slug, site_slug, content, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
+      .select('id, user_id, title, slug, site_slug, content, favicon_url, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
       .in('id', memberProjectIds)
       .order('updated_at', { ascending: false });
 
@@ -170,7 +170,7 @@ export async function POST(request: Request) {
   const { data, error } = await supabaseServer
     .from('projects')
     .insert({ user_id: userId, title, slug, site_slug: siteSlug, content, status })
-    .select('id, user_id, title, slug, site_slug, content, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
+    .select('id, user_id, title, slug, site_slug, content, favicon_url, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
     .single();
 
   if (error) {
@@ -231,6 +231,14 @@ export async function PATCH(request: Request) {
     updates.site_slug = siteSlug;
   }
 
+  if (body.favicon_url !== undefined) {
+    const faviconUrl = typeof body.favicon_url === 'string' ? body.favicon_url.trim() : '';
+    if (faviconUrl && !/^https:\/\//i.test(faviconUrl)) {
+      return NextResponse.json({ error: 'Favicon URL must use HTTPS.' }, { status: 400 });
+    }
+    updates.favicon_url = faviconUrl || null;
+  }
+
   if (body.content !== undefined) {
     updates.content = body.content;
   }
@@ -254,7 +262,7 @@ export async function PATCH(request: Request) {
     .from('projects')
     .update(updates)
     .eq('id', projectId)
-    .select('id, user_id, title, slug, site_slug, content, created_at, updated_at, vercel_token, vercelUrl, status, socialOg');
+    .select('id, user_id, title, slug, site_slug, content, favicon_url, created_at, updated_at, vercel_token, vercelUrl, status, socialOg');
 
   if (userRole !== 'admin' && userRole !== 'owner') {
     const { data: membership } = await supabaseServer

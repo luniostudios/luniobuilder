@@ -4,7 +4,7 @@ import { supabaseServer } from '../../lib/supabaseServer';
 
 const BUCKET = 'user-assets';
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
-const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'image/svg+xml']);
+const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'image/svg+xml', 'image/x-icon', 'image/vnd.microsoft.icon']);
 
 const getUser = async () => {
   const session = await auth();

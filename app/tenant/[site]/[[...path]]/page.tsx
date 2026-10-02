@@ -23,6 +23,7 @@ interface TenantProject {
 	title: string;
 	site_slug: string;
 	status: string;
+	favicon_url: string | null;
 	content: {
 		pages?: Page[];
 		currentPageId?: string;
@@ -77,7 +78,7 @@ async function getTenantProject(site: string) {
 
 	const { data, error } = await supabaseServer
 		.from('projects')
-		.select('id, title, site_slug, status, content')
+		.select('id, title, site_slug, status, content, favicon_url')
 		.eq('site_slug', siteSlug)
 		.eq('status', 'published')
 		.maybeSingle();
@@ -99,6 +100,7 @@ export async function generateMetadata({ params }: TenantRouteProps): Promise<Me
 		title: page.seo?.title || project.title,
 		description: page.seo?.description || undefined,
 		keywords: page.seo?.keywords || undefined,
+		icons: project.favicon_url ? { icon: project.favicon_url, shortcut: project.favicon_url, apple: project.favicon_url } : undefined,
 	};
 }
 
