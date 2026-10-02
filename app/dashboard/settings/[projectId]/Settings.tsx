@@ -327,20 +327,20 @@ export default function ProjectSettingsPage() {
                 <label className='block text-xs font-medium text-gray-300'>Open Graph title
                   <input value={siteMetadata.openGraphTitle} onChange={event => updateMetadata('openGraphTitle', event.target.value)} placeholder='Uses the page title when blank' className='mt-1.5 w-full rounded-lg border border-gray-700 bg-[#0f1218] px-3 py-2.5 text-sm text-white outline-none focus:border-sky-400' />
                 </label>
+                <label className='block text-xs font-medium text-gray-300'>Twitter title
+                  <input value={siteMetadata.twitterTitle} onChange={event => updateMetadata('twitterTitle', event.target.value)} placeholder='Uses the Open Graph title when blank' className='mt-1.5 w-full rounded-lg border border-gray-700 bg-[#0f1218] px-3 py-2.5 text-sm text-white outline-none focus:border-sky-400' />
+                </label>
+                <label className='block text-xs font-medium text-gray-300'>Open Graph description
+                  <textarea value={siteMetadata.openGraphDescription} onChange={event => updateMetadata('openGraphDescription', event.target.value)} rows={2} placeholder='Uses the page description when blank' className='mt-1.5 w-full resize-y rounded-lg border border-gray-700 bg-[#0f1218] px-3 py-2.5 text-sm text-white outline-none focus:border-sky-400' />
+                </label>
+                <label className='block text-xs font-medium text-gray-300'>Twitter description
+                  <textarea value={siteMetadata.twitterDescription} onChange={event => updateMetadata('twitterDescription', event.target.value)} rows={2} placeholder='Uses the Open Graph description when blank' className='mt-1.5 w-full resize-y rounded-lg border border-gray-700 bg-[#0f1218] px-3 py-2.5 text-sm text-white outline-none focus:border-sky-400' />
+                </label>
                 <label className='block text-xs font-medium text-gray-300'>Twitter card
                   <select value={siteMetadata.twitterCard} onChange={event => updateMetadata('twitterCard', event.target.value as SiteMetadata['twitterCard'])} className='mt-1.5 w-full rounded-lg border border-gray-700 bg-[#0f1218] px-3 py-2.5 text-sm text-white outline-none focus:border-sky-400'>
                     <option value='summary_large_image'>Large image</option>
                     <option value='summary'>Summary</option>
                   </select>
-                </label>
-                <label className='block text-xs font-medium text-gray-300'>Open Graph description
-                  <textarea value={siteMetadata.openGraphDescription} onChange={event => updateMetadata('openGraphDescription', event.target.value)} rows={2} placeholder='Uses the page description when blank' className='mt-1.5 w-full resize-y rounded-lg border border-gray-700 bg-[#0f1218] px-3 py-2.5 text-sm text-white outline-none focus:border-sky-400' />
-                </label>
-                <label className='block text-xs font-medium text-gray-300'>Twitter title
-                  <input value={siteMetadata.twitterTitle} onChange={event => updateMetadata('twitterTitle', event.target.value)} placeholder='Uses the Open Graph title when blank' className='mt-1.5 w-full rounded-lg border border-gray-700 bg-[#0f1218] px-3 py-2.5 text-sm text-white outline-none focus:border-sky-400' />
-                </label>
-                <label className='block text-xs font-medium text-gray-300'>Twitter description
-                  <textarea value={siteMetadata.twitterDescription} onChange={event => updateMetadata('twitterDescription', event.target.value)} rows={2} placeholder='Uses the Open Graph description when blank' className='mt-1.5 w-full resize-y rounded-lg border border-gray-700 bg-[#0f1218] px-3 py-2.5 text-sm text-white outline-none focus:border-sky-400' />
                 </label>
                 <label className='block text-xs font-medium text-gray-300'>X / Twitter site
                   <input value={siteMetadata.twitterSite} onChange={event => updateMetadata('twitterSite', event.target.value)} placeholder='@brand' className='mt-1.5 w-full rounded-lg border border-gray-700 bg-[#0f1218] px-3 py-2.5 text-sm text-white outline-none focus:border-sky-400' />
