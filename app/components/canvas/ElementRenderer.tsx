@@ -892,10 +892,6 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     commitTextEdit();
   };
 
-  const handleContentInput = (event: React.FormEvent<HTMLElement>) => {
-    setEditingValue(event.currentTarget.innerText);
-  };
-
   const handleDoubleClick = (e: React.MouseEvent) => {
     if (isPreview || element.locked || !isTextEditableType(element.type)) return;
     e.stopPropagation();
@@ -1012,7 +1008,6 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
             style={isEditing ? editingTextStyles : nestedContentStyles}
             onClick={handleClick}
             onDoubleClick={handleDoubleClick}
-            onInput={handleContentInput}
             onBlur={isEditing ? handleContentBlur : undefined}
             onKeyDown={editableKeyDownHandler}
             contentEditable={!isPreview && isEditing}
@@ -1031,7 +1026,6 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
             style={isEditing ? editingTextStyles : nestedContentStyles}
             onClick={handleClick}
             onDoubleClick={handleDoubleClick}
-            onInput={handleContentInput}
             onBlur={isEditing ? handleContentBlur : undefined}
             onKeyDown={editableKeyDownHandler}
             contentEditable={!isPreview && isEditing}
@@ -1058,7 +1052,6 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
             style={{ ...nestedLeafStyles, outline: 'none', whiteSpace: 'pre-wrap', minWidth: 0 }}
             onClick={handleClick}
             onDoubleClick={handleDoubleClick}
-            onInput={handleContentInput}
             onBlur={handleContentBlur}
             onKeyDown={editableKeyDownHandler}
             contentEditable={!isPreview && isEditing}
@@ -1098,7 +1091,6 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
             style={isEditing ? editingTextStyles : nestedContentStyles}
             onClick={handleClick}
             onDoubleClick={handleDoubleClick}
-            onInput={handleContentInput}
             onBlur={isEditing ? handleContentBlur : undefined}
             onKeyDown={editableKeyDownHandler}
             contentEditable={!isPreview && isEditing}
@@ -1318,7 +1310,6 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
             style={isEditing ? editingTextStyles : nestedContentStyles}
             onClick={handleClick}
             onDoubleClick={handleDoubleClick}
-            onInput={handleContentInput}
             onBlur={isEditing ? handleContentBlur : undefined}
             onKeyDown={editableKeyDownHandler}
             contentEditable={!isPreview && isEditing}

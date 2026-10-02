@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Editor from '@monaco-editor/react';
-import { AlignCenter, AlignJustify, AlignLeft, AlignRight, ChevronDown, ChevronRight, Copy, Grid2x2, LayoutGrid, Link2, Maximize2, Move, Paintbrush, Plus, Redo2, RotateCcw, Save, SlidersHorizontal, Sparkles, Square, Trash2, Type, Unlink2, Upload } from 'lucide-react';
+import { AlignCenter, AlignJustify, AlignLeft, AlignRight, ArrowDown, ArrowUp, ChevronDown, ChevronRight, Copy, Grid2x2, LayoutGrid, Link2, Maximize2, Move, Paintbrush, Plus, Redo2, RotateCcw, Save, SlidersHorizontal, Sparkles, Square, Trash2, Type, Unlink2, Upload } from 'lucide-react';
 import ColorPicker from 'react-best-gradient-color-picker';
 import { useBuilderStore } from '../../stores/builderStore';
 import { Breakpoint, ElementInteraction, PageInteraction, StyleProperties } from '../../types/builder';
@@ -308,6 +308,69 @@ const GradientInput: React.FC<GradientInputProps> = ({ label, value, onChange, p
 
 const isCssGradient = (val: string) => /(linear-gradient|radial-gradient|conic-gradient)\(/i.test(val.trim());
 
+const splitCssBackgroundLayers = (value: string) => {
+  const layers: string[] = [];
+  let start = 0;
+  let depth = 0;
+  let quote = '';
+  let escaped = false;
+
+  for (let index = 0; index < value.length; index += 1) {
+    const character = value[index];
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (character === '\\') {
+      escaped = true;
+      continue;
+    }
+    if (quote) {
+      if (character === quote) quote = '';
+      continue;
+    }
+    if (character === '"' || character === "'") {
+      quote = character;
+      continue;
+    }
+    if (character === '(') depth += 1;
+    if (character === ')') depth = Math.max(0, depth - 1);
+    if (character === ',' && depth === 0) {
+      const layer = value.slice(start, index).trim();
+      if (layer) layers.push(layer);
+      start = index + 1;
+    }
+  }
+
+  const lastLayer = value.slice(start).trim();
+  if (lastLayer) layers.push(lastLayer);
+  return layers;
+};
+
+const normalizeGradientForPicker = (value: string) => {
+  const fallback = 'linear-gradient(180deg, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 100%)';
+  const match = value.trim().match(/^((?:repeating-)?(?:linear|radial)-gradient)\(([\s\S]*)\)$/i);
+  if (!match) return fallback;
+
+  const gradientName = match[1].toLowerCase();
+  const argumentsList = splitCssBackgroundLayers(match[2]);
+  const isRadial = gradientName.includes('radial');
+  const hasOrientation = isRadial
+    ? /^(?:(?:circle|ellipse)\b|(?:closest|farthest)-(?:side|corner)\b|contain\b|cover\b|at\b)/i.test(argumentsList[0] || '')
+    : /^(?:to\s+|[-+]?(?:\d+\.?\d*|\.\d+)deg\b)/i.test(argumentsList[0] || '');
+  const prefix = hasOrientation ? argumentsList.slice(0, 1) : [];
+  const stops = argumentsList.slice(prefix.length);
+  if (stops.length < 2) return fallback;
+
+  const positionedStops = stops.map((stop, index) => {
+    if (/(?:^|\s)[-+]?(?:\d+\.?\d*|\.\d+)(?:%|px|em)\s*$/i.test(stop)) return stop;
+    const position = stops.length === 1 ? 0 : (index / (stops.length - 1)) * 100;
+    return `${stop} ${position}%`;
+  });
+
+  return `${gradientName}(${[...prefix, ...positionedStops].join(', ')})`;
+};
+
 const BackgroundFillInput: React.FC<{
   label: string;
   colorValue: string;
@@ -319,6 +382,7 @@ const BackgroundFillInput: React.FC<{
 
   const currentValue = gradientValue || colorValue || '#000000';
   const isGradient = isCssGradient(currentValue);
+  const pickerValue = isGradient ? normalizeGradientForPicker(currentValue) : currentValue;
 
   const handleChange = (next: string) => {
     if (isCssGradient(next)) {
@@ -366,7 +430,7 @@ const BackgroundFillInput: React.FC<{
       </div>
       {open && (
         <div className="absolute z-10 bottom-2 right-65 mt-3 rounded-xl border border-gray-700 overflow-hidden">
-          <ColorPicker value={currentValue} onChange={handleChange} hidePresets={true} />
+          <ColorPicker value={pickerValue} onChange={handleChange} hidePresets={true} />
         </div>
       )}
     </div>
@@ -599,6 +663,7 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
   const isTextElement = ['heading', 'paragraph', 'button', 'link', 'listItem'].includes(element.type);
   const isImageElement = element.type === 'image';
   const [backgroundImageTab, setBackgroundImageTab] = useState<'value' | 'unsplash' | 'uploads'>('value');
+  const [activeBackgroundLayer, setActiveBackgroundLayer] = useState(0);
   const [textClipImageTab, setTextClipImageTab] = useState<'value' | 'unsplash' | 'uploads'>('value');
 
   const update = (key: keyof StyleProperties, value: string) => {
@@ -778,6 +843,46 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
     return `url("${trimmed.replace(/"/g, '\\"')}")`;
   };
 
+  const backgroundLayers = [
+    ...(styles.backgroundGradient ? [styles.backgroundGradient] : []),
+    ...splitCssBackgroundLayers(styles.backgroundImage || ''),
+  ];
+
+  const writeBackgroundLayers = (layers: string[]) => {
+    update('backgroundGradient', '');
+    update('backgroundImage', layers.join(', '));
+  };
+
+  const updateBackgroundLayer = (index: number, value: string) => {
+    const layers = [...backgroundLayers];
+    layers[index] = value;
+    writeBackgroundLayers(layers);
+  };
+
+  const moveBackgroundLayer = (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= backgroundLayers.length) return;
+    const layers = [...backgroundLayers];
+    [layers[index], layers[targetIndex]] = [layers[targetIndex], layers[index]];
+    writeBackgroundLayers(layers);
+    setActiveBackgroundLayer(targetIndex);
+  };
+
+  const deleteBackgroundLayer = (index: number) => {
+    const layers = backgroundLayers.filter((_, layerIndex) => layerIndex !== index);
+    writeBackgroundLayers(layers);
+    setActiveBackgroundLayer(Math.max(0, Math.min(index, layers.length - 1)));
+  };
+
+  const addBackgroundLayer = (kind: 'image' | 'gradient') => {
+    const layer = kind === 'gradient'
+      ? 'linear-gradient(180deg, rgba(15, 23, 42, 0.35) 0%, rgba(15, 23, 42, 0) 100%)'
+      : 'none';
+    writeBackgroundLayers([layer, ...backgroundLayers]);
+    setActiveBackgroundLayer(0);
+    setBackgroundImageTab('value');
+  };
+
   const parsePx = (val: string | undefined) => {
     if (!val) return '';
     return val.replace('px', '').replace('rem', '').trim();
@@ -889,54 +994,6 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
               onChange={v => update('gap', v)}
               placeholder="16px" />
           </>
-        )}
-        {styles.display === 'grid' && (
-          <>
-            <InputRow
-              label="Columns"
-              value={styles.gridTemplateColumns || ''}
-              onChange={v => update('gridTemplateColumns', v)}
-              placeholder="repeat(3, 1fr)"
-            />
-            <InputRow
-              label="Rows"
-              value={styles.gridTemplateRows || ''}
-              onChange={v => update('gridTemplateRows', v)}
-              placeholder="auto"
-            />
-            <InputRow label="Gap" value={styles.gap || ''} onChange={v => update('gap', v)} placeholder="16px" />
-          </>
-        )}
-        <InputRow
-          label="Position"
-          value={styles.position || ''}
-          onChange={v => update('position', v)}
-          options={['static', 'relative', 'absolute', 'fixed', 'sticky']}
-        />
-        <label className="flex items-center gap-2 mt-2 text-xs text-gray-400 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={styles.visibility !== 'hidden'}
-            onChange={e => update('visibility', e.target.checked ? 'visible' : 'hidden')}
-            className="accent-blue-500"
-          />
-          {styles.visibility !== 'hidden' ? 'Visible' : 'Hidden'}
-        </label>
-        {(styles.position === 'absolute' || styles.position === 'fixed') && (
-          <div className="grid grid-cols-2 gap-2 mt-1">
-            {(['top', 'right', 'bottom', 'left'] as const).map(side => (
-              <div key={side} className="flex items-center">
-                <span className="text-xs text-gray-600 w-3">{side[0].toUpperCase()}</span>
-                <input
-                  type="text"
-                  value={(styles as unknown as Record<string, string>)[side] || ''}
-                  onChange={e => update(side as keyof StyleProperties, e.target.value)}
-                  placeholder="auto"
-                  className="flex-1 w-full bg-gray-800 text-gray-200 text-xs rounded px-1.5 py-1 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-            ))}
-          </div>
         )}
       </Section>
 
@@ -1130,56 +1187,59 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
           onChangeColor={(v) => update('backgroundColor', v)}
           onChangeGradient={(v) => update('backgroundGradient', v)}
         />
-        <InputRow
-          label="Image"
-          value={extractUrlFromCssBackgroundImage(styles.backgroundImage)}
-          onChange={v => update('backgroundImage', toCssBackgroundImageValue(v))}
-          placeholder="https://..."
-        />
-
-        <div className="flex gap-2 mb-2">
-          <button
-            type="button"
-            onClick={() => setBackgroundImageTab('value')}
-            className={`flex-1 text-xs px-3 py-2 rounded-lg border transition-colors ${backgroundImageTab === 'value'
-              ? 'bg-blue-300/10 text-blue-200 border-blue-300/40'
-              : 'bg-gray-900 text-gray-400 border-gray-800 hover:text-gray-200'
-              }`}
-          >
-            URL
-          </button>
-          <button
-            type="button"
-            onClick={() => setBackgroundImageTab('unsplash')}
-            className={`flex-1 text-xs px-3 py-2 rounded-lg border transition-colors ${backgroundImageTab === 'unsplash'
-              ? 'bg-blue-300/10 text-blue-200 border-blue-300/40'
-              : 'bg-gray-900 text-gray-400 border-gray-800 hover:text-gray-200'
-              }`}
-          >
-            Unsplash
-          </button>
-          <button
-            type="button"
-            onClick={() => setBackgroundImageTab('uploads')}
-            className={`flex-1 text-xs px-3 py-2 rounded-lg border transition-colors ${backgroundImageTab === 'uploads'
-              ? 'bg-blue-300/10 text-blue-200 border-blue-300/40'
-              : 'bg-gray-900 text-gray-400 border-gray-800 hover:text-gray-200'
-              }`}
-          >
-            My uploads
-          </button>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-medium text-gray-300">Background layers</span>
+            <span className="text-[10px] text-gray-500">Top layer renders first</span>
+          </div>
+          {backgroundLayers.map((layer, index) => {
+            const isGradient = isCssGradient(layer);
+            return (
+              <div key={`${index}-${layer.slice(0, 20)}`} className="rounded-md border border-gray-800 bg-[#101114] p-2">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="min-w-0 truncate text-[10px] font-medium text-gray-300">{isGradient ? 'Gradient overlay' : `Image layer ${index + 1}`}</span>
+                  <div className="flex shrink-0 items-center gap-0.5">
+                    <button type="button" onClick={() => moveBackgroundLayer(index, -1)} disabled={index === 0} title="Move layer forward" aria-label={`Move background layer ${index + 1} forward`} className="rounded p-1 text-gray-500 hover:bg-gray-800 hover:text-gray-200 disabled:opacity-30"><ArrowUp size={13} /></button>
+                    <button type="button" onClick={() => moveBackgroundLayer(index, 1)} disabled={index === backgroundLayers.length - 1} title="Move layer backward" aria-label={`Move background layer ${index + 1} backward`} className="rounded p-1 text-gray-500 hover:bg-gray-800 hover:text-gray-200 disabled:opacity-30"><ArrowDown size={13} /></button>
+                    <button type="button" onClick={() => deleteBackgroundLayer(index)} title="Remove background layer" aria-label={`Remove background layer ${index + 1}`} className="rounded p-1 text-gray-500 hover:bg-red-500/10 hover:text-red-300"><Trash2 size={13} /></button>
+                  </div>
+                </div>
+                {isGradient ? (
+                  <BackgroundFillInput
+                    label="Gradient overlay"
+                    colorValue=""
+                    gradientValue={layer}
+                    onChangeColor={() => {}}
+                    onChangeGradient={(v) => updateBackgroundLayer(index, v)}
+                  />
+                ) : (
+                  <>
+                    <div className="mb-2 grid grid-cols-3 gap-1">
+                      {([
+                        ['value', 'URL'],
+                        ['unsplash', 'Unsplash'],
+                        ['uploads', 'Uploads'],
+                      ] as const).map(([tab, label]) => (
+                        <button key={tab} type="button" onClick={() => { setActiveBackgroundLayer(index); setBackgroundImageTab(tab); }} aria-pressed={activeBackgroundLayer === index && backgroundImageTab === tab} className={`rounded border px-1 py-1.5 text-[9px] ${activeBackgroundLayer === index && backgroundImageTab === tab ? 'border-sky-400/40 bg-sky-400/10 text-sky-200' : 'border-gray-800 bg-gray-900 text-gray-500 hover:text-gray-200'}`}>{label}</button>
+                      ))}
+                    </div>
+                    {activeBackgroundLayer === index && backgroundImageTab === 'unsplash' ? (
+                      <UnsplashPicker onPick={photo => updateBackgroundLayer(index, toCssBackgroundImageValue(photo.urls.regular))} />
+                    ) : activeBackgroundLayer === index && backgroundImageTab === 'uploads' ? (
+                      <UserImagePicker onPick={url => updateBackgroundLayer(index, toCssBackgroundImageValue(url))} />
+                    ) : (
+                      <InputRow label="Image URL" value={extractUrlFromCssBackgroundImage(layer)} onChange={value => updateBackgroundLayer(index, value ? toCssBackgroundImageValue(value) : 'none')} placeholder="https://..." />
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          })}
+          <div className="grid grid-cols-2 gap-2 mb-2">
+            <button type="button" onClick={() => addBackgroundLayer('image')} className="flex items-center justify-center gap-1.5 rounded border border-gray-700 bg-gray-900 px-2 py-2 text-[10px] font-medium text-gray-300 hover:border-sky-400/40 hover:text-sky-200"><Plus size={12} />Image</button>
+            <button type="button" onClick={() => addBackgroundLayer('gradient')} className="flex items-center justify-center gap-1.5 rounded border border-gray-700 bg-gray-900 px-2 py-2 text-[10px] font-medium text-gray-300 hover:border-sky-400/40 hover:text-sky-200"><Plus size={12} />Gradient</button>
+          </div>
         </div>
-
-        {backgroundImageTab === 'unsplash' && (
-          <UnsplashPicker
-            onPick={(photo) => {
-              update('backgroundImage', toCssBackgroundImageValue(photo.urls.regular));
-            }}
-          />
-        )}
-        {backgroundImageTab === 'uploads' && (
-          <UserImagePicker onPick={(url) => update('backgroundImage', toCssBackgroundImageValue(url))} />
-        )}
         <InputRow
           label="Size"
           value={styles.backgroundSize || ''}
