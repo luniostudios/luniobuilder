@@ -52,6 +52,8 @@ export interface StyleProperties {
   gap?: string;
   gridTemplateColumns?: string;
   gridTemplateRows?: string;
+  columnLayout?: string;
+  rowLayout?: string;
   backdropFilter?: string;
   visibility?: string;
   transform?: string;

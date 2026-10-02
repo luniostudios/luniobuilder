@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from 'react';
-import { AlignCenter, AlignJustify, AlignLeft, AlignRight, ChevronDown, ChevronRight, Grid2x2, LayoutGrid, Link2, Maximize2, Move, Paintbrush, Plus, Redo2, SlidersHorizontal, Sparkles, Square, Trash2, Type, Unlink2, Upload } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import Editor from '@monaco-editor/react';
+import { AlignCenter, AlignJustify, AlignLeft, AlignRight, ChevronDown, ChevronRight, Copy, Grid2x2, LayoutGrid, Link2, Maximize2, Move, Paintbrush, Plus, Redo2, RotateCcw, Save, SlidersHorizontal, Sparkles, Square, Trash2, Type, Unlink2, Upload } from 'lucide-react';
 import ColorPicker from 'react-best-gradient-color-picker';
 import { useBuilderStore } from '../../stores/builderStore';
-import { ElementInteraction, PageInteraction, StyleProperties } from '../../types/builder';
-import { getEffectiveStyles } from '../../utils/builderUtils';
+import { Breakpoint, ElementInteraction, PageInteraction, StyleProperties } from '../../types/builder';
+import { getEffectiveStyles, styleObjectToCssString } from '../../utils/builderUtils';
 import { GOOGLE_FONT_OPTIONS, loadGoogleFont } from '../../utils/googleFonts';
 import { Slider } from '@/components/ui/slider';
 
@@ -1317,160 +1318,185 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
   );
 };
 
-const toKebabCase = (key: string) => key.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`);
-const toCamelCase = (key: string) => key.replace(/-([a-z])/g, (_, char) => char.toUpperCase());
+const createCssScaffold = (selector: string, styles: StyleProperties) => {
+  const declarations = styleObjectToCssString(styles)
+    .split(';')
+    .map(declaration => declaration.trim())
+    .filter(Boolean)
+    .map(declaration => `  ${declaration};`)
+    .join('\n');
+  return `/* Styles for this element */\n${selector} {\n${declarations ? `${declarations}\n` : ''}}\n`;
+};
 
-interface CSSRow {
-  id: string;
-  property: string;
-  value: string;
-  enabled: boolean;
-}
+const cssPropertyToStyleKey = (property: string) => property.startsWith('--')
+  ? property
+  : property.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
 
-const createEmptyRow = (): CSSRow => ({
-  id: `${Date.now()}-${Math.random()}`,
-  property: '',
-  value: '',
-  enabled: true,
-});
+const readElementCssStyles = (css: string, selector: string): Partial<StyleProperties> | null => {
+  try {
+    const stylesheet = new CSSStyleSheet();
+    stylesheet.replaceSync(css);
+    const matchingRule = Array.from(stylesheet.cssRules).find(rule => {
+      if (rule.type !== 1) return false;
+      const styleRule = rule as CSSStyleRule;
+      return styleRule.selectorText.split(',').some(item => item.trim() === selector);
+    }) as CSSStyleRule | undefined;
 
-const buildStyleRows = (styles: StyleProperties): CSSRow[] =>
-  Object.entries(styles)
-    .filter(([, value]) => value !== undefined && value !== '')
-    .map(([key, value]) => ({
-      id: `${key}-${Math.random()}`,
-      property: toKebabCase(key),
-      value: String(value),
-      enabled: true,
-    }));
+    if (!matchingRule) return null;
 
-const CSSEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
-  const { updateElementStyles } = useBuilderStore();
-  const [rows, setRows] = useState<CSSRow[]>([]);
+    const styles: Record<string, string> = {};
+    for (let index = 0; index < matchingRule.style.length; index += 1) {
+      const property = matchingRule.style.item(index);
+      styles[cssPropertyToStyleKey(property)] = matchingRule.style.getPropertyValue(property).trim();
+    }
+    return styles as Partial<StyleProperties>;
+  } catch {
+    return null;
+  }
+};
 
-  const currentStyles = getEffectiveStyles(
-    element,
-    breakpoint as 'widescreen' | 'desktop' | 'laptop' | 'tablet' | 'mobileLandscape' | 'mobile'
-  );
+const syncElementCssRule = (css: string, selector: string, styles: StyleProperties) => {
+  try {
+    const stylesheet = new CSSStyleSheet();
+    stylesheet.replaceSync(css);
+    const matchingRule = Array.from(stylesheet.cssRules).find(rule => {
+      if (rule.type !== 1) return false;
+      const styleRule = rule as CSSStyleRule;
+      return styleRule.selectorText.split(',').some(item => item.trim() === selector);
+    }) as CSSStyleRule | undefined;
 
-  React.useEffect(() => {
-    setRows([...buildStyleRows(currentStyles), createEmptyRow()]);
-  }, [element.id, breakpoint, currentStyles]);
+    if (!matchingRule) return `${css.trimEnd()}\n\n${createCssScaffold(selector, styles)}`;
+    matchingRule.style.cssText = styleObjectToCssString(styles);
+    return Array.from(stylesheet.cssRules).map(rule => rule.cssText).join('\n');
+  } catch {
+    return css;
+  }
+};
 
-  const handleToggle = (id: string) => {
-    setRows(prev => prev.map(row => row.id === id ? { ...row, enabled: !row.enabled } : row));
-  };
+const CSSEditor: React.FC<{ element: BuilderElement; breakpoint: Breakpoint }> = ({ element, breakpoint }) => {
+  const { updateElementProps, updateElementStyles, pushHistory } = useBuilderStore();
+  const selector = `.lunio-${element.id}`;
+  const savedCss = typeof element.props.customCss === 'string' ? element.props.customCss : undefined;
+  const currentStyles = getEffectiveStyles(element, breakpoint);
+  const styleSignature = styleObjectToCssString(currentStyles);
+  const [code, setCode] = useState(() => savedCss ?? createCssScaffold(selector, currentStyles));
+  const [checkpointed, setCheckpointed] = useState(true);
+  const [copied, setCopied] = useState(false);
+  const localUpdate = useRef(false);
+  const activeElementId = useRef(element.id);
 
-  const handleChange = (id: string, field: 'property' | 'value', value: string) => {
-    setRows(prev => prev.map(row => row.id === id ? { ...row, [field]: value } : row));
-  };
+  useEffect(() => {
+    const elementChanged = activeElementId.current !== element.id;
+    activeElementId.current = element.id;
+    if (!elementChanged && localUpdate.current) {
+      localUpdate.current = false;
+      return;
+    }
+    localUpdate.current = false;
+    const nextCode = savedCss
+      ? syncElementCssRule(savedCss, selector, currentStyles)
+      : createCssScaffold(selector, currentStyles);
+    setCode(nextCode);
+    if (savedCss && nextCode !== savedCss) {
+      updateElementProps(element.id, { customCss: nextCode });
+    }
+    setCheckpointed(true);
+  }, [element.id, savedCss, selector, breakpoint, styleSignature, updateElementProps]);
 
-  const handleDeleteRow = (id: string) => {
-    setRows(prev => prev.filter(row => row.id !== id));
-  };
+  const handleChange = (nextCode: string | undefined) => {
+    const value = nextCode ?? '';
+    localUpdate.current = true;
+    setCode(value);
+    setCheckpointed(false);
+    updateElementProps(element.id, { customCss: value });
 
-  const handleAddRow = () => {
-    setRows(prev => [...prev, createEmptyRow()]);
-  };
-
-  const handleSave = () => {
-    const enabledStyles = rows.reduce((acc, row) => {
-      const property = row.property.trim();
-      const value = row.value.trim();
-      if (row.enabled && property && value) {
-        acc[toCamelCase(property) as keyof StyleProperties] = value;
-      }
-      return acc;
-    }, {} as Partial<StyleProperties>);
-
-    const clearedStyles = Object.keys(currentStyles).reduce((acc, key) => {
-      const kebab = toKebabCase(key);
-      const matchingRow = rows.find(row => row.property.trim() === kebab);
-      if (!matchingRow || !matchingRow.enabled || !matchingRow.value.trim()) {
-        acc[key as keyof StyleProperties] = undefined;
-      }
-      return acc;
-    }, {} as Partial<StyleProperties>);
-
-    updateElementStyles(element.id, { ...clearedStyles, ...enabledStyles });
+    const parsedStyles = readElementCssStyles(value, selector);
+    if (parsedStyles) {
+      const clearedStyles = Object.keys(currentStyles).reduce((result, key) => {
+        result[key as keyof StyleProperties] = undefined;
+        return result;
+      }, {} as Partial<StyleProperties>);
+      updateElementStyles(element.id, { ...clearedStyles, ...parsedStyles });
+    }
   };
 
   const handleReset = () => {
-    setRows([...buildStyleRows(currentStyles), createEmptyRow()]);
+    const value = createCssScaffold(selector, currentStyles);
+    localUpdate.current = true;
+    setCode(value);
+    setCheckpointed(false);
+    updateElementProps(element.id, { customCss: value });
+    const parsedStyles = readElementCssStyles(value, selector);
+    if (parsedStyles) updateElementStyles(element.id, parsedStyles);
+  };
+
+  const handleCopySelector = async () => {
+    try {
+      await navigator.clipboard.writeText(selector);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1200);
+    } catch {
+      setCopied(false);
+    }
   };
 
   return (
-    <div className="p-4 space-y-3">
-      <div className="flex items-center justify-between gap-2 mb-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">CSS Editor</p>
+    <div className="flex h-full min-h-0 flex-col bg-[#101114]">
+      <div className="border-b border-white/8 px-3.5 py-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-gray-100">Custom CSS</p>
+            <p className="mt-1 truncate font-mono text-[10px] text-sky-300">{selector}</p>
+          </div>
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded border border-emerald-400/20 bg-emerald-400/8 px-2 py-1 text-[10px] text-emerald-300">
+            <span className="size-1.5 rounded-full bg-emerald-400" />Live
+          </span>
         </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={handleReset}
-            className="text-xs px-3 py-1.5 rounded bg-gray-800 text-gray-300 border border-gray-700 hover:bg-gray-700"
-          >
-            Reset
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            className="text-xs px-3 py-1.5 rounded bg-blue-500 text-white hover:bg-blue-400"
-          >
-            Save
-          </button>
-        </div>
-      </div>
-
-      <div className="grid gap-2">
-        <div className="flex flex-row items-center gap-2 px-2 text-[11px] text-gray-400 uppercase tracking-wider">
-          <span />
-          <span>Property</span>
-          <span>Value</span>
-          <span />
-        </div>
-        {rows.map(row => (
-          <div
-            key={row.id}
-            className={`grid grid-cols-[40%_40%_20%] items-center gap-2 px-2 rounded-md border border-gray-800 ${row.enabled ? 'bg-gray-900' : 'bg-gray-950/50 opacity-70'}`}
-          >
-            <input
-              type="text"
-              value={row.property}
-              onChange={e => handleChange(row.id, 'property', e.target.value)}
-              placeholder="property"
-              className="w-full bg-transparent text-gray-100 text-xs rounded px-2 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-            <input
-              type="text"
-              value={row.value}
-              onChange={e => handleChange(row.id, 'value', e.target.value)}
-              placeholder="value"
-              className="w-full bg-transparent text-gray-100 text-xs rounded px-2 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-            <button
-              type="button"
-              onClick={() => handleDeleteRow(row.id)}
-              className="text-gray-400 hover:text-red-400"
-              title="Delete declaration"
-            >
-              ×
+        <div className="mt-3 flex items-center justify-between gap-2">
+          <span className="truncate text-[10px] text-gray-500">element-{element.id.slice(-6)}.css</span>
+          <div className="flex shrink-0 items-center gap-1">
+            <button type="button" onClick={handleCopySelector} title="Copy element selector" aria-label="Copy element selector" className="inline-flex size-7 items-center justify-center rounded border border-white/10 text-gray-400 transition-colors hover:border-sky-400/40 hover:bg-sky-400/10 hover:text-sky-200">
+              <Copy size={13} />
+            </button>
+            <button type="button" onClick={handleReset} title="Reset to selector scaffold" aria-label="Reset CSS" className="inline-flex size-7 items-center justify-center rounded border border-white/10 text-gray-400 transition-colors hover:border-white/20 hover:bg-white/5 hover:text-gray-100">
+              <RotateCcw size={13} />
+            </button>
+            <button type="button" onClick={() => { pushHistory(); setCheckpointed(true); }} title="Save undo checkpoint" aria-label="Save CSS changes" className="inline-flex size-7 items-center justify-center rounded border border-sky-400/30 bg-sky-400/10 text-sky-200 transition-colors hover:bg-sky-400/20">
+              <Save size={13} />
             </button>
           </div>
-        ))}
+        </div>
       </div>
-
-      <button
-        type="button"
-        onClick={handleAddRow}
-        className="w-full text-left text-xs font-medium uppercase tracking-wide text-blue-300 hover:text-white px-3 py-2 rounded bg-gray-800 border border-gray-700"
-      >
-        + Add property
-      </button>
-
-      <div className="text-[11px] text-gray-500">
-        Use kebab-case property names. If a change is not seen then the property is written wrong.
+      <div className="min-h-0 flex-1 p-2">
+        <div className="h-full min-h-64 overflow-hidden rounded-md border border-white/10 bg-[#0b0c0e] shadow-inner shadow-black/20">
+          <Editor
+            height="100%"
+            language="css"
+            theme="vs-dark"
+            value={code}
+            onChange={handleChange}
+            options={{
+              ariaLabel: 'Custom CSS editor',
+              automaticLayout: true,
+              bracketPairColorization: { enabled: true },
+              cursorBlinking: 'smooth',
+              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+              fontSize: 12,
+              formatOnPaste: true,
+              formatOnType: true,
+              lineNumbers: 'on',
+              minimap: { enabled: false },
+              padding: { top: 12, bottom: 12 },
+              scrollBeyondLastLine: false,
+              tabSize: 2,
+              wordWrap: 'on',
+            }}
+          />
+        </div>
+      </div>
+      <div className="flex items-center justify-between border-t border-white/8 px-3.5 py-2 text-[10px] text-gray-500">
+        <span>CSS · {code.split('\n').length} lines</span>
+        <span className={checkpointed ? 'text-gray-500' : 'text-amber-300'}>{checkpointed ? 'Checkpoint saved' : 'Live changes'}</span>
       </div>
     </div>
   );
@@ -2111,6 +2137,14 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
 
       {(element.type === 'button' || element.type === 'link') && (
         <div>
+          <label className="text-xs text-gray-500 block mb-1">Link text</label>
+          <input
+            type="text"
+            value={String(element.props.text || '')}
+            onChange={e => update('text', e.target.value)}
+            placeholder="Link text"
+            className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 mb-3"
+          />
           <label className="text-xs text-gray-500 block mb-1">Link URL</label>
           <input
             type="text"

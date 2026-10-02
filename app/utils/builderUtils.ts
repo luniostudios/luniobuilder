@@ -291,6 +291,9 @@ const buildResponsiveCssForElement = (element: BuilderElement): string => {
     rules.push(pseudoClassRules);
   }
 
+  const customCss = typeof element.props.customCss === 'string' ? element.props.customCss.trim() : '';
+  if (customCss) rules.push(customCss);
+
   element.children.forEach(child => {
     const childRules = buildResponsiveCssForElement(child);
     if (childRules) rules.push(childRules);

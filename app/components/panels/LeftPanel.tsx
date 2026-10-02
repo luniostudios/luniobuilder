@@ -12,17 +12,18 @@ import { COMPONENT_CATEGORIES, COMPONENT_LABELS, canHaveChildren, createDefaultE
 import type { CmsCollection, CmsRecord } from '../../types/cms';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogDescription, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { IconTabs, IconSection, IconBoxPadding, IconCode } from '@tabler/icons-react';
 
 const COMPONENT_ICONS: Record<string, React.ReactNode> = {
-  section: <Layout size={25} />,
-  div: <Square size={25} />,
+  section: <IconSection size={25} />,
+  div: <IconBoxPadding size={25} />,
   heading: <Type size={25} />,
   paragraph: <TextInitialIcon size={25} />,
   button: <MousePointer size={25} />,
   image: <Image size={25} />,
   link: <Link size={25} />,
   navbar: <LayoutPanelTop size={25} />,
-  tabs: <PanelsTopLeft size={25} />,
+  tabs: <IconTabs size={25} />,
   hero: <LayoutIcon size={25} />,
   slider: <ImagesIcon size={25} />,
   card: <IdCard size={25} />,
@@ -41,7 +42,7 @@ const COMPONENT_ICONS: Record<string, React.ReactNode> = {
   calendar: <CalendarDays size={25} />,
   table: <Table2 size={25} />,
   cmsMap: <ListTree size={25} />,
-  custom: <Code2 size={25} />,
+  custom: <IconCode stroke={2} />,
   select: <ChevronsDownUp size={25} />,
 };
 

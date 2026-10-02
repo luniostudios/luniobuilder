@@ -5,7 +5,8 @@ export const getGridElementDefaults = () => ({
   props: { columns: 3 },
   styles: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
+    gridTemplateColumns: 'auto auto auto',
+    gridTemplateRows: 'auto',
     gap: '24px',
     width: '100%',
     paddingTop: '20px',

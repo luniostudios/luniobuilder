@@ -2,12 +2,9 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Monitor, Tablet, Smartphone, Undo2, Redo2, Eye, EyeOff,
-  ZoomIn, ZoomOut, Download, Share2, Settings,
-  Play,
-  Check,
+  Undo2, Redo2, 
+  ZoomIn, ZoomOut, Download, Settings,
   Loader,
-  MonitorCheck,
   Code,
   Folder,
   FileCode2,
@@ -18,7 +15,6 @@ import {
   Braces,
   X,
   ExternalLink,
-  Laptop,
   Globe,
   Rocket,
   ChevronDown,
@@ -41,6 +37,7 @@ import { getGoogleFontStylesheetUrls } from '../utils/googleFonts';
 import { Page } from '../types/builder';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { IconBrandVercel, IconCircleCheck, IconDeviceDesktopStar, IconDeviceLaptop, IconDeviceMobile, IconDeviceMobileRotated, IconDeviceTablet, IconPlayerPause, IconPlayerPlay, IconScreenShare } from '@tabler/icons-react';
 
 interface UserData {
   id: string;
@@ -900,7 +897,7 @@ export const TopBar: React.FC = () => {
                   <div
                     key={collaborator.id}
                     title={collaborator.name}
-                    className="relative -ml-1 h-7 w-7 overflow-hidden rounded-full border-2 border-[#0d1117] text-center text-[10px] font-semibold leading-5 text-white first:ml-0"
+                    className="relative -ml-1 h-7 w-7 overflow-hidden rounded-full border border-white text-center text-[10px] font-semibold leading-5 text-white first:ml-0"
                     style={{ zIndex: 50 - index, backgroundColor: 'white' }}
                   >
                     {collaborator.avatar ? (
@@ -940,12 +937,12 @@ export const TopBar: React.FC = () => {
           {/* Breakpoints */}
           <div className="flex items-center gap-0.5 bg-gray-800/60 rounded-lg p-0.5 border border-gray-700/50">
             {[
-              { id: 'widescreen' as const, icon: <Monitor size={13} />, label: 'Widescreen' },
-              { id: 'desktop' as const, icon: <MonitorCheck size={13} />, label: 'Desktop (default)' },
-              { id: 'laptop' as const, icon: <Laptop size={13} />, label: 'Laptop' },
-              { id: 'tablet' as const, icon: <Tablet size={13} />, label: 'Tablet' },
-              { id: 'mobileLandscape' as const, icon: <Smartphone size={13} className='transform rotate-90' />, label: 'Mobile Landscape' },
-              { id: 'mobile' as const, icon: <Smartphone size={13} />, label: 'Mobile' },
+              { id: 'widescreen' as const, icon: <IconScreenShare size={13} stroke={2} />, label: 'Widescreen' },
+              { id: 'desktop' as const, icon: <IconDeviceDesktopStar size={13} stroke={2} />, label: 'Desktop (default)' },
+              { id: 'laptop' as const, icon: <IconDeviceLaptop size={13} stroke={2} />, label: 'Laptop' },
+              { id: 'tablet' as const, icon: <IconDeviceTablet size={13} stroke={2} />, label: 'Tablet' },
+              { id: 'mobileLandscape' as const, icon: <IconDeviceMobileRotated size={13} stroke={2} />, label: 'Mobile Landscape' },
+              { id: 'mobile' as const, icon: <IconDeviceMobile size={13} stroke={2} />, label: 'Mobile' },
             ].map(bp => (
               <button
                 key={bp.id}
@@ -1003,7 +1000,7 @@ export const TopBar: React.FC = () => {
           )}
 
           {/* Save */}
-          {isSaving ? <Loader size={13} className="text-gray-400 align" /> : <Check size={13} className="text-green-500" />}
+          {isSaving ? <Loader size={13} className="text-gray-400 align" /> : <IconCircleCheck size={13} className="text-green-500" />}
 
           {/* Export*/}
           <button
@@ -1018,11 +1015,11 @@ export const TopBar: React.FC = () => {
           <button
             onClick={() => setPreviewMode(!isPreviewMode)}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium ${isPreviewMode
-              ? 'bg-blue-600 text-white border-blue-500 hover:bg-blue-500'
+              ? 'bg-slate-700 text-white border-slate-700 hover:bg-slate-700'
               : 'bg-gray-800 text-gray-300 hover:text-white hover:bg-gray-700 border border-gray-700'
               }`}
           >
-            {isPreviewMode ? <Play size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" />}
+            {isPreviewMode ? <IconPlayerPause title="Pause Preview" size={14} stroke={2} /> : <IconPlayerPlay title="Play Preview" size={14} stroke={2} />}
           </button>
 
           {/* Publish */}
@@ -1072,16 +1069,11 @@ export const TopBar: React.FC = () => {
                   onClick={handlePublish}
                   className="w-full flex items-center gap-2 px-2 py-2 text-xs text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
                 >
-                  <Share2 size={12} />
+                  <IconBrandVercel stroke={2} size={12} />
                   Publish to Vercel
-                </button>
-                <button
-                  onClick={handleViewOnVercel}
-                  disabled={!projectId}
-                  className={`w-full flex items-center gap-2 px-2 py-2 text-xs ${projectId ? 'text-gray-300 hover:text-white hover:bg-gray-800' : 'text-gray-600 cursor-not-allowed'} transition-colors`}
-                >
-                  <ExternalLink size={12} />
-                  View on Vercel
+                  <Link href="" onClick={handleViewOnVercel} target="_blank" rel="noreferrer" className="ml-auto text-blue-400 hover:text-blue-300">
+                    <ExternalLink size={12} />
+                  </Link>
                 </button>
                 <button
                   onClick={userData?.role !== 'pro' && userData?.role !== 'admin' ? () => router.push('/pricing') : exportHTML}
@@ -1215,7 +1207,7 @@ export const TopBar: React.FC = () => {
             {inputPrompt?.message && <DialogDescription className='text-gray-400'>{inputPrompt.message}</DialogDescription>}
           </DialogHeader>
           <input autoFocus type={inputPrompt?.type || 'text'} value={inputPromptValue} onChange={event => setInputPromptValue(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') closeInputPrompt(inputPromptValue); }} placeholder={inputPrompt?.placeholder} className='mt-4 w-full rounded-lg border border-gray-700 bg-[#111114] px-3 py-2 text-sm text-white outline-none focus:border-blue-400' />
-          <DialogFooter>
+          <DialogFooter className='mt-4 flex justify-end gap-2 bg-[#17171c] px-4 py-3'>
             <Button type='button' variant='outline' onClick={() => closeInputPrompt(null)} className='border-gray-700 bg-transparent text-gray-300 hover:bg-gray-800 hover:text-white'>Cancel</Button>
             <Button type='button' onClick={() => closeInputPrompt(inputPromptValue)} className='bg-blue-600 text-white hover:bg-blue-500'>Continue</Button>
           </DialogFooter>
