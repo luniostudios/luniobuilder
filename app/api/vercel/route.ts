@@ -22,12 +22,14 @@ export async function POST(request: Request) {
 
   let token = providedToken;
   let faviconUrl = '';
+  let siteMetadata = null;
+  let socialOg = '';
   if (projectId) {
     const userId = session.user.id || session.user.email;
     if (userId) {
       const { data: project, error: projectError } = await supabaseServer
         .from('projects')
-        .select('vercel_token, favicon_url')
+        .select('vercel_token, favicon_url, site_metadata, socialOg')
         .eq('id', projectId)
         .eq('user_id', userId)
         .single();
@@ -40,6 +42,8 @@ export async function POST(request: Request) {
         token = project.vercel_token as string;
       }
       faviconUrl = typeof project?.favicon_url === 'string' ? project.favicon_url : '';
+      siteMetadata = project?.site_metadata || null;
+      socialOg = typeof project?.socialOg === 'string' ? project.socialOg : '';
     }
   }
 
@@ -64,7 +68,7 @@ export async function POST(request: Request) {
 
   const role = String(user?.role || 'free').toLowerCase();
   const proRoles = new Set(['pro', 'premium', 'team', 'business', 'admin', 'owner']);
-  const files = generateNextProjectFiles(pages, projectName, 'desktop', !proRoles.has(role), faviconUrl);
+  const files = generateNextProjectFiles(pages, projectName, 'desktop', !proRoles.has(role), faviconUrl, siteMetadata, socialOg);
   // Sanitize incoming extraCss to remove bundled font URLs that won't work during export
   const extraCss = body?.extraCss;
   const sanitize = (css: any) => {

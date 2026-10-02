@@ -35,6 +35,7 @@ import { normalizeSiteSlug } from '../lib/tenant';
 import { persistGeneratedCms } from '../utils/generatedCms';
 import { getGoogleFontStylesheetUrls } from '../utils/googleFonts';
 import { Page } from '../types/builder';
+import { normalizeSiteMetadata, SiteMetadata } from '../types/siteMetadata';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { IconBrandVercel, IconCircleCheck, IconDeviceDesktopStar, IconDeviceLaptop, IconDeviceMobile, IconDeviceMobileRotated, IconDeviceTablet, IconPlayerPause, IconPlayerPlay, IconScreenShare } from '@tabler/icons-react';
@@ -56,6 +57,8 @@ interface ProjectRecord {
   updated_at: Date;
   vercelUrl: string;
   favicon_url?: string | null;
+  site_metadata?: Partial<SiteMetadata> | null;
+  socialOg?: string | null;
   status: string;
   content?: {
     pages?: Page[];
@@ -420,6 +423,8 @@ export const TopBar: React.FC = () => {
   };
 
   const getProjectFavicon = () => projects.find(project => project.id === projectId)?.favicon_url || '';
+  const getProjectSiteMetadata = () => normalizeSiteMetadata(projects.find(project => project.id === projectId)?.site_metadata, getProjectTitle());
+  const getProjectSocialImage = () => projects.find(project => project.id === projectId)?.socialOg || '';
 
   const saveProject = useCallback(async () => {
     if (!projectId || isPublishingRef.current) return;
@@ -688,6 +693,36 @@ export const TopBar: React.FC = () => {
     const googleFontLinks = getGoogleFontStylesheetUrls([page]).map(url => `<link rel="stylesheet" href="${url}">`).join('\n  ');
     const faviconUrl = getProjectFavicon();
     const faviconLink = faviconUrl ? `<link rel="icon" href="${faviconUrl.replace(/&/g, '&amp;').replace(/"/g, '&quot;')}">` : '';
+    const siteMetadata = getProjectSiteMetadata();
+    const socialImage = getProjectSocialImage();
+    const metadataText = (value: string) => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    const pageTitle = page.seo.title || siteMetadata.title || getProjectTitle();
+    const pageDescription = page.seo.description || siteMetadata.description;
+    const socialTitle = siteMetadata.openGraphTitle || pageTitle;
+    const socialDescription = siteMetadata.openGraphDescription || pageDescription;
+    const canonicalUrl = /^https:\/\//i.test(siteMetadata.canonicalUrl) ? siteMetadata.canonicalUrl : '';
+    const exportMetaTags = [
+      `<title>${metadataText(pageTitle)}</title>`,
+      pageDescription ? `<meta name="description" content="${metadataText(pageDescription)}">` : '',
+      siteMetadata.keywords ? `<meta name="keywords" content="${metadataText(siteMetadata.keywords)}">` : '',
+      canonicalUrl ? `<link rel="canonical" href="${metadataText(canonicalUrl)}">` : '',
+      `<meta name="robots" content="${siteMetadata.robotsIndex ? 'index' : 'noindex'}, ${siteMetadata.robotsFollow ? 'follow' : 'nofollow'}">`,
+      siteMetadata.themeColor ? `<meta name="theme-color" content="${metadataText(siteMetadata.themeColor)}">` : '',
+      `<meta property="og:type" content="website">`,
+      `<meta property="og:site_name" content="${metadataText(siteMetadata.title || getProjectTitle())}">`,
+      `<meta property="og:title" content="${metadataText(socialTitle)}">`,
+      socialDescription ? `<meta property="og:description" content="${metadataText(socialDescription)}">` : '',
+      siteMetadata.openGraphLocale ? `<meta property="og:locale" content="${metadataText(siteMetadata.openGraphLocale)}">` : '',
+      canonicalUrl ? `<meta property="og:url" content="${metadataText(canonicalUrl)}">` : '',
+      socialImage ? `<meta property="og:image" content="${metadataText(socialImage)}">` : '',
+      socialImage && siteMetadata.openGraphImageAlt ? `<meta property="og:image:alt" content="${metadataText(siteMetadata.openGraphImageAlt)}">` : '',
+      `<meta name="twitter:card" content="${siteMetadata.twitterCard}">`,
+      `<meta name="twitter:title" content="${metadataText(siteMetadata.twitterTitle || socialTitle)}">`,
+      (siteMetadata.twitterDescription || socialDescription) ? `<meta name="twitter:description" content="${metadataText(siteMetadata.twitterDescription || socialDescription)}">` : '',
+      siteMetadata.twitterSite ? `<meta name="twitter:site" content="${metadataText(siteMetadata.twitterSite)}">` : '',
+      siteMetadata.twitterCreator ? `<meta name="twitter:creator" content="${metadataText(siteMetadata.twitterCreator)}">` : '',
+      socialImage ? `<meta name="twitter:image" content="${metadataText(socialImage)}">` : '',
+    ].filter(Boolean).map(tag => `  ${tag}`).join('\n');
 
     // Collect in-document <style> contents and attempt to fetch linked stylesheets.
     const collectedCssParts: string[] = [];
@@ -724,12 +759,11 @@ export const TopBar: React.FC = () => {
     const navigationScript = `<script>(function(){document.addEventListener('click',function(event){var toggle=event.target.closest('[data-lunio-nav-toggle]');if(!toggle)return;var nav=toggle.closest('nav');var menu=nav&&nav.querySelector('[data-lunio-nav-menu]');if(!menu)return;var open=menu.classList.toggle('lunio-nav-open');toggle.setAttribute('aria-expanded',String(open));menu.style.display=open?'flex':'';});})();</script>`;
 
     const html = `<!DOCTYPE html>
-<html lang="en">
+<html lang="${metadataText(siteMetadata.openGraphLocale.split('_')[0] || 'en')}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${page.seo.title}</title>
-  <meta name="description" content="${page.seo.description}">
+${exportMetaTags}
   ${faviconLink}
   ${googleFontLinks}
   ${headLinkTags.join('\n  ')}
@@ -752,7 +786,7 @@ export const TopBar: React.FC = () => {
 
   const exportReact = async () => {
     const projectName = page.name || 'LUNIOProject';
-    const files = generateReactProjectFiles(pages, projectName, breakpoint, getProjectFavicon());
+    const files = generateReactProjectFiles(pages, projectName, breakpoint, getProjectFavicon(), getProjectSiteMetadata(), getProjectSocialImage());
 
     // Gather styles from the current preview to include in the generated project
     const collectedCssParts: string[] = [];
@@ -807,7 +841,7 @@ export const TopBar: React.FC = () => {
 
   const openCodeModal = () => {
     const projectName = page.name || 'LUNIOProject';
-    const files = generateReactProjectFiles(pages, projectName, breakpoint, getProjectFavicon());
+    const files = generateReactProjectFiles(pages, projectName, breakpoint, getProjectFavicon(), getProjectSiteMetadata(), getProjectSocialImage());
     setCodeFiles(files);
     setSelectedCodePath(files[0]?.path || '');
     setCodeSearch('');

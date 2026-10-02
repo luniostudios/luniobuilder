@@ -3,6 +3,7 @@ import { auth } from '../../auth/auth';
 import { supabaseServer } from '../../lib/supabaseServer';
 import { getProjectLimitForRole } from '../../lib/projectLimits';
 import { normalizeSiteSlug } from '../../lib/tenant';
+import { normalizeSiteMetadata } from '../../types/siteMetadata';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -55,7 +56,7 @@ export async function GET(request: Request) {
       : [];
     let query = supabaseServer
       .from('projects')
-      .select('id, user_id, title, slug, site_slug, content, favicon_url, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
+      .select('id, user_id, title, slug, site_slug, content, favicon_url, site_metadata, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
       .eq('id', projectId);
 
     // allow admins/owners to fetch any project
@@ -78,7 +79,7 @@ export async function GET(request: Request) {
   // List owned projects and accepted shared projects for regular users.
   let listQuery = supabaseServer
     .from('projects')
-    .select('id, user_id, title, slug, site_slug, content, favicon_url, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
+    .select('id, user_id, title, slug, site_slug, content, favicon_url, site_metadata, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
     .order('updated_at', { ascending: false });
 
   if (role !== 'admin' && role !== 'owner') {
@@ -90,7 +91,7 @@ export async function GET(request: Request) {
 
     const { data: sharedProjects, error: sharedError } = await supabaseServer
       .from('projects')
-      .select('id, user_id, title, slug, site_slug, content, favicon_url, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
+      .select('id, user_id, title, slug, site_slug, content, favicon_url, site_metadata, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
       .in('id', memberProjectIds)
       .order('updated_at', { ascending: false });
 
@@ -162,6 +163,8 @@ export async function POST(request: Request) {
   const siteSlug = explicitSiteSlug || normalizeSiteSlug(generatedSiteSlug);
   const content = body.content || { pages: [], currentPageId: '' };
   const status = body.status === 'published' ? 'published' : 'draft';
+  const siteMetadata = normalizeSiteMetadata(body.site_metadata, title);
+  const socialOg = typeof body.socialOg === 'string' ? body.socialOg.trim() : null;
 
   if (!siteSlug) {
     return NextResponse.json({ error: 'A valid site subdomain is required.' }, { status: 400 });
@@ -169,8 +172,8 @@ export async function POST(request: Request) {
 
   const { data, error } = await supabaseServer
     .from('projects')
-    .insert({ user_id: userId, title, slug, site_slug: siteSlug, content, status })
-    .select('id, user_id, title, slug, site_slug, content, favicon_url, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
+    .insert({ user_id: userId, title, slug, site_slug: siteSlug, content, status, site_metadata: siteMetadata, socialOg })
+    .select('id, user_id, title, slug, site_slug, content, favicon_url, site_metadata, created_at, updated_at, vercel_token, vercelUrl, status, socialOg')
     .single();
 
   if (error) {
@@ -239,6 +242,22 @@ export async function PATCH(request: Request) {
     updates.favicon_url = faviconUrl || null;
   }
 
+  if (body.site_metadata !== undefined) {
+    const siteMetadata = normalizeSiteMetadata(body.site_metadata, String(body.title || ''));
+    if (siteMetadata.canonicalUrl && !/^https?:\/\//i.test(siteMetadata.canonicalUrl)) {
+      return NextResponse.json({ error: 'Canonical URL must use HTTP or HTTPS.' }, { status: 400 });
+    }
+    updates.site_metadata = siteMetadata;
+  }
+
+  if (body.socialOg !== undefined) {
+    const socialOg = typeof body.socialOg === 'string' ? body.socialOg.trim() : '';
+    if (socialOg && !/^https:\/\//i.test(socialOg)) {
+      return NextResponse.json({ error: 'Social image URL must use HTTPS.' }, { status: 400 });
+    }
+    updates.socialOg = socialOg || null;
+  }
+
   if (body.content !== undefined) {
     updates.content = body.content;
   }
@@ -262,7 +281,7 @@ export async function PATCH(request: Request) {
     .from('projects')
     .update(updates)
     .eq('id', projectId)
-    .select('id, user_id, title, slug, site_slug, content, favicon_url, created_at, updated_at, vercel_token, vercelUrl, status, socialOg');
+    .select('id, user_id, title, slug, site_slug, content, favicon_url, site_metadata, created_at, updated_at, vercel_token, vercelUrl, status, socialOg');
 
   if (userRole !== 'admin' && userRole !== 'owner') {
     const { data: membership } = await supabaseServer

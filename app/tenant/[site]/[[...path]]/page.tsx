@@ -7,6 +7,7 @@ import TenantSite from '../../TenantSite';
 import type { Page } from '../../../types/builder';
 import type { CmsRecord } from '../../../types/cms';
 import { siteAccessCookieName } from '../../../lib/siteAccess';
+import { normalizeSiteMetadata } from '../../../types/siteMetadata';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -24,6 +25,8 @@ interface TenantProject {
 	site_slug: string;
 	status: string;
 	favicon_url: string | null;
+	socialOg: string | null;
+	site_metadata: unknown;
 	content: {
 		pages?: Page[];
 		currentPageId?: string;
@@ -78,7 +81,7 @@ async function getTenantProject(site: string) {
 
 	const { data, error } = await supabaseServer
 		.from('projects')
-		.select('id, title, site_slug, status, content, favicon_url')
+		.select('id, title, site_slug, status, content, favicon_url, socialOg, site_metadata')
 		.eq('site_slug', siteSlug)
 		.eq('status', 'published')
 		.maybeSingle();
@@ -95,11 +98,48 @@ export async function generateMetadata({ params }: TenantRouteProps): Promise<Me
 	const page = findPage(pages, requestedSlug) || (project ? (await findCmsDetail(project.id, pages, requestedSlug))?.page : undefined);
 
 	if (!project || !page) return {};
+	const siteMetadata = normalizeSiteMetadata(project.site_metadata, project.title);
+	const title = page.seo?.title || siteMetadata.title || project.title;
+	const description = page.seo?.description || siteMetadata.description || undefined;
+	const canonicalUrl = (() => {
+		if (!siteMetadata.canonicalUrl) return undefined;
+		try {
+			const base = new URL(siteMetadata.canonicalUrl);
+			const basePath = base.pathname.replace(/\/+$/, '');
+			base.pathname = `${basePath}${requestedSlug === '/' ? '' : `/${requestedSlug.replace(/^\/+/, '')}`}` || '/';
+			return base.toString();
+		} catch {
+			return undefined;
+		}
+	})();
+	const openGraphTitle = siteMetadata.openGraphTitle || title;
+	const openGraphDescription = siteMetadata.openGraphDescription || description;
+	const socialImage = project.socialOg || undefined;
 
 	return {
-		title: page.seo?.title || project.title,
-		description: page.seo?.description || undefined,
-		keywords: page.seo?.keywords || undefined,
+		title,
+		description,
+		keywords: page.seo?.keywords || siteMetadata.keywords || undefined,
+		alternates: canonicalUrl ? { canonical: canonicalUrl } : undefined,
+		robots: { index: siteMetadata.robotsIndex, follow: siteMetadata.robotsFollow },
+		openGraph: {
+			title: openGraphTitle,
+			description: openGraphDescription,
+			type: 'website',
+			siteName: siteMetadata.title || project.title,
+			url: canonicalUrl,
+			locale: siteMetadata.openGraphLocale || undefined,
+			images: socialImage ? [{ url: socialImage, alt: siteMetadata.openGraphImageAlt || openGraphTitle }] : undefined,
+		},
+		twitter: {
+			card: siteMetadata.twitterCard,
+			title: siteMetadata.twitterTitle || openGraphTitle,
+			description: siteMetadata.twitterDescription || openGraphDescription,
+			site: siteMetadata.twitterSite || undefined,
+			creator: siteMetadata.twitterCreator || undefined,
+			images: socialImage ? [socialImage] : undefined,
+		},
+		other: siteMetadata.themeColor ? { 'theme-color': siteMetadata.themeColor } : undefined,
 		icons: project.favicon_url ? { icon: project.favicon_url, shortcut: project.favicon_url, apple: project.favicon_url } : undefined,
 	};
 }
