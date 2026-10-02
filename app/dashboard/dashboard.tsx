@@ -28,7 +28,7 @@ import Link from 'next/link';
 import { redirect, useRouter, useSearchParams } from 'next/navigation';
 import { Page } from '@/app/types/builder';
 import { getProjectLimitForRole } from '@/app/lib/projectLimits';
-import { generateCssForPage, renderElementToHtml } from '@/app/utils/builderUtils';
+import { createDefaultElement, generateCssForPage, generateId, renderElementToHtml } from '@/app/utils/builderUtils';
 import { getGoogleFontStylesheetUrls } from '@/app/utils/googleFonts';
 import Userss from './users/users';
 import ProfileSettings from './profile/ProfileSettings';
@@ -319,7 +319,7 @@ export default function Dashboard() {
                         id: 'page-1',
                         name: 'Home',
                         slug: '/',
-                        elements: [],
+                        elements: [createDefaultElement('body', generateId(), null)],
                         seo: {
                             title: 'My Website',
                             description: '',

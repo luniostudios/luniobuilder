@@ -3,6 +3,7 @@ import { Breakpoint } from '../types/builder';
 import { getGoogleFontStylesheetUrls } from './googleFonts';
 import type { ElementDefaults } from './elements/elementDefaults';
 import { getArticleElementDefaults } from './elements/article';
+import { getBodyElementDefaults } from './elements/body';
 import { getButtonElementDefaults } from './elements/button';
 import { getCalendarElementDefaults } from './elements/calendar';
 import { getCardElementDefaults } from './elements/card';
@@ -90,6 +91,7 @@ export const createDefaultElement = (
 
 export const getElementDefaults = (type: ElementType): ElementDefaults => {
   if (type === 'section') return getSectionElementDefaults();
+  if (type === 'body') return getBodyElementDefaults();
   if (type === 'div') return getDivElementDefaults();
   if (type === 'article') return getArticleElementDefaults();
   if (type === 'heading') return getHeadingElementDefaults();
@@ -368,20 +370,24 @@ const renderTabsExport = (
   element: BuilderElement,
   indent: number,
   mode: 'jsx' | 'html',
-  renderPanelContents: (tab: BuilderElement, indent: number) => string
+  renderPanelContents: (tab: BuilderElement, indent: number) => string,
+  breakpoint: Breakpoint = 'desktop'
 ): string => {
   const tabs = element.children.filter(child => child.type === 'tab');
+  const selectorElement = element.children.find(child => child.props.isTabSelector === true);
   const indentation = ' '.repeat(indent);
-  const selectorStyles: StyleProperties = {
-    display: 'flex',
-    flexDirection: element.props.selectorOrientation === 'vertical' ? 'column' : 'row',
-    flexWrap: 'wrap',
-    gap: String(element.props.selectorGap || '4px'),
-    padding: String(element.props.selectorPadding || '4px'),
-    backgroundColor: String(element.props.selectorBackgroundColor || '#eef2f7'),
-    border: String(element.props.selectorBorder || '1px solid #e2e8f0'),
-    borderRadius: String(element.props.selectorBorderRadius || '12px'),
-  };
+  const selectorStyles: StyleProperties = selectorElement
+    ? getEffectiveStyles(selectorElement, breakpoint)
+    : {
+      display: 'flex',
+      flexDirection: element.props.selectorOrientation === 'vertical' ? 'column' : 'row',
+      flexWrap: 'wrap',
+      gap: String(element.props.selectorGap || '4px'),
+      padding: String(element.props.selectorPadding || '4px'),
+      backgroundColor: String(element.props.selectorBackgroundColor || '#eef2f7'),
+      border: String(element.props.selectorBorder || '1px solid #e2e8f0'),
+      borderRadius: String(element.props.selectorBorderRadius || '12px'),
+    };
   const panelStyles: StyleProperties = {
     minWidth: '0',
     padding: String(element.props.panelPadding || '24px'),
@@ -398,7 +404,7 @@ const renderTabsExport = (
   const activeBackground = String(element.props.activeTabBackgroundColor || '#ffffff');
   const inactiveBackground = String(element.props.inactiveTabBackgroundColor || 'transparent');
   const root = `<div data-lunio-tabs="${escapeHtml(element.id)}" ${classAttribute(getElementClassName(element))}>`;
-  const selector = `<div role="tablist" aria-label="${escapeHtml(String(element.props.label || 'Page sections'))}" ${styleAttribute(selectorStyles)}>${tabs.map((tab, index) => {
+  const selector = `<div role="tablist" aria-label="${escapeHtml(String(element.props.label || 'Page sections'))}" ${selectorElement ? classAttribute(getElementClassName(selectorElement)) : ''} ${styleAttribute(selectorStyles)}>${tabs.map((tab, index) => {
     const selected = index === 0;
     const tabId = escapeHtml(`${tab.id}-selector`);
     const panelId = escapeHtml(`${tab.id}-panel`);
@@ -449,7 +455,7 @@ const renderElementToReact = (element: BuilderElement, indent = 2, breakpoint: B
     case 'navbar':
       return `${indentation}<nav${attrs}>${children}</nav>`;
     case 'tabs':
-      return renderTabsExport(element, indent, 'jsx', (tab, childIndent) => tab.children.map(child => renderElementToReact(child, childIndent, breakpoint)).join('\n'));
+      return renderTabsExport(element, indent, 'jsx', (tab, childIndent) => tab.children.map(child => renderElementToReact(child, childIndent, breakpoint)).join('\n'), breakpoint);
     case 'form':
       return `${indentation}<form${attrs}>${children}</form>`;
     case 'list':
@@ -458,6 +464,7 @@ const renderElementToReact = (element: BuilderElement, indent = 2, breakpoint: B
     case 'grid':
     case 'hero':
     case 'card':
+    case 'body':
     case 'div':
       return `${indentation}<div${attrs}>${children}</div>`;
     case 'heading': {
@@ -548,7 +555,7 @@ export const renderElementToHtml = (element: BuilderElement, breakpoint: Breakpo
     case 'navbar':
       return `<nav${attrs}>${renderChildren()}</nav>`;
     case 'tabs':
-      return renderTabsExport(element, 0, 'html', tab => tab.children.map(child => renderElementToHtml(child, breakpoint)).join(''));
+      return renderTabsExport(element, 0, 'html', tab => tab.children.map(child => renderElementToHtml(child, breakpoint)).join(''), breakpoint);
     case 'form':
       return `<form${attrs}>${renderChildren()}</form>`;
     case 'list':
@@ -557,6 +564,7 @@ export const renderElementToHtml = (element: BuilderElement, breakpoint: Breakpo
     case 'grid':
     case 'hero':
     case 'card':
+    case 'body':
       return `<div${attrs}>${renderChildren()}</div>`;
     case 'div':
       return `<div${attrs}>${renderChildren()}</div>`;
@@ -701,7 +709,7 @@ export const renderElementToReactWithComponents = (
     case 'navbar':
       return `${indentation}<nav${attrs}>${children}</nav>`;
     case 'tabs':
-      return renderTabsExport(element, indent, 'jsx', (tab, childIndent) => tab.children.map(child => renderElementToReactWithComponents(child, componentMap, childIndent, false, breakpoint)).join('\n'));
+      return renderTabsExport(element, indent, 'jsx', (tab, childIndent) => tab.children.map(child => renderElementToReactWithComponents(child, componentMap, childIndent, false, breakpoint)).join('\n'), breakpoint);
     case 'form':
       return `${indentation}<form${attrs}>${children}</form>`;
     case 'list':
@@ -710,6 +718,7 @@ export const renderElementToReactWithComponents = (
     case 'grid':
     case 'hero':
     case 'card':
+    case 'body':
     case 'div':
       return `${indentation}<div${attrs}>${children}</div>`;
     case 'heading': {
@@ -1035,7 +1044,7 @@ export const generateNextProjectFiles = (
   return files;
 };
 export const canHaveChildren = (type: ElementType): boolean => {
-  return ['section', 'div', 'navbar', 'tabs', 'tab', 'hero', 'slider', 'slide', 'card', 'grid', 'columns', 'form', 'list', 'cmsMap'].includes(type);
+  return ['body', 'section', 'div', 'navbar', 'tabs', 'tab', 'hero', 'slider', 'slide', 'card', 'grid', 'columns', 'form', 'list', 'cmsMap'].includes(type);
 };
 
 export const COMPONENT_CATEGORIES = {
@@ -1049,6 +1058,7 @@ export const COMPONENT_CATEGORIES = {
 
 export const COMPONENT_LABELS: Record<ElementType, string> = {
   article: 'Article',
+  body: 'Body',
   section: 'Section',
   div: 'Container',
   heading: 'Heading',

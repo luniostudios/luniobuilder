@@ -458,6 +458,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
 
   const page = useBuilderStore(state => state.getCurrentPage());
   const tabs = element.type === 'tabs' ? element.children.filter(child => child.type === 'tab') : [];
+  const tabSelector = element.type === 'tabs' ? element.children.find(child => child.props.isTabSelector === true) : undefined;
   const selectedTab = !isPreview && !isPublishedSite
     ? tabs.find(tab => {
       const containsSelection = (current: BuilderElement): boolean => current.id === selectedElementId || current.children.some(containsSelection);
@@ -1444,15 +1445,23 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
             <div
               role="tablist"
               aria-label={String(element.props.label || 'Page sections')}
-              style={{
-                display: 'flex',
-                flexDirection: element.props.selectorOrientation === 'vertical' ? 'column' : 'row',
-                flexWrap: 'wrap',
-                gap: String(element.props.selectorGap || '4px'),
-                padding: String(element.props.selectorPadding || '4px'),
-                backgroundColor: String(element.props.selectorBackgroundColor || '#eef2f7'),
-                border: String(element.props.selectorBorder || '1px solid #e2e8f0'),
-                borderRadius: String(element.props.selectorBorderRadius || '12px'),
+              style={tabSelector
+                ? stylesToCSS(getEffectiveStyles(tabSelector, breakpoint))
+                : {
+                  display: 'flex',
+                  flexDirection: element.props.selectorOrientation === 'vertical' ? 'column' : 'row',
+                  flexWrap: 'wrap',
+                  gap: String(element.props.selectorGap || '4px'),
+                  padding: String(element.props.selectorPadding || '4px'),
+                  backgroundColor: String(element.props.selectorBackgroundColor || '#eef2f7'),
+                  border: String(element.props.selectorBorder || '1px solid #e2e8f0'),
+                  borderRadius: String(element.props.selectorBorderRadius || '12px'),
+                }}
+              onClick={event => {
+                if (tabSelector && !isPreview && !isPublishedSite) {
+                  event.stopPropagation();
+                  selectElement(tabSelector.id);
+                }
               }}
             >
               {tabs.map((tab, index) => {

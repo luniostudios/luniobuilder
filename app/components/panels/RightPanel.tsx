@@ -1955,16 +1955,10 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
               ><Trash2 size={14} /></button>
             </div>
           ))}
-          <label className="block text-xs text-gray-500">Selector orientation
-            <select value={String(element.props.selectorOrientation || 'horizontal')} onChange={event => update('selectorOrientation', event.target.value)} className="mt-1 w-full rounded-md border border-gray-700 bg-gray-900 px-2.5 py-2 text-xs text-gray-200">
-              <option value="horizontal">Horizontal</option><option value="vertical">Vertical</option>
-            </select>
-          </label>
-          <p className="pt-1 text-[10px] font-semibold uppercase tracking-wider text-gray-500">Selector surface</p>
+          <p className="pt-1 text-[10px] font-semibold uppercase tracking-wider text-gray-500">Tab states</p>
           <div className="grid grid-cols-2 gap-2">
             {([
-              ['selectorGap', 'Gap'], ['selectorPadding', 'Padding'], ['selectorBorder', 'Border'], ['selectorBorderRadius', 'Radius'],
-              ['selectorBackgroundColor', 'Background'], ['activeTabBackgroundColor', 'Active fill'], ['activeTabColor', 'Active text'],
+              ['activeTabBackgroundColor', 'Active fill'], ['activeTabColor', 'Active text'],
               ['inactiveTabBackgroundColor', 'Inactive fill'], ['inactiveTabColor', 'Inactive text'],
             ] as const).map(([key, label]) => <label key={key} className="min-w-0 text-[10px] text-gray-500">{label}
               <input value={String(element.props[key] || '')} onChange={event => update(key, event.target.value)} className="mt-1 w-full rounded border border-gray-700 bg-gray-900 px-2 py-1.5 text-[11px] text-gray-200 outline-none focus:border-sky-400" />

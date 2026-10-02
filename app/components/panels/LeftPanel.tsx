@@ -760,15 +760,17 @@ const LayerItem: React.FC<{ element: BuilderElement; depth: number; collapseSign
           <span className="w-3 shrink-0" />
         )}
 
-        <button
-          {...attributes}
-          {...listeners}
-          onClick={e => e.stopPropagation()}
-          className="text-gray-500 hover:text-gray-300 shrink-0 p-0.5 rounded cursor-grab active:cursor-grabbing"
-          title="Drag to reorder"
-        >
-          <Move size={10} />
-        </button>
+        {element.type !== 'body' && (
+          <button
+            {...attributes}
+            {...listeners}
+            onClick={e => e.stopPropagation()}
+            className="text-gray-500 hover:text-gray-300 shrink-0 p-0.5 rounded cursor-grab active:cursor-grabbing"
+            title="Drag to reorder"
+          >
+            <Move size={10} />
+          </button>
+        )}
 
         <span className="text-gray-500 shrink-0">
           {COMPONENT_ICONS[element.type] || <Square size={12} />}
@@ -804,12 +806,14 @@ const LayerItem: React.FC<{ element: BuilderElement; depth: number; collapseSign
           >
             <Package size={10} />
           </button>
-          <button
-            onClick={e => { e.stopPropagation(); deleteElement(element.id); }}
-            className="p-0.5 text-gray-500 hover:text-red-400 rounded"
-          >
-            <Trash2 size={10} />
-          </button>
+          {element.type !== 'body' && (
+            <button
+              onClick={e => { e.stopPropagation(); deleteElement(element.id); }}
+              className="p-0.5 text-gray-500 hover:text-red-400 rounded"
+            >
+              <Trash2 size={10} />
+            </button>
+          )}
         </div>
       </div>
 

@@ -2,6 +2,7 @@ export type ElementType =
   | 'article'
   | 'section'
   | 'div'
+  | 'body'
   | 'heading'
   | 'paragraph'
   | 'button'
