@@ -1,12 +1,21 @@
-import type { BuilderElement, StyleProperties } from '../../types/builder';
+import type { BuilderElement, ResponsiveStyles, StyleProperties } from '../../types/builder';
 import type { ElementDefaults } from './elementDefaults';
+
+const responsiveStyles = (desktop: StyleProperties): ResponsiveStyles => ({
+  desktop,
+  widescreen: {},
+  laptop: {},
+  tablet: {},
+  mobileLandscape: {},
+  mobile: {},
+});
 
 const makeSlide = (text: string): BuilderElement => ({
   id: `luniobuilder-${Math.random().toString(36).substr(2, 9)}`,
   type: 'slide',
   name: 'Slide',
   props: {},
-  styles: {
+  styles: responsiveStyles({
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'center',
@@ -17,7 +26,7 @@ const makeSlide = (text: string): BuilderElement => ({
     paddingBottom: '64px',
     paddingLeft: '64px',
     backgroundColor: '#f1f5f9',
-  },
+  }),
   children: [
     { id: `luniobuilder-${Math.random().toString(36).substr(2, 9)}`, type: 'heading', name: 'Slide heading', props: { text, level: 1 }, styles: { desktop: { fontSize: '48px', fontWeight: '700', marginBottom: '16px' }, tablet: {}, mobile: {}, widescreen: {}, laptop: {}, mobileLandscape: {} }, children: [], parentId: null, locked: false, hidden: false },
     { id: `luniobuilder-${Math.random().toString(36).substr(2, 9)}`, type: 'paragraph', name: 'Slide paragraph', props: { text: 'Add images, buttons, and any other elements to each slide.' }, styles: { desktop: { fontSize: '18px', lineHeight: '1.6', marginBottom: '0' }, tablet: {}, mobile: {}, widescreen: {}, laptop: {}, mobileLandscape: {} }, children: [], parentId: null, locked: false, hidden: false },
@@ -32,7 +41,7 @@ const makeArrow = (direction: 'previous' | 'next'): BuilderElement => ({
   type: 'sliderArrow',
   name: direction === 'previous' ? 'Previous arrow' : 'Next arrow',
   props: { direction, label: direction === 'previous' ? 'Previous slide' : 'Next slide' },
-  styles: {
+  styles: responsiveStyles({
     display: 'inline-flex',
     position: 'absolute',
     top: '50%',
@@ -49,7 +58,7 @@ const makeArrow = (direction: 'previous' | 'next'): BuilderElement => ({
     color: '#111827',
     cursor: 'pointer',
     zIndex: '2',
-  },
+  }),
   children: [],
   parentId: null,
   locked: false,
@@ -76,7 +85,7 @@ export const getSliderElementDefaults = (): ElementDefaults => ({
       type: 'sliderPagination',
       name: 'Pagination',
       props: { activeColor: '#111827', inactiveColor: '#94a3b8', dotSize: '10px', dotRadius: '999px', dotBorderColor: 'transparent', dotBorderWidth: '0px' },
-      styles: {
+      styles: responsiveStyles({
         display: 'flex',
         position: 'absolute',
         left: '50%',
@@ -86,7 +95,7 @@ export const getSliderElementDefaults = (): ElementDefaults => ({
         justifyContent: 'center',
         gap: '8px',
         zIndex: '2',
-      },
+      }),
       children: [],
       parentId: null,
       locked: false,

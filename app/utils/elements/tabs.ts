@@ -1,4 +1,4 @@
-import type { BuilderElement, StyleProperties } from '../../types/builder';
+import type { BuilderElement, ResponsiveStyles, StyleProperties } from '../../types/builder';
 import type { ElementDefaults } from './elementDefaults';
 
 const createTab = (title: string, heading: string, body: string): BuilderElement => ({
@@ -7,17 +7,24 @@ const createTab = (title: string, heading: string, body: string): BuilderElement
   name: title,
   props: { text: title },
   styles: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '10px 16px',
-    border: '1px solid transparent',
-    borderRadius: '8px',
-    fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-  },
+    desktop: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '10px 16px',
+      border: '1px solid transparent',
+      borderRadius: '8px',
+      fontSize: '14px',
+      fontWeight: '600',
+      cursor: 'pointer',
+      transition: 'all 0.2s ease',
+    },
+    widescreen: {},
+    laptop: {},
+    tablet: {},
+    mobileLandscape: {},
+    mobile: {},
+  } satisfies ResponsiveStyles,
   children: [
     { id: `luniobuilder-${Math.random().toString(36).substr(2, 9)}`, type: 'heading', name: heading, props: { text: heading, level: 1 }, styles: { desktop: { fontSize: '24px' }, tablet: {}, mobile: {}, widescreen: {}, laptop: {}, mobileLandscape: {} }, children: [], parentId: null, locked: false, hidden: false },
     { id: `luniobuilder-${Math.random().toString(36).substr(2, 9)}`, type: 'paragraph', name: body, props: { text: body }, styles: { desktop: { fontSize: '16px' }, tablet: {}, mobile: {}, widescreen: {}, laptop: {}, mobileLandscape: {} }, children: [], parentId: null, locked: false, hidden: false },
