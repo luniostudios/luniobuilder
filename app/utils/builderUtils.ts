@@ -1,6 +1,41 @@
 import { BuilderElement, ElementType, StyleProperties, ResponsiveStyles, Page } from '../types/builder';
 import { Breakpoint } from '../types/builder';
 import { getGoogleFontStylesheetUrls } from './googleFonts';
+import type { ElementDefaults } from './elements/elementDefaults';
+import { getArticleElementDefaults } from './elements/article';
+import { getButtonElementDefaults } from './elements/button';
+import { getCalendarElementDefaults } from './elements/calendar';
+import { getCardElementDefaults } from './elements/card';
+import { getCmsMapElementDefaults } from './elements/cmsMap';
+import { getColumnsElementDefaults } from './elements/columns';
+import { getCustomElementDefaults } from './elements/custom';
+import { getDividerElementDefaults } from './elements/divider';
+import { getDivElementDefaults } from './elements/div';
+import { getFormElementDefaults } from './elements/form';
+import { getGridElementDefaults } from './elements/grid';
+import { getHeadingElementDefaults } from './elements/heading';
+import { getHeroElementDefaults } from './elements/hero';
+import { getIconElementDefaults } from './elements/icon';
+import { getIframeElementDefaults } from './elements/iframe';
+import { getImageElementDefaults } from './elements/image';
+import { getInputElementDefaults } from './elements/input';
+import { getLinkElementDefaults } from './elements/link';
+import { getListElementDefaults } from './elements/list';
+import { getListItemElementDefaults } from './elements/listItem';
+import { getNavbarElementDefaults } from './elements/navbar';
+import { getParagraphElementDefaults } from './elements/paragraph';
+import { getSectionElementDefaults, renderSectionElement } from './elements/section';
+import { getSelectElementDefaults } from './elements/select';
+import { getSliderArrowElementDefaults } from './elements/sliderArrow';
+import { getSliderElementDefaults } from './elements/slider';
+import { getSliderPaginationElementDefaults } from './elements/sliderPagination';
+import { getSlideElementDefaults } from './elements/slide';
+import { getSpacerElementDefaults } from './elements/spacer';
+import { getTabElementDefaults } from './elements/tab';
+import { getTableElementDefaults } from './elements/table';
+import { getTabsElementDefaults } from './elements/tabs';
+import { getTextareaElementDefaults } from './elements/textarea';
+import { getVideoElementDefaults } from './elements/video';
 
 export const generateId = (): string => {
   return `luniobuilder-${Math.random().toString(36).substr(2, 9)}`;
@@ -53,733 +88,47 @@ export const createDefaultElement = (
   };
 };
 
-interface ElementDefaults {
-  name: string;
-  props: BuilderElement['props'];
-  styles: StyleProperties;
-  children?: BuilderElement[];
-}
-
 export const getElementDefaults = (type: ElementType): ElementDefaults => {
-  switch (type) {
-    case 'section':
-      return {
-        name: 'Section',
-        props: {},
-        styles: {
-          display: 'flex',
-          flexDirection: 'column',
-          width: '100%',
-          minHeight: '200px',
-          paddingTop: '40px',
-          paddingBottom: '40px',
-          paddingLeft: '20px',
-          paddingRight: '20px',
-          backgroundColor: '#ffffff',
-        },
-      };
-    case 'div':
-      return {
-        name: 'Container',
-        props: {},
-        styles: {
-          display: 'block',
-          flexDirection: 'column',
-          width: '100%',
-          paddingTop: '20px',
-          paddingBottom: '20px',
-          paddingLeft: '20px',
-          paddingRight: '20px',
-        },
-      };
-    case 'article':
-      return {
-        name: 'Article',
-        props: {},
-        styles: {
-          display: 'block',
-          flexDirection: 'column',
-          width: '100%',
-          paddingTop: '20px',
-          paddingBottom: '20px',
-          paddingLeft: '20px',
-          paddingRight: '20px',
-        },
-      };
-    case 'heading':
-      return {
-        name: 'Heading',
-        props: { text: 'Beautiful Heading', level: 1 },
-        styles: {
-          display: 'flex',
-          fontSize: '48px',
-          fontWeight: '700',
-          lineHeight: '1.2',
-          color: '#111827',
-        },
-      };
-    case 'paragraph':
-      return {
-        name: 'Paragraph',
-        props: { text: 'Add your text content here. Click to edit.' },
-        styles: {
-          display: 'flex',
-          fontSize: '16px',
-          lineHeight: '1.6',
-          color: '#6b7280',
-          marginBottom: '16px',
-        },
-      };
-    case 'button':
-      return {
-        name: 'Button',
-        props: { text: 'Click Me', href: '#' },
-        styles: {
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          paddingTop: '12px',
-          paddingRight: '28px',
-          paddingBottom: '12px',
-          paddingLeft: '28px',
-          backgroundColor: '#2563eb',
-          color: '#ffffff',
-          fontSize: '16px',
-          fontWeight: '600',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          transition: 'all 0.2s ease',
-        },
-      };
-    case 'select':
-      return {
-        name: 'Select',
-        props: { options: ['Option 1', 'Option 2', 'Option 3'], placeholder: 'Select an option'},
-        styles: {
-          display: 'flex',
-          width: '100%',
-          paddingTop: '10px',
-          paddingBottom: '10px',
-          paddingLeft: '14px',
-          paddingRight: '14px',
-          fontSize: '14px',
-          border: '1px solid #e5e7eb',
-          borderRadius: '8px',
-          color: '#111827',
-          backgroundColor: '#ffffff',
-          outline: 'none',
-        },
-      };
-    case 'image':
-      return {
-        name: 'Image',
-        props: {
-          src: 'https://images.pexels.com/photos/3184292/pexels-photo-3184292.jpeg?auto=compress&cs=tinysrgb&w=800',
-          alt: 'Image',
-        },
-        styles: {
-          display: 'flex',
-          objectFit: 'cover',
-        },
-      };
-    case 'navbar':
-      return {
-        name: 'Navigation',
-        props: {},
-        styles: {
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          width: '100%',
-          paddingBottom: '16px',
-          paddingTop: '16px',
-          paddingLeft: '20px',
-          paddingRight: '20px',
-          backgroundColor: '#ffffff',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-          position: 'relative',
-          zIndex: '100',
-        },
-        children: [
-          {
-            id: generateId(),
-            type: 'heading',
-            name: 'Nav Logo',
-            props: { text: 'MyLogo', level: 1 },
-            styles: {
-              desktop: { fontSize: '24px', fontWeight: '700', margin: '0' },
-              tablet: {},
-              mobile: {},
-              widescreen: { fontSize: '24px', fontWeight: '700', margin: '0' },
-              laptop: { fontSize: '24px', fontWeight: '700', margin: '0' },
-              mobileLandscape: {},
-            },
-            children: [],
-            parentId: null,
-            locked: false,
-            hidden: false,
-          },
-          {
-            id: generateId(),
-            type: 'icon',
-            name: 'Hamburger',
-            props: { iconName: 'Menu' },
-            styles: {
-              desktop: { display: 'none', cursor: 'pointer', width: '40px', height: '40px', alignItems: 'center', justifyContent: 'center', color: '#111827' },
-              tablet: { display: 'flex' },
-              mobile: { display: 'flex' },
-              widescreen: { display: 'none' },
-              laptop: { display: 'none' },
-              mobileLandscape: { display: 'flex' },
-            },
-            children: [],
-            parentId: null,
-            locked: false,
-            hidden: false,
-          },
-          {
-            id: generateId(),
-            type: 'list',
-            name: 'Nav Links',
-            props: { isNavMenu: true },
-            styles: {
-              desktop: { display: 'flex', alignItems: 'center', gap: '16px', listStyle: 'none', margin: '0 0 0 auto', padding: '0' },
-              tablet: { display: 'none' },
-              mobile: { display: 'none' },
-              widescreen: { display: 'flex', alignItems: 'center', gap: '16px', listStyle: 'none', margin: '0 0 0 auto', padding: '0' },
-              laptop: { display: 'flex', alignItems: 'center', gap: '16px', listStyle: 'none', margin: '0 0 0 auto', padding: '0' },
-              mobileLandscape: { display: 'none' },
-            },
-            children: [
-              {
-                id: generateId(),
-                type: 'link',
-                name: 'Nav Item',
-                props: { text: 'Home', href: '#' },
-                styles: { desktop: { margin: '0' }, tablet: {}, mobile: {}, widescreen: { margin: '0' }, laptop: { margin: '0' }, mobileLandscape: { margin: '0' } },
-                children: [],
-                parentId: null,
-                locked: false,
-                hidden: false,
-              },
-              {
-                id: generateId(),
-                type: 'link',
-                name: 'Nav Item',
-                props: { text: 'Services', href: '#' },
-                styles: {
-                  desktop: { margin: '0' },
-                  tablet: {},
-                  mobile: {},
-                  widescreen: { margin: '0' },
-                  laptop: { margin: '0' },
-                  mobileLandscape: { margin: '0' }
-                },
-                children: [],
-                parentId: null,
-                locked: false,
-                hidden: false,
-              }
-            ],
-            parentId: null,
-            locked: false,
-            hidden: false,
-          },
-        ],
-      };
-    case 'tabs': {
-      const firstTab = createDefaultElement('tab', generateId(), null);
-      firstTab.props.text = 'Overview';
-      firstTab.children[0].props.text = 'A clear place to start';
-      firstTab.children[1].props.text = 'Organize related content into focused panels.';
-      const secondTab = createDefaultElement('tab', generateId(), null);
-      secondTab.props.text = 'Details';
-      secondTab.children[0].props.text = 'More details';
-      secondTab.children[1].props.text = 'Give each section its own content and visual style.';
-      return {
-        name: 'Tabs',
-        props: {
-          selectorOrientation: 'horizontal',
-          selectorGap: '4px',
-          selectorPadding: '4px',
-          selectorBackgroundColor: '#eef2f7',
-          selectorBorder: '1px solid #e2e8f0',
-          selectorBorderRadius: '12px',
-          activeTabBackgroundColor: '#ffffff',
-          activeTabColor: '#172033',
-          inactiveTabBackgroundColor: 'transparent',
-          inactiveTabColor: '#64748b',
-          panelPadding: '24px',
-          panelBackgroundColor: '#ffffff',
-          panelBorderColor: '#e2e8f0',
-          panelBorderRadius: '12px',
-        },
-        styles: { display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' },
-        children: [firstTab, secondTab],
-      };
-    }
-    case 'tab':
-      return {
-        name: 'Tab',
-        props: { text: 'New tab' },
-        styles: {
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '10px 16px',
-          border: '1px solid transparent',
-          borderRadius: '8px',
-          fontSize: '14px',
-          fontWeight: '600',
-          cursor: 'pointer',
-          transition: 'all 0.2s ease',
-        },
-        children: [
-          createDefaultElement('heading', generateId(), null),
-          createDefaultElement('paragraph', generateId(), null),
-        ],
-      };
-    case 'hero':
-      return {
-        name: 'Hero',
-        props: {},
-        styles: {
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: 'screen',
-          minHeight: '600px',
-          paddingRight: '100px',
-          paddingLeft: '40px',
-          paddingTop: '80px',
-          paddingBottom: '80px',
-          backgroundColor: '#f8fafc',
-          textAlign: 'center',
-        },
-        children: [
-          {
-            id: generateId(),
-            type: 'heading',
-            name: 'Hero Heading',
-            props: { text: 'Welcome to Our Website', level: 1 },
-            styles: {
-              desktop: { fontSize: '64px', fontWeight: '700', marginBottom: '24px' },
-              tablet: { fontSize: '48px', marginBottom: '16px' },
-              mobile: { fontSize: '36px', marginBottom: '12px' },
-              widescreen: { fontSize: '64px', fontWeight: '700', marginBottom: '24px' },
-              laptop: { fontSize: '64px', fontWeight: '700', marginBottom: '24px' },
-              mobileLandscape: { fontSize: '48px', marginBottom: '16px' },
-            },
-            children: [],
-            parentId: null,
-            locked: false,
-            hidden: false,
-          },
-          {
-            id: generateId(),
-            type: 'paragraph',
-            name: 'Hero Paragraph',
-            props: { text: 'Discover our amazing products and services.' },
-            styles: {
-              desktop: { fontSize: '20px', lineHeight: '1.6', marginBottom: '24px' },
-              tablet: { fontSize: '18px', lineHeight: '1.5', marginBottom: '16px' },
-              mobile: { fontSize: '16px', lineHeight: '1.4', marginBottom: '12px' },
-              widescreen: { fontSize: '20px', lineHeight: '1.6', marginBottom: '24px' },
-              laptop: { fontSize: '20px', lineHeight: '1.6', marginBottom: '24px' },
-              mobileLandscape: { fontSize: '18px', lineHeight: '1.5', marginBottom: '16px' },
-            },
-            children: [],
-            parentId: null,
-            locked: false,
-            hidden: false,
-          },
-        ],
-      };
-    case 'slider': {
-      const firstSlide = createDefaultElement('slide', generateId(), null);
-      const secondSlide = createDefaultElement('slide', generateId(), null);
-      firstSlide.children[0].props.text = 'A clear headline for your first slide';
-      secondSlide.children[0].props.text = 'Make room for your next idea';
-      secondSlide.children[1].props.text = 'Add images, buttons, and any other elements to each slide.';
-      return {
-        name: 'Slider',
-        props: { autoplay: false, interval: 5000, loop: true, transition: 'slide', duration: 500, showArrows: true, showPagination: true },
-        styles: {
-          display: 'block',
-          position: 'relative',
-          width: '100%',
-          minHeight: '420px',
-          overflow: 'hidden',
-        },
-        children: [
-          firstSlide,
-          secondSlide,
-          createDefaultElement('sliderArrow', generateId(), null),
-          (() => {
-            const arrow = createDefaultElement('sliderArrow', generateId(), null);
-            arrow.name = 'Next arrow';
-            arrow.props.direction = 'next';
-            arrow.styles.desktop.left = 'auto';
-            arrow.styles.desktop.right = '16px';
-            return arrow;
-          })(),
-          createDefaultElement('sliderPagination', generateId(), null),
-        ],
-      };
-    }
-    case 'slide':
-      return {
-        name: 'Slide',
-        props: {},
-        styles: {
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '420px',
-          paddingTop: '64px',
-          paddingRight: '64px',
-          paddingBottom: '64px',
-          paddingLeft: '64px',
-          backgroundColor: '#f1f5f9',
-        },
-        children: [
-          createDefaultElement('heading', generateId(), null),
-          createDefaultElement('paragraph', generateId(), null),
-        ],
-      };
-    case 'sliderArrow':
-      return {
-        name: 'Previous arrow',
-        props: { direction: 'previous', label: 'Previous slide' },
-        styles: {
-          display: 'inline-flex',
-          position: 'absolute',
-          top: '50%',
-          left: '16px',
-          transform: 'translateY(-50%)',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: '44px',
-          height: '44px',
-          border: '0',
-          borderRadius: '999px',
-          backgroundColor: '#ffffff',
-          color: '#111827',
-          cursor: 'pointer',
-          zIndex: '2',
-        },
-      };
-    case 'sliderPagination':
-      return {
-        name: 'Pagination',
-        props: { activeColor: '#111827', inactiveColor: '#94a3b8', dotSize: '10px', dotRadius: '999px', dotBorderColor: 'transparent', dotBorderWidth: '0px' },
-        styles: {
-          display: 'flex',
-          position: 'absolute',
-          left: '50%',
-          bottom: '16px',
-          transform: 'translateX(-50%)',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '8px',
-          zIndex: '2',
-        },
-      };
-    case 'card':
-      return {
-        name: 'Card',
-        props: {},
-        styles: {
-          display: 'flex',
-          flexDirection: 'column',
-          backgroundColor: '#ffffff',
-          borderRadius: '12px',
-          paddingTop: '24px',
-          paddingBottom: '24px',
-          paddingLeft: '20px',
-          paddingRight: '20px',
-          boxShadow: '0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -1px rgba(0,0,0,0.04)',
-          overflow: 'hidden',
-        },
-      };
-    case 'grid':
-      return {
-        name: 'Grid',
-        props: { columns: 3 },
-        styles: {
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: '24px',
-          width: '100%',
-          paddingTop: '20px',
-          paddingBottom: '20px',
-          paddingLeft: '20px',
-          paddingRight: '20px',
-        },
-      };
-    case 'columns':
-      return {
-        name: 'Columns',
-        props: { columns: 2 },
-        styles: {
-          display: 'flex',
-          gap: '24px',
-          width: '100%',
-        },
-        children: [
-          {
-            id: generateId(),
-            type: 'div',
-            name: 'Column',
-            props: {},
-            styles: { desktop: { display: 'flex', flex: '50%', width: '100%' }, tablet: { display: 'block', width: '100%' }, mobile: { display: 'block', width: '100%' }, widescreen: { display: 'block', width: '100%' }, laptop: { display: 'block', width: '100%' }, mobileLandscape: { display: 'block', width: '100%' } },
-            children: [],
-            parentId: null,
-            locked: false,
-            hidden: false,
-          },
-          {
-            id: generateId(),
-            type: 'div',
-            name: 'Column',
-            props: {},
-            styles: { desktop: { display: 'flex', flex: '50%', width: '100%' }, tablet: { display: 'block', width: '100%' }, mobile: { display: 'block', width: '100%' }, widescreen: { display: 'block', width: '100%' }, laptop: { display: 'block', width: '100%' }, mobileLandscape: { display: 'block', width: '100%' } },
-            children: [],
-            parentId: null,
-            locked: false,
-            hidden: false,
-          },
-        ],
-      };
-    case 'form':
-      return {
-        name: 'Form',
-        props: { formName: 'Newsletter signup', submitLabel: 'Subscribe', successMessage: 'Thanks for subscribing!', errorMessage: 'Unable to submit form. Please try again.' },
-        styles: {
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '16px',
-          maxWidth: '480px',
-          paddingTop: '32px',
-          paddingBottom: '32px',
-          paddingLeft: '32px',
-          paddingRight: '32px',
-          backgroundColor: '#ffffff',
-          borderRadius: '12px',
-          boxShadow: '0 4px 6px -1px rgba(0,0,0,0.07)',
-        },
-        children: [
-          {
-            id: generateId(),
-            type: 'input',
-            name: 'Email',
-            props: { type: 'email', name: 'email', placeholder: 'Your email address', label: 'Email', required: true },
-            styles: { desktop: { width: '100%', paddingTop: '12px', paddingBottom: '12px', paddingLeft: '14px', paddingRight: '14px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', backgroundColor: '#ffffff', color: '#111827' }, tablet: {}, mobile: {}, widescreen: { width: '100%', paddingTop: '12px', paddingBottom: '12px', paddingLeft: '14px', paddingRight: '14px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', backgroundColor: '#ffffff', color: '#111827' }, laptop: { width: '100%', paddingTop: '12px', paddingBottom: '12px', paddingLeft: '14px', paddingRight: '14px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '14px', backgroundColor: '#ffffff', color: '#111827' }, mobileLandscape: {} },
-            children: [],
-            parentId: null,
-            locked: false,
-            hidden: false,
-          },
-          {
-            id: generateId(),
-            type: 'button',
-            name: 'Submit button',
-            props: { text: 'Subscribe', type: 'submit' },
-            styles: { desktop: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', paddingTop: '12px', paddingRight: '20px', paddingBottom: '12px', paddingLeft: '20px', backgroundColor: '#2563eb', color: '#ffffff', fontSize: '14px', fontWeight: '600', borderRadius: '8px', cursor: 'pointer' }, tablet: {}, mobile: {}, widescreen: {}, laptop: {}, mobileLandscape: {} },
-            children: [],
-            parentId: null,
-            locked: false,
-            hidden: false,
-          },
-        ],
-      };
-    case 'input':
-      return {
-        name: 'Input',
-        props: { placeholder: 'Enter text...', type: 'text', label: 'Label' },
-        styles: {
-          display: 'flex',
-          width: '100%',
-          paddingTop: '10px',
-          paddingBottom: '10px',
-          paddingLeft: '14px',
-          paddingRight: '14px',
-          fontSize: '14px',
-          border: '1px solid #e5e7eb',
-          borderRadius: '8px',
-          color: '#111827',
-          backgroundColor: '#ffffff',
-          outline: 'none',
-        },
-      };
-    case 'textarea':
-      return {
-        name: 'Textarea',
-        props: { placeholder: 'Enter text...', label: 'Message' },
-        styles: {
-          width: '100%',
-          paddingTop: '10px',
-          paddingBottom: '10px',
-          paddingLeft: '14px',
-          paddingRight: '14px',
-          fontSize: '14px',
-          border: '1px solid #e5e7eb',
-          borderRadius: '8px',
-          color: '#111827',
-          backgroundColor: '#ffffff',
-          minHeight: '120px',
-          resize: 'vertical' as unknown as string,
-          outline: 'none',
-        },
-      };
-    case 'video':
-      return {
-        name: 'Video',
-        props: { src: 'https://www.w3schools.com/html/mov_bbb.mp4' },
-        styles: {
-          width: '100%',
-          borderRadius: '8px',
-        },
-      };
-    case 'divider':
-      return {
-        name: 'Divider',
-        props: {},
-        styles: {
-          width: '100%',
-          borderBottom: '1px solid #e5e7eb',
-          marginTop: '16px',
-          marginBottom: '16px',
-        },
-      };
-    case 'spacer':
-      return {
-        name: 'Spacer',
-        props: {},
-        styles: {
-          height: '48px',
-          width: '100%',
-        },
-      };
-    case 'icon':
-      return {
-        name: 'Icon',
-        props: { iconName: 'Star' },
-        styles: {
-          color: '#2563eb',
-          width: '32px',
-          height: '32px',
-        },
-      };
-    case 'list':
-      return {
-        name: 'List',
-        props: {},
-        styles: {
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '8px',
-          paddingTop: '20px',
-          paddingBottom: '20px',
-          paddingLeft: '20px',
-          paddingRight: '20px',
-          listStyle: 'none' as unknown as string,
-        },
-      };
-    case 'listItem':
-      return {
-        name: 'List Item',
-        props: { text: 'List item text' },
-        styles: {
-          fontSize: '16px',
-          color: '#374151',
-          paddingTop: '4px',
-          paddingBottom: '4px',
-          paddingLeft: '8px',
-          paddingRight: '8px',
-        },
-      };
-    case 'link':
-      return {
-        name: 'Link',
-        props: { text: 'Click here', href: '#' },
-        styles: {
-          fontSize: '16px',
-          textDecoration: 'underline',
-          cursor: 'pointer',
-        },
-      };
-    case 'iframe':
-      return {
-        name: 'Iframe',
-        props: { src: 'https://www.w3schools.com' },
-        styles: {
-          width: '100%',
-          height: '100%',
-          border: 'none',
-        },
-      };
-    case 'calendar':
-      return {
-        name: 'Calendar',
-        props: { title: 'Calendar' },
-        styles: {
-          width: '100%',
-          height: '650px',
-          border: 'none',
-          borderRadius: '8px',
-          backgroundColor: '#f8fafc',
-        },
-      };
-    case 'table':
-      return {
-        name: 'CMS Table',
-        props: { collectionId: '', columns: [], emptyMessage: 'No records yet.' },
-        styles: {
-          display: 'block',
-          width: '100%',
-          color: '#172033',
-          backgroundColor: '#ffffff',
-        },
-      };
-    case 'cmsMap':
-      return {
-        name: 'CMS Map',
-        props: { collectionId: '', emptyMessage: 'No records yet.' },
-        styles: {
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-          gap: '20px',
-          width: '100%',
-          paddingTop: '20px',
-          paddingBottom: '20px',
-          paddingLeft: '20px',
-          paddingRight: '20px',
-        },
-      };
-    case 'custom':
-      return {
-        name: 'Custom Code',
-        props: {
-          html: '<div class="custom-content">Your custom code</div>',
-          css: '.custom-content { padding: 24px; color: #374151; }',
-          javascript: '',
-        },
-        styles: {
-          width: '100%',
-          minHeight: '120px',
-          border: '1px dashed #9ca3af',
-        },
-      };
-    default:
-      return {
-        name: type,
-        props: {},
-        styles: { display: 'block' },
-      };
-  }
+  if (type === 'section') return getSectionElementDefaults();
+  if (type === 'div') return getDivElementDefaults();
+  if (type === 'article') return getArticleElementDefaults();
+  if (type === 'heading') return getHeadingElementDefaults();
+  if (type === 'paragraph') return getParagraphElementDefaults();
+  if (type === 'button') return getButtonElementDefaults();
+  if (type === 'select') return getSelectElementDefaults();
+  if (type === 'image') return getImageElementDefaults();
+  if (type === 'navbar') return getNavbarElementDefaults();
+  if (type === 'tabs') return getTabsElementDefaults();
+  if (type === 'tab') return getTabElementDefaults();
+  if (type === 'hero') return getHeroElementDefaults();
+  if (type === 'slider') return getSliderElementDefaults();
+  if (type === 'slide') return getSlideElementDefaults();
+  if (type === 'sliderArrow') return getSliderArrowElementDefaults();
+  if (type === 'sliderPagination') return getSliderPaginationElementDefaults();
+  if (type === 'card') return getCardElementDefaults();
+  if (type === 'grid') return getGridElementDefaults();
+  if (type === 'columns') return getColumnsElementDefaults();
+  if (type === 'form') return getFormElementDefaults();
+  if (type === 'input') return getInputElementDefaults();
+  if (type === 'textarea') return getTextareaElementDefaults();
+  if (type === 'video') return getVideoElementDefaults();
+  if (type === 'divider') return getDividerElementDefaults();
+  if (type === 'spacer') return getSpacerElementDefaults();
+  if (type === 'icon') return getIconElementDefaults();
+  if (type === 'list') return getListElementDefaults();
+  if (type === 'listItem') return getListItemElementDefaults();
+  if (type === 'link') return getLinkElementDefaults();
+  if (type === 'iframe') return getIframeElementDefaults();
+  if (type === 'calendar') return getCalendarElementDefaults();
+  if (type === 'table') return getTableElementDefaults();
+  if (type === 'cmsMap') return getCmsMapElementDefaults();
+  if (type === 'custom') return getCustomElementDefaults();
+
+  return {
+    name: type,
+    props: {},
+    styles: { display: 'block' },
+  };
 };
 
 export const getEffectiveStyles = (
@@ -1093,8 +442,10 @@ const renderElementToReact = (element: BuilderElement, indent = 2, breakpoint: B
   const children = renderChildren();
 
   switch (element.type) {
+    case 'article':
+      return `${indentation}<article${attrs}>${children}</article>`;
     case 'section':
-      return `${indentation}<section${attrs}>${children}</section>`;
+      return renderSectionElement({ indent, attrs, children });
     case 'navbar':
       return `${indentation}<nav${attrs}>${children}</nav>`;
     case 'tabs':
@@ -1189,9 +540,11 @@ export const renderElementToHtml = (element: BuilderElement, breakpoint: Breakpo
     return element.children.map(child => renderElementToHtml(child, breakpoint)).join('');
   };
 
+  if (element.type === 'section') {
+    return renderSectionElement({ attrs, children: renderChildren() });
+  }
+
   switch (element.type) {
-    case 'section':
-      return `<section${attrs}>${renderChildren()}</section>`;
     case 'navbar':
       return `<nav${attrs}>${renderChildren()}</nav>`;
     case 'tabs':
@@ -1340,9 +693,11 @@ export const renderElementToReactWithComponents = (
 
   const children = renderChildren();
 
+  if (element.type === 'section') {
+    return renderSectionElement({ indent, attrs, children });
+  }
+
   switch (element.type) {
-    case 'section':
-      return `${indentation}<section${attrs}>${children}</section>`;
     case 'navbar':
       return `${indentation}<nav${attrs}>${children}</nav>`;
     case 'tabs':

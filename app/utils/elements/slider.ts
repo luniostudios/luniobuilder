@@ -1,0 +1,96 @@
+import type { BuilderElement, StyleProperties } from '../../types/builder';
+import type { ElementDefaults } from './elementDefaults';
+
+const makeSlide = (text: string): BuilderElement => ({
+  id: `luniobuilder-${Math.random().toString(36).substr(2, 9)}`,
+  type: 'slide',
+  name: 'Slide',
+  props: {},
+  styles: {
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: '420px',
+    paddingTop: '64px',
+    paddingRight: '64px',
+    paddingBottom: '64px',
+    paddingLeft: '64px',
+    backgroundColor: '#f1f5f9',
+  },
+  children: [
+    { id: `luniobuilder-${Math.random().toString(36).substr(2, 9)}`, type: 'heading', name: 'Slide heading', props: { text, level: 1 }, styles: { desktop: { fontSize: '48px', fontWeight: '700', marginBottom: '16px' }, tablet: {}, mobile: {}, widescreen: {}, laptop: {}, mobileLandscape: {} }, children: [], parentId: null, locked: false, hidden: false },
+    { id: `luniobuilder-${Math.random().toString(36).substr(2, 9)}`, type: 'paragraph', name: 'Slide paragraph', props: { text: 'Add images, buttons, and any other elements to each slide.' }, styles: { desktop: { fontSize: '18px', lineHeight: '1.6', marginBottom: '0' }, tablet: {}, mobile: {}, widescreen: {}, laptop: {}, mobileLandscape: {} }, children: [], parentId: null, locked: false, hidden: false },
+  ],
+  parentId: null,
+  locked: false,
+  hidden: false,
+});
+
+const makeArrow = (direction: 'previous' | 'next'): BuilderElement => ({
+  id: `luniobuilder-${Math.random().toString(36).substr(2, 9)}`,
+  type: 'sliderArrow',
+  name: direction === 'previous' ? 'Previous arrow' : 'Next arrow',
+  props: { direction, label: direction === 'previous' ? 'Previous slide' : 'Next slide' },
+  styles: {
+    display: 'inline-flex',
+    position: 'absolute',
+    top: '50%',
+    left: direction === 'previous' ? '16px' : 'auto',
+    right: direction === 'next' ? '16px' : 'auto',
+    transform: 'translateY(-50%)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '44px',
+    height: '44px',
+    border: '0',
+    borderRadius: '999px',
+    backgroundColor: '#ffffff',
+    color: '#111827',
+    cursor: 'pointer',
+    zIndex: '2',
+  },
+  children: [],
+  parentId: null,
+  locked: false,
+  hidden: false,
+});
+
+export const getSliderElementDefaults = (): ElementDefaults => ({
+  name: 'Slider',
+  props: { autoplay: false, interval: 5000, loop: true, transition: 'slide', duration: 500, showArrows: true, showPagination: true },
+  styles: {
+    display: 'block',
+    position: 'relative',
+    width: '100%',
+    minHeight: '420px',
+    overflow: 'hidden',
+  } satisfies StyleProperties,
+  children: [
+    makeSlide('A clear headline for your first slide'),
+    makeSlide('Make room for your next idea'),
+    makeArrow('previous'),
+    makeArrow('next'),
+    {
+      id: `luniobuilder-${Math.random().toString(36).substr(2, 9)}`,
+      type: 'sliderPagination',
+      name: 'Pagination',
+      props: { activeColor: '#111827', inactiveColor: '#94a3b8', dotSize: '10px', dotRadius: '999px', dotBorderColor: 'transparent', dotBorderWidth: '0px' },
+      styles: {
+        display: 'flex',
+        position: 'absolute',
+        left: '50%',
+        bottom: '16px',
+        transform: 'translateX(-50%)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '8px',
+        zIndex: '2',
+      },
+      children: [],
+      parentId: null,
+      locked: false,
+      hidden: false,
+    },
+  ],
+});
