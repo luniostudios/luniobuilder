@@ -416,6 +416,7 @@ const getElementName = (type: ElementType): string => {
     article: 'Article',
     section: 'Section',
     tabs: 'Tabs',
+    body: 'Body',
     tab: 'Tab',
     div: 'Container',
     heading: 'Heading',
