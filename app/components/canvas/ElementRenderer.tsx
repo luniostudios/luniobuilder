@@ -495,7 +495,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
   const pageInteraction = (page.interactions || []).find((interaction: PageInteraction) => interaction.trigger === 'load');
   const styles = getEffectiveStyles(element, breakpoint);
   const hasOrderedBackgroundLayers = Array.isArray(element.props.backgroundLayers);
-  const orderedBackgroundLayers = hasOrderedBackgroundLayers
+  const orderedBackgroundLayers = Array.isArray(element.props.backgroundLayers)
     ? element.props.backgroundLayers.filter((layer: any) => (
       layer && ['image', 'gradient', 'video'].includes(layer.type) && typeof layer.value === 'string'
     ))
