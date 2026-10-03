@@ -1329,6 +1329,17 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
           onChangeColor={(v) => update('backgroundColor', v)}
           onChangeGradient={(v) => update('backgroundGradient', v)}
         />
+        {(element.type === 'section' || element.type === 'div') && (
+          <label className="mb-2 flex cursor-pointer items-center gap-2 text-[11px] text-gray-300">
+            <input
+              type="checkbox"
+              checked={styles.backgroundAttachment === 'fixed'}
+              onChange={event => update('backgroundAttachment', event.target.checked ? 'fixed' : 'scroll')}
+              className="accent-sky-400"
+            />
+            Parallax background
+          </label>
+        )}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-gray-300">Background layers</span>

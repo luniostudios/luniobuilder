@@ -29,6 +29,7 @@ import { redirect, useRouter, useSearchParams } from 'next/navigation';
 import { Page } from '@/app/types/builder';
 import { getProjectLimitForRole } from '@/app/lib/projectLimits';
 import { createDefaultElement, generateCssForPage, generateId, renderElementToHtml } from '@/app/utils/builderUtils';
+import { createStarterPage } from '@/app/utils/starterTemplate';
 import { getGoogleFontStylesheetUrls } from '@/app/utils/googleFonts';
 import Userss from './users/users';
 import ProfileSettings from './profile/ProfileSettings';
@@ -127,7 +128,7 @@ export default function Dashboard() {
     const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; projectId: string | null }>({ isOpen: false, projectId: null });
-    const [createProjectModal, setCreateProjectModal] = useState<{ isOpen: boolean; name: string }>({ isOpen: false, name: '' });
+    const [createProjectModal, setCreateProjectModal] = useState<{ isOpen: boolean; name: string; template: 'blank' | 'starter' }>({ isOpen: false, name: '', template: 'blank' });
     const [roleUpdated, setRoleUpdated] = useState(false);
     const [invitations, setInvitations] = useState<ProjectInvitation[]>([]);
     const [inviteModal, setInviteModal] = useState<{ projectId: string; projectTitle: string } | null>(null);
@@ -296,7 +297,7 @@ export default function Dashboard() {
     }, [projects, projectFilter, projectSort, searchQuery]);
 
     const openCreateProjectModal = () => {
-        setCreateProjectModal({ isOpen: true, name: '' });
+        setCreateProjectModal({ isOpen: true, name: '', template: 'blank' });
     };
 
     const confirmCreateProject = async () => {
@@ -313,22 +314,24 @@ export default function Dashboard() {
         const payload = {
             title: projectName,
             slug: `/project-${Date.now()}`,
-            content: {
-                pages: [
-                    {
-                        id: 'page-1',
-                        name: 'Home',
-                        slug: '/',
-                        elements: [createDefaultElement('body', generateId(), null)],
-                        seo: {
-                            title: 'My Website',
-                            description: '',
-                            keywords: '',
+            content: createProjectModal.template === 'starter'
+                ? { pages: [createStarterPage()], currentPageId: 'page-1' }
+                : {
+                    pages: [
+                        {
+                            id: 'page-1',
+                            name: 'Home',
+                            slug: '/',
+                            elements: [createDefaultElement('body', generateId(), null)],
+                            seo: {
+                                title: 'My Website',
+                                description: '',
+                                keywords: '',
+                            },
                         },
-                    },
-                ],
-                currentPageId: 'page-1',
-            },
+                    ],
+                    currentPageId: 'page-1',
+                },
         };
 
         const response = await fetch('/api/projects', {
@@ -346,7 +349,7 @@ export default function Dashboard() {
             return;
         }
 
-        setCreateProjectModal({ isOpen: false, name: '' });
+        setCreateProjectModal({ isOpen: false, name: '', template: 'blank' });
         router.push(`/editor?projectId=${data.id}`);
     };
 
@@ -809,12 +812,12 @@ export default function Dashboard() {
                 </div>
                 <Dialog
                     open={createProjectModal.isOpen}
-                    onOpenChange={open => { if (!open) setCreateProjectModal({ isOpen: false, name: '' }); }}
+                    onOpenChange={open => { if (!open) setCreateProjectModal({ isOpen: false, name: '', template: 'blank' }); }}
                 >
-                    <DialogContent className='max-w-sm'>
+                    <DialogContent className='max-w-md'>
                         <DialogHeader>
                             <DialogTitle>Create new project</DialogTitle>
-                            <DialogDescription>Enter a name for your new project.</DialogDescription>
+                            <DialogDescription>Choose a starting point and name your project.</DialogDescription>
                         </DialogHeader>
                         <input
                             type='text'
@@ -825,8 +828,38 @@ export default function Dashboard() {
                             className='w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-[#1D976C]'
                             autoFocus
                         />
+                        <fieldset className='grid gap-3 sm:grid-cols-2' aria-label='Project starting point'>
+                            <label className={`flex cursor-pointer gap-3 rounded-lg border p-3 transition-colors ${createProjectModal.template === 'blank' ? 'border-[#1D976C] bg-[#1D976C]/5' : 'border-gray-200 hover:border-gray-300'}`}>
+                                <input
+                                    type='radio'
+                                    name='project-template'
+                                    value='blank'
+                                    checked={createProjectModal.template === 'blank'}
+                                    onChange={() => setCreateProjectModal({ ...createProjectModal, template: 'blank' })}
+                                    className='mt-1 accent-[#1D976C]'
+                                />
+                                <span>
+                                    <span className='block text-sm font-medium text-gray-900'>Blank project</span>
+                                    <span className='mt-1 block text-xs text-gray-500'>Start with an empty canvas.</span>
+                                </span>
+                            </label>
+                            <label className={`flex cursor-pointer gap-3 rounded-lg border p-3 transition-colors ${createProjectModal.template === 'starter' ? 'border-[#1D976C] bg-[#1D976C]/5' : 'border-gray-200 hover:border-gray-300'}`}>
+                                <input
+                                    type='radio'
+                                    name='project-template'
+                                    value='starter'
+                                    checked={createProjectModal.template === 'starter'}
+                                    onChange={() => setCreateProjectModal({ ...createProjectModal, template: 'starter' })}
+                                    className='mt-1 accent-[#1D976C]'
+                                />
+                                <span>
+                                    <span className='block text-sm font-medium text-gray-900'>Starter template</span>
+                                    <span className='mt-1 block text-xs text-gray-500'>Begin with a ready-made website layout.</span>
+                                </span>
+                            </label>
+                        </fieldset>
                         <DialogFooter>
-                            <Button type='button' variant='outline' onClick={() => setCreateProjectModal({ isOpen: false, name: '' })} disabled={saving}>Cancel</Button>
+                            <Button type='button' variant='outline' onClick={() => setCreateProjectModal({ isOpen: false, name: '', template: 'blank' })} disabled={saving}>Cancel</Button>
                             <Button type='button' onClick={() => confirmCreateProject()} disabled={saving} className='bg-[#1D976C] text-black hover:bg-[#1D976C]/90'>
                                 {saving ? 'Creating...' : 'Create'}
                             </Button>

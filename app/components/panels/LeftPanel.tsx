@@ -546,32 +546,15 @@ const ComponentsTab: React.FC = () => {
 };
 
 const SECTION_PRESETS = [
-  { id: 'hero', label: 'Hero section', description: 'Headline, copy, and call to action', icon: <LayoutIcon size={18} /> },
-  { id: 'newsletter', label: 'Newsletter form', description: 'Email field and subscribe button', icon: <Form size={18} /> },
   { id: 'feature-grid', label: 'Feature grid', description: 'Three cards with editable content', icon: <Grid size={18} /> },
-  { id: 'two-columns', label: 'Two-column section', description: 'Side-by-side content areas', icon: <Columns size={18} /> },
 ];
 
 const createSectionPreset = (presetId: string): BuilderElement | null => {
-  if (presetId === 'hero') {
-    const hero = createDefaultElement('hero', generateId(), null);
-    const button = createDefaultElement('button', generateId(), hero.id);
-    button.name = 'Hero call to action';
-    button.props.text = 'Get started';
-    button.styles.desktop.marginTop = '8px';
-    hero.children.push(button);
-    return hero;
-  }
-  if (presetId === 'newsletter') return createDefaultElement('form', generateId(), null);
-  if (presetId === 'two-columns') return createDefaultElement('columns', generateId(), null);
   if (presetId !== 'feature-grid') return null;
 
   const grid = createDefaultElement('grid', generateId(), null);
   grid.name = 'Feature grid';
-  grid.styles.desktop.gridTemplateColumns = 'repeat(3, minmax(0, 1fr))';
   grid.styles.desktop.gap = '24px';
-  grid.styles.tablet.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))';
-  grid.styles.mobile.gridTemplateColumns = '1fr';
   grid.children = ['Simple to use', 'Made for teams', 'Ready to grow'].map((title, index) => {
     const card = createDefaultElement('card', generateId(), grid.id);
     card.name = `Feature ${index + 1}`;

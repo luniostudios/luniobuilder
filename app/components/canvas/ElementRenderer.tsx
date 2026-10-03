@@ -646,7 +646,14 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
       pointerEvents: 'none',
     };
     if (layer.type === 'video') {
-      return <video key={`background-video-${index}`} aria-hidden="true" tabIndex={-1} autoPlay muted loop playsInline preload="metadata" src={layer.value} style={{ ...layerStyle, width: '100%', height: '100%', objectFit: 'cover' }} />;
+      return <video key={`background-video-${index}`} aria-hidden="true" tabIndex={-1} 
+      autoPlay 
+      muted 
+      loop 
+      playsInline 
+      preload="metadata" 
+      src={layer.value} 
+      style={{ ...layerStyle, width: '100%', height: '100%', objectFit: 'cover' }} />
     }
     return <div key={`background-${layer.type}-${index}`} aria-hidden="true" style={{
       ...layerStyle,
@@ -654,6 +661,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
       backgroundSize: safeCssStyles.backgroundSize || 'cover',
       backgroundPosition: safeCssStyles.backgroundPosition || 'center',
       backgroundRepeat: 'no-repeat',
+      ...(layer.type === 'image' && safeCssStyles.backgroundAttachment === 'fixed' ? { backgroundAttachment: 'fixed' } : {}),
     }} />;
   });
 

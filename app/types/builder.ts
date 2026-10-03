@@ -99,6 +99,7 @@ export interface StyleProperties {
   backgroundSize?: string;
   backgroundPosition?: string;
   backgroundRepeat?: string;
+  backgroundAttachment?: string;
   objectFit?: string;
 
   // Text gradient
