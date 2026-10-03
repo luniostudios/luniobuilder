@@ -218,6 +218,13 @@ export interface ElementInteraction {
   action: 'animate' | 'show' | 'visibility' | 'opacity';
   animationName: string;
   duration: string;
+  timing: string;
+  delay?: number | string;
+  repeat?: number | 'infinite';
+  direction?: 'normal' | 'reverse' | 'alternate' | 'alternate-reverse';
+  fillMode?: 'none' | 'forwards' | 'backwards' | 'both';
+  iterationCount?: number | 'infinite';
+  easingFunction?: string;
   customKeyframes?: InteractionKeyframe[];
   targetElementId?: string;
   visibilityMode?: 'show' | 'hide' | 'toggle';

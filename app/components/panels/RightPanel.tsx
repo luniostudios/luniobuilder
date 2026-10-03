@@ -97,43 +97,89 @@ const InteractionsEditor: React.FC<{ element?: BuilderElement; page: any }> = ({
         <p className='text-sm font-semibold'>Interactions</p>
         <p className='mt-1 text-[11px] text-gray-500'>Animate elements and pages with simple triggers.</p></div>
     </div>
-    {element && <InteractionCard title='Element trigger' description='Animate this element when visitors interact with it.' onAdd={() => updateElement([...elementInteractions, { trigger: 'hover', action: 'animate', animationName: 'fade-in', duration: '0.8s' }])}>
-      {elementInteractions.map((interaction, index) => <div key={`${interaction.trigger}-${index}`} className='mb-2 rounded-lg border border-gray-700 bg-gray-900/60 p-3'>
-        <div className='flex items-center justify-between gap-2'>
-          <select value={interaction.trigger} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, trigger: event.target.value as ElementInteraction['trigger'] } : item))} className='min-w-0 flex-1 rounded border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white'>
-            <option value='hover'>While hovering</option><option value='click'>On click</option><option value='scroll-into-view'>When scrolled into view</option>
-          </select>
-          <button type='button' onClick={() => updateElement(elementInteractions.filter((_, itemIndex) => itemIndex !== index))} title='Remove trigger' className='p-1 text-gray-500 hover:text-red-300'><Trash2 size={14} /></button>
-        </div>
-        <select value={interaction.animationName} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, animationName: event.target.value } : item))} className='mt-2 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white'>
-          {INTERACTION_ANIMATIONS.map(animation => <option key={animation} value={animation}>{animation}</option>)}
-        </select>
-        {interaction.animationName === 'custom' && <CustomTimelineEditor
-          frames={interaction.customKeyframes || []}
-          allowInitialState={(interaction.action || 'animate') === 'animate'}
-          onChange={customKeyframes => {
-            const hasInitialState = customKeyframes.some(frame => frame.isInitialState);
-            updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index
-              ? { ...item, customKeyframes }
-              : hasInitialState
-                ? { ...item, customKeyframes: item.customKeyframes?.map(frame => ({ ...frame, isInitialState: undefined })) }
-                : item));
-          }}
-        />}
-        <select value={interaction.action || 'animate'} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, action: event.target.value as ElementInteraction['action'], targetElementId: ['show', 'visibility', 'opacity'].includes(event.target.value) ? item.targetElementId : undefined } : item))} className='mt-2 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white'>
-          <option value='animate'>Animate this element</option><option value='show'>Show another element</option><option value='visibility'>Toggle element visibility</option><option value='opacity'>Change element opacity</option>
-        </select>
-        {(interaction.action || 'animate') !== 'animate' && <div className='mt-2 flex items-center gap-2'>
-          <button type='button' onClick={() => beginInteractionTargetSelection(element.id, index)} onDoubleClick={cancelInteractionTargetSelection} className={`flex-1 rounded border px-2 py-1.5 text-left text-xs ${interactionTargetSelection?.sourceId === element.id && interactionTargetSelection?.interactionIndex === index ? 'border-blue-400 bg-blue-500/20 text-blue-200' : 'border-gray-700 bg-gray-800 text-gray-300 hover:border-blue-400'}`}>
-            {interactionTargetSelection?.sourceId === element.id && interactionTargetSelection?.interactionIndex === index ? 'Click an element on the canvas...' : interaction.targetElementId ? `Target: ${targetElements.find(target => target.id === interaction.targetElementId)?.name || 'Selected element'}` : 'Select target on canvas'}
-          </button>
-        </div>}
-        {(interaction.action || 'animate') === 'visibility' && <select value={interaction.visibilityMode || 'toggle'} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, visibilityMode: event.target.value as ElementInteraction['visibilityMode'] } : item))} className='mt-2 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white'>
-          <option value='toggle'>Toggle visibility</option><option value='show'>Show target</option><option value='hide'>Hide target</option>
-        </select>}
-        {(interaction.action || 'animate') === 'opacity' && <input value={interaction.opacityValue || '0'} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, opacityValue: event.target.value } : item))} placeholder='Opacity, e.g. 0.5 or 50%' className='mt-2 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white outline-none' />}
+    {element && <InteractionCard title='Element trigger' description='Animate this element when visitors interact with it.' onAdd={() => updateElement([...elementInteractions, { trigger: 'hover', action: 'animate', animationName: 'fade-in', duration: '0.8s', timing: 'ease-in-out' }])}>
+      {elementInteractions.map((interaction, index) =>
+        <div key={`${interaction.trigger}-${index}`} className='mb-2 rounded-lg border border-gray-700 p-3'>
+          <button type='button' onClick={() => updateElement(elementInteractions.filter((_, itemIndex) => itemIndex !== index))} title='Remove trigger' className='w-full p-1 text-gray-500 hover:text-red-300 justify-items-end'><Trash2 size={14} /></button>
+          <div className='flex items-center justify-between gap-2'>
+            <label htmlFor={`trigger-${index}`} className='text-xs text-gray-300'>Trigger</label>
+            <select value={interaction.trigger} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, trigger: event.target.value as ElementInteraction['trigger'] } : item))} className='min-w-0 flex-1 rounded border border-gray-700 bg-gray-800/20 px-2 py-1.5 text-xs text-white outline-none'>
+              <option value='hover' className='bg-gray-800 text-white'>While hovering</option><option value='click' className='bg-gray-800 text-white'>On click</option><option value='scroll-into-view' className='bg-gray-800 text-white'>When scrolled into view</option>
+            </select>
+          </div>
+          <div className='flex items-center justify-between gap-2'>
+            <label htmlFor={`trigger-${index}`} className='text-xs text-gray-300'>Animation</label>
+            <select value={interaction.animationName} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, animationName: event.target.value } : item))} className='mt-2 w-full rounded border border-gray-700 bg-gray-800/20 px-2 py-1.5 text-xs text-white'>
+              {INTERACTION_ANIMATIONS.map(animation => <option key={animation} value={animation} className='bg-gray-800 text-white'>{animation}</option>)}
+            </select>
+          </div>
+          {INTERACTION_ANIMATIONS && interaction.animationName !== 'custom' &&
+            <div>
+              <div className='flex items-center justify-between gap-2'>
+                <label htmlFor={`trigger-${index}`} className='text-xs text-gray-300'>Duration</label>
+                {INTERACTION_ANIMATIONS && interaction.animationName !== 'custom' &&
+                  <input value={interaction.duration} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, duration: event.target.value } : item))} placeholder='Duration, e.g. 0.8s' className='mt-2 w-full rounded border border-gray-700 bg-gray-800/20 px-2 py-1.5 text-xs text-white outline-none' />
+                }
+              </div>
 
-      </div>)}
+              <div className='flex items-center justify-between gap-2'>
+                <label htmlFor={`trigger-${index}`} className='text-xs text-gray-300'>Timing</label>
+                {INTERACTION_ANIMATIONS && interaction.animationName !== 'custom' &&
+                  <select value={interaction.timing || 'ease-in-out'} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, timing: event.target.value } : item))} className='mt-2 w-full rounded border border-gray-700 bg-gray-800/20 px-2 py-1.5 text-xs text-white'>
+                    <option value='linear' className='bg-gray-800 text-white'>Linear</option><option value='ease' className='bg-gray-800 text-white'>Ease</option><option value='ease-in' className='bg-gray-800 text-white'>Ease in</option><option value='ease-out' className='bg-gray-800 text-white'>Ease out</option><option value='ease-in-out' className='bg-gray-800 text-white'>Ease in-out</option>
+                  </select>
+                }
+              </div>
+              <div className='flex items-center justify-between gap-2'>
+                <label htmlFor={`trigger-${index}`} className='text-xs text-gray-300'>Delay</label>
+                {INTERACTION_ANIMATIONS && interaction.animationName !== 'custom' &&
+                  <input value={interaction.delay || '0s'} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, delay: event.target.value } : item))} placeholder='Delay, e.g. 0.2s' className='mt-2 w-full rounded border border-gray-700 bg-gray-800/20 px-2 py-1.5 text-xs text-white outline-none' />
+                }
+              </div>
+              <div className='flex items-center justify-between gap-2'>
+                <label htmlFor={`trigger-${index}`} className='text-xs text-gray-300'>Direction</label>
+                {INTERACTION_ANIMATIONS && interaction.animationName !== 'custom' &&
+                  <select value={interaction.direction || 'normal'} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, direction: event.target.value as ElementInteraction['direction'] } : item))} className='mt-2 w-full rounded border border-gray-700 bg-gray-800/20 px-2 py-1.5 text-xs text-white'>
+                    <option value='normal' className='bg-gray-800 text-white'>Normal</option><option value='reverse' className='bg-gray-800 text-white'>Reverse</option><option value='alternate' className='bg-gray-800 text-white'>Alternate</option><option value='alternate-reverse' className='bg-gray-800 text-white'>Alternate reverse</option>
+                  </select>
+                }
+              </div>
+              <div className='flex items-center justify-between gap-2'>
+                <label htmlFor={`trigger-${index}`} className='text-xs text-gray-300'>Fill</label>
+                {INTERACTION_ANIMATIONS && interaction.animationName !== 'custom' &&
+                  <select value={interaction.fillMode || 'none'} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, fillMode: event.target.value as ElementInteraction['fillMode'] } : item))} className='mt-2 w-full rounded border border-gray-700 bg-gray-800/20 px-2 py-1.5 text-xs text-white'>
+                    <option value='none' className='bg-gray-800 text-white'>None</option><option value='forwards' className='bg-gray-800 text-white'>Forwards</option><option value='backwards' className='bg-gray-800 text-white'>Backwards</option><option value='both' className='bg-gray-800 text-white'>Both</option>
+                  </select>
+                }
+              </div>
+            </div>
+          }
+          {interaction.animationName === 'custom' && <CustomTimelineEditor
+            frames={interaction.customKeyframes || []}
+            allowInitialState={(interaction.action || 'animate') === 'animate'}
+            onChange={customKeyframes => {
+              const hasInitialState = customKeyframes.some(frame => frame.isInitialState);
+              updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index
+                ? { ...item, customKeyframes }
+                : hasInitialState
+                  ? { ...item, customKeyframes: item.customKeyframes?.map(frame => ({ ...frame, isInitialState: undefined })) }
+                  : item));
+            }}
+          />}
+          <select value={interaction.action || 'animate'} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, action: event.target.value as ElementInteraction['action'], targetElementId: ['show', 'visibility', 'opacity'].includes(event.target.value) ? item.targetElementId : undefined } : item))} className='mt-2 w-full rounded border border-gray-700 bg-gray-800/20 px-2 py-1.5 text-xs text-white'>
+            <option value='animate' className='bg-gray-800 text-white'>Animate this element</option><option value='show' className='bg-gray-800 text-white'>Show another element</option><option value='visibility' className='bg-gray-800 text-white'>Toggle element visibility</option><option value='opacity' className='bg-gray-800 text-white'>Change element opacity</option>
+          </select>
+          {(interaction.action || 'animate') !== 'animate' && <div className='mt-2 flex items-center gap-2'>
+            <button type='button' onClick={() => beginInteractionTargetSelection(element.id, index)} onDoubleClick={cancelInteractionTargetSelection} className={`flex-1 rounded border px-2 py-1.5 text-left text-xs ${interactionTargetSelection?.sourceId === element.id && interactionTargetSelection?.interactionIndex === index ? 'border-blue-400 bg-blue-500/20 text-blue-200' : 'border-gray-700 bg-gray-800/20 text-gray-300 hover:border-blue-400'}`}>
+              {interactionTargetSelection?.sourceId === element.id && interactionTargetSelection?.interactionIndex === index ? 'Click an element on the canvas...' : interaction.targetElementId ? `Target: ${targetElements.find(target => target.id === interaction.targetElementId)?.name || 'Selected element'}` : 'Select target on canvas'}
+            </button>
+          </div>}
+          {(interaction.action || 'animate') === 'visibility' && <select value={interaction.visibilityMode || 'toggle'} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, visibilityMode: event.target.value as ElementInteraction['visibilityMode'] } : item))} className='mt-2 w-full rounded border border-gray-700 bg-gray-800/20 px-2 py-1.5 text-xs text-white'>
+            <option value='toggle' className='bg-gray-800 text-white'>Toggle visibility</option><option value='show' className='bg-gray-800 text-white'>Show target</option><option value='hide' className='bg-gray-800 text-white'>Hide target</option>
+          </select>}
+          {(interaction.action || 'animate') === 'opacity' && <input value={interaction.opacityValue || '0'} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, opacityValue: event.target.value } : item))} placeholder='Opacity, e.g. 0.5 or 50%' className='mt-2 w-full rounded border border-gray-700 bg-gray-800/20 px-2 py-1.5 text-xs text-white outline-none' />}
+
+        </div>)}
       <div className='mt-4 px-4 py-4 border-2 border-gray-800/50 rounded-lg border-dashed'>
         <h2 className='text-sm font-semibold text-gray-300'>ElementTriggers</h2>
         <p className='mt-1 text-[11px] text-gray-500'>These triggers are applied to the element and will run when the specified event occurs.</p>
@@ -1517,30 +1563,6 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
         />
         <InputRow label="z-index" value={styles.zIndex || ''} onChange={v => update('zIndex', v)} placeholder="auto" />
         <InputRow label="Transition" value={styles.transition || ''} onChange={v => update('transition', v)} placeholder="all 0.2s ease" />
-      </Section>
-
-      <Section title="Animation" defaultOpen={false}>
-        <div className="mb-3">
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Animations</p>
-              <p className="text-[11px] text-gray-500">Apply a custom CSS animation or use a quick preset.</p>
-            </div>
-          </div>
-          <InputRow
-            label="Animation Name"
-            value={styles.animationName || ''}
-            onChange={v => update('animationName', v)}
-            options={['fade-in', 'fade-out', 'slide-up', 'pop-in', 'bounce', 'spin', 'slide-in']}
-          />
-          <InputRow label="Duration" value={styles.animationDuration || ''} onChange={v => update('animationDuration', v)} placeholder="0.8s" />
-          <InputRow label="Timing" value={styles.animationTimingFunction || ''} onChange={v => update('animationTimingFunction', v)} placeholder="ease" />
-          <InputRow label="Delay" value={styles.animationDelay || ''} onChange={v => update('animationDelay', v)} placeholder="0s" />
-          <InputRow label="Repeat" value={styles.animationIterationCount || ''} onChange={v => update('animationIterationCount', v)} placeholder="1 or infinite" />
-          <InputRow label="Direction" value={styles.animationDirection || ''} onChange={v => update('animationDirection', v)} placeholder="normal" />
-          <InputRow label="Fill mode" value={styles.animationFillMode || ''} onChange={v => update('animationFillMode', v)} placeholder="both" />
-          <InputRow label="Play state" value={styles.animationPlayState || ''} onChange={v => update('animationPlayState', v)} placeholder="running" />
-        </div>
       </Section>
     </div>
   );

@@ -643,7 +643,7 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
   },
 
   triggerElementInteraction: (id, animationName, duration) => {
-    set(state => ({ triggeredInteractions: { ...state.triggeredInteractions, [id]: { animationName, duration } } }));
+    set(state => ({ triggeredInteractions: { ...state.triggeredInteractions, [id]: { animationName, duration, timing: 'ease-in-out', delay: '0s', direction: 'normal', fillMode: 'none' } } }));
     window.setTimeout(() => {
       set(state => {
         const triggeredInteractions = { ...state.triggeredInteractions };
@@ -656,7 +656,7 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
   revealElementForInteraction: (id, animationName, duration) => {
     set(state => ({
       revealedElementIds: { ...state.revealedElementIds, [id]: true },
-      triggeredInteractions: { ...state.triggeredInteractions, [id]: { animationName, duration } },
+      triggeredInteractions: { ...state.triggeredInteractions, [id]: { animationName, duration, timing: 'ease-in-out', delay: '0s', direction: 'normal', fillMode: 'none' } },
     }));
     window.setTimeout(() => {
       set(state => {
@@ -681,7 +681,7 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
     const animationName = interaction.animationName || 'fade-in';
     const duration = interaction.duration || '0.8s';
     set(state => ({
-      triggeredInteractions: { ...state.triggeredInteractions, [id]: { animationName, duration, customKeyframes: interaction.customKeyframes, visibility, opacity } },
+      triggeredInteractions: { ...state.triggeredInteractions, [id]: { animationName, duration, timing: 'ease-in-out', delay: '0s', direction: 'normal', fillMode: 'none', customKeyframes: interaction.customKeyframes, visibility, opacity } },
       visibilityOverrides: visibility ? { ...state.visibilityOverrides, [id]: visibility } : state.visibilityOverrides,
       opacityOverrides: opacity !== undefined ? { ...state.opacityOverrides, [id]: opacity } : state.opacityOverrides,
     }));
