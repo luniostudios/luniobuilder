@@ -192,11 +192,22 @@ export interface PseudoClassStyles {
 
 export type InteractionTrigger = 'hover' | 'click' | 'scroll-into-view';
 
+export interface InteractionKeyframe {
+  offset: number;
+  isInitialState?: boolean;
+  opacity?: number;
+  translateX?: number;
+  translateY?: number;
+  scale?: number;
+  rotate?: number;
+}
+
 export interface ElementInteraction {
   trigger: InteractionTrigger;
   action: 'animate' | 'show' | 'visibility' | 'opacity';
   animationName: string;
   duration: string;
+  customKeyframes?: InteractionKeyframe[];
   targetElementId?: string;
   visibilityMode?: 'show' | 'hide' | 'toggle';
   opacityValue?: string;
@@ -259,7 +270,7 @@ export interface BuilderState {
   history: Page[][];
   historyIndex: number;
   isPreviewMode: boolean;
-  triggeredInteractions: Record<string, { animationName: string; duration: string; visibility?: 'show' | 'hide'; opacity?: string }>;
+  triggeredInteractions: Record<string, { animationName: string; duration: string; customKeyframes?: InteractionKeyframe[]; visibility?: 'show' | 'hide'; opacity?: string }>;
   revealedElementIds: Record<string, boolean>;
   visibilityOverrides: Record<string, 'show' | 'hide'>;
   opacityOverrides: Record<string, string>;

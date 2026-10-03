@@ -2,10 +2,10 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Editor from '@monaco-editor/react';
-import { AlignCenter, AlignJustify, AlignLeft, AlignRight, ArrowDown, ArrowUp, ChevronDown, ChevronRight, Copy, Grid2x2, LayoutGrid, Link2, Maximize2, Move, Paintbrush, Plus, Redo2, RotateCcw, Save, SlidersHorizontal, Sparkles, Square, Trash2, Type, Unlink2, Upload } from 'lucide-react';
+import { AlignCenter, AlignJustify, AlignLeft, AlignRight, ArrowDown, ArrowUp, ChevronDown, ChevronRight, CircleDot, Copy, Grid2x2, LayoutGrid, Link2, Maximize2, Move, Paintbrush, Plus, Redo2, RotateCcw, Save, SlidersHorizontal, Sparkles, Square, Trash2, Type, Unlink2, Upload } from 'lucide-react';
 import ColorPicker from 'react-best-gradient-color-picker';
 import { useBuilderStore } from '../../stores/builderStore';
-import { Breakpoint, ElementInteraction, PageInteraction, StyleProperties } from '../../types/builder';
+import { Breakpoint, ElementInteraction, InteractionKeyframe, PageInteraction, StyleProperties } from '../../types/builder';
 import { getEffectiveStyles, styleObjectToCssString } from '../../utils/builderUtils';
 import { GOOGLE_FONT_OPTIONS, loadGoogleFont } from '../../utils/googleFonts';
 import { Slider } from '@/components/ui/slider';
@@ -33,7 +33,7 @@ export const RightPanel: React.FC = () => {
   const page = getCurrentPage();
 
   return (
-    <div className="w-64 bg-[#111114] max-md:hidden border-l border-gray-800 flex flex-col h-full">
+    <div className="w-70 bg-[#111114] max-md:hidden border-l border-gray-800 flex flex-col h-full">
       {element ? (
         <>
           {/* Tabs */}
@@ -73,7 +73,7 @@ export const RightPanel: React.FC = () => {
   );
 };
 
-const INTERACTION_ANIMATIONS = ['fade-in', 'fade-out', 'slide-up', 'pop-in', 'bounce', 'spin', 'slide-in'];
+const INTERACTION_ANIMATIONS = ['fade-in', 'fade-out', 'slide-up', 'pop-in', 'bounce', 'spin', 'slide-in', 'custom'];
 
 const flattenElements = (elements: BuilderElement[], result: BuilderElement[] = []) => {
   elements.forEach(item => {
@@ -108,6 +108,18 @@ const InteractionsEditor: React.FC<{ element?: BuilderElement; page: any }> = ({
         <select value={interaction.animationName} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, animationName: event.target.value } : item))} className='mt-2 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white'>
           {INTERACTION_ANIMATIONS.map(animation => <option key={animation} value={animation}>{animation}</option>)}
         </select>
+        {interaction.animationName === 'custom' && <CustomTimelineEditor
+          frames={interaction.customKeyframes || []}
+          allowInitialState={(interaction.action || 'animate') === 'animate'}
+          onChange={customKeyframes => {
+            const hasInitialState = customKeyframes.some(frame => frame.isInitialState);
+            updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index
+              ? { ...item, customKeyframes }
+              : hasInitialState
+                ? { ...item, customKeyframes: item.customKeyframes?.map(frame => ({ ...frame, isInitialState: undefined })) }
+                : item));
+          }}
+        />}
         <select value={interaction.action || 'animate'} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, action: event.target.value as ElementInteraction['action'], targetElementId: ['show', 'visibility', 'opacity'].includes(event.target.value) ? item.targetElementId : undefined } : item))} className='mt-2 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white'>
           <option value='animate'>Animate this element</option><option value='show'>Show another element</option><option value='visibility'>Toggle element visibility</option><option value='opacity'>Change element opacity</option>
         </select>
@@ -120,7 +132,7 @@ const InteractionsEditor: React.FC<{ element?: BuilderElement; page: any }> = ({
           <option value='toggle'>Toggle visibility</option><option value='show'>Show target</option><option value='hide'>Hide target</option>
         </select>}
         {(interaction.action || 'animate') === 'opacity' && <input value={interaction.opacityValue || '0'} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, opacityValue: event.target.value } : item))} placeholder='Opacity, e.g. 0.5 or 50%' className='mt-2 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white outline-none' />}
-        <input value={interaction.duration} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, duration: event.target.value } : item))} placeholder='Duration, e.g. 0.8s' className='mt-2 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white outline-none' />
+          
       </div>)}
       <div className='mt-4 px-4 py-4 border-2 border-gray-800/50 rounded-lg border-dashed'>
         <h2 className='text-sm font-semibold text-gray-300'>ElementTriggers</h2>
@@ -130,7 +142,7 @@ const InteractionsEditor: React.FC<{ element?: BuilderElement; page: any }> = ({
     <InteractionCard title='Page trigger' description='Run an animation when the page loads.' onAdd={() => updatePage([...pageInteractions, { trigger: 'load', animationName: 'fade-in', duration: '0.8s' }])}>
       {pageInteractions.map((interaction, index) => <div key={index} className='rounded-lg border border-gray-700 bg-gray-900/60 p-3'>
         <div className='flex items-center justify-between'><span className='text-xs text-gray-300'>When page loads</span><button type='button' onClick={() => updatePage(pageInteractions.filter((_, itemIndex) => itemIndex !== index))} title='Remove trigger' className='p-1 text-gray-500 hover:text-red-300'><Trash2 size={14} /></button></div>
-        <select value={interaction.animationName} onChange={event => updatePage(pageInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, animationName: event.target.value } : item))} className='mt-2 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white'>{INTERACTION_ANIMATIONS.map(animation => <option key={animation} value={animation}>{animation}</option>)}</select>
+        <select value={interaction.animationName} onChange={event => updatePage(pageInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, animationName: event.target.value } : item))} className='mt-2 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white'>{INTERACTION_ANIMATIONS.filter(animation => animation !== 'custom').map(animation => <option key={animation} value={animation}>{animation}</option>)}</select>
         <input value={interaction.duration} onChange={event => updatePage(pageInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, duration: event.target.value } : item))} placeholder='Duration, e.g. 0.8s' className='mt-2 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white outline-none' />
       </div>)}
       <div className='mt-4 px-4 py-4 border-2 border-gray-800/50 rounded-lg border-dashed'>
@@ -146,6 +158,85 @@ const InteractionCard: React.FC<{ title: string; description: string; onAdd: () 
   </div><button type='button' onClick={onAdd} title={`Add ${title.toLowerCase()}`} aria-label={`Add ${title.toLowerCase()}`} className='rounded p-1 text-gray-500 hover:bg-gray-800 hover:text-gray-200'><Plus size={15} /></button></div>
   {children}
 </div>;
+
+const KEYFRAME_PROPERTIES: Array<{ key: keyof Omit<InteractionKeyframe, 'offset' | 'isInitialState'>; label: string; unit: string; min: number; max: number }> = [
+  { key: 'opacity', label: 'Opacity', unit: '', min: 0, max: 1 },
+  { key: 'translateX', label: 'X', unit: 'px', min: -500, max: 500 },
+  { key: 'translateY', label: 'Y', unit: 'px', min: -500, max: 500 },
+  { key: 'scale', label: 'Scale', unit: '', min: 0, max: 3 },
+  { key: 'rotate', label: 'Rotate', unit: 'deg', min: -360, max: 360 },
+];
+
+const CustomTimelineEditor: React.FC<{ frames: InteractionKeyframe[]; allowInitialState: boolean; onChange: (frames: InteractionKeyframe[]) => void }> = ({ frames, allowInitialState, onChange }) => {
+  const [selectedFrameIndex, setSelectedFrameIndex] = useState(0);
+  const activeIndex = Math.min(selectedFrameIndex, Math.max(0, frames.length - 1));
+  const selectedFrame = frames[activeIndex];
+  const updateFrame = (index: number, patch: Partial<InteractionKeyframe>) => onChange(frames.map((frame, frameIndex) => frameIndex === index
+    ? { ...frame, ...patch }
+    : patch.isInitialState ? { ...frame, isInitialState: undefined } : frame));
+  const addFrame = () => {
+    const offset = frames.length ? Math.min(100, Math.max(...frames.map(frame => frame.offset)) + 25) : 0;
+    onChange([...frames, { offset }]);
+    setSelectedFrameIndex(frames.length);
+  };
+  const removeFrame = () => {
+    onChange(frames.filter((_, index) => index !== activeIndex));
+    setSelectedFrameIndex(Math.max(0, activeIndex - 1));
+  };
+
+  return <div className='mt-3 overflow-hidden rounded-md border border-gray-700/80 bg-[#15171b]'>
+    <div className='flex items-center justify-between border-b border-gray-800 px-2.5 py-2'>
+      <div>
+        <p className='text-xs font-semibold uppercase tracking-wider text-gray-300'>Timeline</p>
+        <p className='mt-0.5 text-[9px] text-gray-500'>{frames.length} {frames.length === 1 ? 'keyframe' : 'keyframes'}</p>
+      </div>
+      <button type='button' onClick={addFrame} className='flex h-7 items-center gap-1 rounded border border-sky-400/30 bg-sky-400/10 px-2 text-xs font-medium text-sky-200 transition hover:border-sky-300/60 hover:bg-sky-400/15'>
+        <Plus size={12} /> Keyframe
+      </button>
+    </div>
+    <div className='px-2.5 pb-2.5 pt-3'>
+      <div className='relative mb-2 h-11 select-none rounded-sm border-y border-gray-800/90 bg-[#101114]' style={{ backgroundImage: 'linear-gradient(90deg, transparent 24.8%, #282b31 25%, transparent 25.2%, transparent 49.8%, #282b31 50%, transparent 50.2%, transparent 74.8%, #282b31 75%, transparent 75.2%)' }}>
+        {[0, 25, 50, 75, 100].map(tick => <span key={tick} className={`absolute top-1 text-[8px] tabular-nums text-gray-600 ${tick === 0 ? '' : tick === 100 ? '-translate-x-full' : '-translate-x-1/2'}`} style={{ left: `${tick}%` }}>{tick}%</span>)}
+        <div className='absolute inset-x-0 bottom-2 h-px bg-gray-700' />
+        {frames.map((frame, index) => <button key={index} type='button' aria-label={`Select ${frame.isInitialState ? 'initial state, ' : ''}keyframe ${index + 1} at ${frame.offset}%`} aria-pressed={activeIndex === index} onClick={() => setSelectedFrameIndex(index)} className={`absolute bottom-1.75 z-10 h-3 w-3 -translate-x-1/2 rotate-45 border transition ${frame.isInitialState ? 'border-emerald-100 bg-emerald-400' : activeIndex === index ? 'border-white bg-sky-300 shadow-[0_0_0_3px_rgba(56,189,248,0.18)]' : 'border-sky-300/80 bg-sky-500 hover:scale-110 hover:bg-sky-300'}`} style={{ left: `${Math.max(0, Math.min(100, frame.offset))}%` }} />)}
+      </div>
+      {frames.length > 0 ? <>
+        <div className='mb-3 flex gap-1.5 overflow-x-auto pb-1 custom-scrollbar' aria-label='Keyframes'>
+          {frames.map((frame, index) => <button key={index} type='button' aria-pressed={activeIndex === index} onClick={() => setSelectedFrameIndex(index)} className={`flex min-w-[4.2rem] items-center gap-1.5 rounded border px-2 py-1.5 text-left transition ${activeIndex === index ? 'border-sky-400/50 bg-sky-400/10 text-sky-100' : 'border-gray-800 bg-gray-900/50 text-gray-400 hover:border-gray-600 hover:text-gray-200'}`}>
+            <span className={`h-1.5 w-1.5 shrink-0 rotate-45 ${activeIndex === index ? 'bg-sky-300' : 'bg-gray-500'}`} />
+            <span className='text-[9px] font-medium tabular-nums'>KF {String(index + 1).padStart(2, '0')}</span>
+            {frame.isInitialState ? <span className='ml-auto text-[8px] font-semibold text-emerald-300'>Initial</span> : <span className='ml-auto text-[9px] tabular-nums text-gray-500'>{frame.offset}%</span>}
+          </button>)}
+        </div>
+        <div className='rounded border border-gray-800 bg-gray-900/50 p-2'>
+          <div className='mb-2 flex items-center justify-between'>
+            <span className='text-[9px] font-semibold uppercase tracking-wider text-gray-500'>Keyframe {String(activeIndex + 1).padStart(2, '0')}</span>
+            <div className='flex items-center gap-1'>
+              {allowInitialState && <button type='button' onClick={() => updateFrame(activeIndex, { isInitialState: !selectedFrame.isInitialState })} aria-pressed={Boolean(selectedFrame.isInitialState)} title={selectedFrame.isInitialState ? 'Unset initial state' : 'Use as initial state'} className={`flex h-6 items-center gap-1 rounded border px-1.5 text-[9px] transition ${selectedFrame.isInitialState ? 'border-emerald-400/40 bg-emerald-400/10 text-emerald-300' : 'border-gray-700 text-gray-500 hover:border-emerald-400/40 hover:text-emerald-300'}`}>
+                <CircleDot size={11} /> {selectedFrame.isInitialState ? 'Initial state' : 'Set initial'}
+              </button>}
+              <button type='button' onClick={removeFrame} title='Remove selected keyframe' aria-label='Remove selected keyframe' className='rounded p-1 text-gray-500 transition hover:bg-red-400/10 hover:text-red-300'><Trash2 size={12} /></button>
+            </div>
+          </div>
+          <label className='mb-3 block'>
+            <span className='mb-1 flex items-center justify-between text-[9px] text-gray-400'><span>Position</span><span className='font-mono tabular-nums text-gray-300'>{selectedFrame.offset}%</span></span>
+            <input type='range' min='0' max='100' value={selectedFrame.offset} aria-label='Keyframe timeline position' onChange={event => updateFrame(activeIndex, { offset: Number(event.target.value) })} className='h-1.5 w-full cursor-pointer accent-sky-400' />
+          </label>
+          <div className='grid grid-cols-2 gap-x-2 gap-y-1'>
+            {KEYFRAME_PROPERTIES.map(property => <label key={property.key} className='min-w-0'>
+              <span className='mb-1 flex items-center justify-between text-[9px] text-gray-500'><span>{property.label}</span>{property.unit && <span>{property.unit}</span>}</span>
+              <input type='number' step={property.key === 'opacity' || property.key === 'scale' ? '0.1' : '1'} min={property.min} max={property.max} value={selectedFrame[property.key] ?? ''} onChange={event => updateFrame(activeIndex, { [property.key]: event.target.value === '' ? undefined : Number(event.target.value) })} className='h-7 w-full rounded border border-gray-700/80 bg-[#17191d] px-2 text-[10px] tabular-nums text-gray-100 outline-none transition focus:border-sky-400' />
+            </label>)}
+          </div>
+        </div>
+      </> : <div className='flex min-h-24 flex-col items-center justify-center rounded border border-dashed border-gray-700/80 bg-gray-900/30 px-3 text-center'>
+        <span className='mb-1 flex h-6 w-6 items-center justify-center rounded-full border border-gray-700 bg-gray-800 text-gray-400'><Plus size={13} /></span>
+        <p className='text-[10px] font-medium text-gray-300'>Start your timeline</p>
+        <p className='mt-0.5 text-[9px] text-gray-500'>Add a keyframe, then set its position and motion.</p>
+      </div>}
+    </div>
+  </div>;
+};
 
 interface SectionProps {
   title: string;

@@ -542,9 +542,52 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
 
   const runtimeInteraction = activeInteraction || triggeredInteraction;
   const runtimeOpacity = opacityOverride || (runtimeInteraction && 'opacity' in runtimeInteraction ? runtimeInteraction.opacity : undefined);
+  const initialKeyframe = !runtimeInteraction
+    ? element.interactions?.filter(interaction => (interaction.action || 'animate') === 'animate').flatMap(interaction => interaction.customKeyframes || []).find(frame => frame.isInitialState)
+    : undefined;
+  const customAnimationName = `lunio-custom-${element.id.replace(/[^a-zA-Z0-9_-]/g, '-')}`;
+
+  useEffect(() => {
+    if (!runtimeInteraction?.customKeyframes?.length || typeof document === 'undefined') return;
+
+    const styleElement = document.createElement('style');
+    const keyframeRules = runtimeInteraction.customKeyframes
+      .map(frame => {
+        const declarations: string[] = [];
+        if (frame.opacity !== undefined) declarations.push(`opacity:${frame.opacity}`);
+        const transformParts = [
+          frame.translateX !== undefined || frame.translateY !== undefined
+            ? `translate(${frame.translateX ?? 0}px, ${frame.translateY ?? 0}px)`
+            : '',
+          frame.scale !== undefined ? `scale(${frame.scale})` : '',
+          frame.rotate !== undefined ? `rotate(${frame.rotate}deg)` : '',
+        ].filter(Boolean);
+        if (transformParts.length) declarations.push(`transform:${transformParts.join(' ')}`);
+        return `${Math.max(0, Math.min(100, frame.offset))}%{${declarations.join(';')}}`;
+      })
+      .join('');
+    styleElement.textContent = `@keyframes ${customAnimationName}{${keyframeRules}}`;
+    document.head.appendChild(styleElement);
+    return () => styleElement.remove();
+  }, [customAnimationName, runtimeInteraction]);
+
   const interactionStyles = {
+    ...(!runtimeInteraction && initialKeyframe ? {
+      ...(initialKeyframe.opacity !== undefined ? { opacity: initialKeyframe.opacity } : {}),
+      ...((initialKeyframe.translateX !== undefined || initialKeyframe.translateY !== undefined || initialKeyframe.scale !== undefined || initialKeyframe.rotate !== undefined) ? {
+        transform: [
+          initialKeyframe.translateX !== undefined || initialKeyframe.translateY !== undefined
+            ? `translate(${initialKeyframe.translateX ?? 0}px, ${initialKeyframe.translateY ?? 0}px)`
+            : '',
+          initialKeyframe.scale !== undefined ? `scale(${initialKeyframe.scale})` : '',
+          initialKeyframe.rotate !== undefined ? `rotate(${initialKeyframe.rotate}deg)` : '',
+        ].filter(Boolean).join(' '),
+      } : {}),
+    } : {}),
     ...(runtimeInteraction ? {
-      animationName: runtimeInteraction.animationName,
+      animationName: runtimeInteraction.animationName === 'custom' && runtimeInteraction.customKeyframes?.length
+        ? customAnimationName
+        : runtimeInteraction.animationName,
       animationDuration: runtimeInteraction.duration,
       animationTimingFunction: 'ease',
       animationFillMode: 'both',

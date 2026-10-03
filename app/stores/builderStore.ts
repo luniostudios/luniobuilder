@@ -681,7 +681,7 @@ export const useBuilderStore = create<BuilderStore>((set, get) => ({
     const animationName = interaction.animationName || 'fade-in';
     const duration = interaction.duration || '0.8s';
     set(state => ({
-      triggeredInteractions: { ...state.triggeredInteractions, [id]: { animationName, duration, visibility, opacity } },
+      triggeredInteractions: { ...state.triggeredInteractions, [id]: { animationName, duration, customKeyframes: interaction.customKeyframes, visibility, opacity } },
       visibilityOverrides: visibility ? { ...state.visibilityOverrides, [id]: visibility } : state.visibilityOverrides,
       opacityOverrides: opacity !== undefined ? { ...state.opacityOverrides, [id]: opacity } : state.opacityOverrides,
     }));
