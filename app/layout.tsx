@@ -69,6 +69,7 @@ export default async function RootLayout({
         <meta property="twitter:image:width" content="1200" />
         <meta property="twitter:image:height" content="630" />
         <link rel="preconnect" href="https://challenges.cloudflare.com" />
+        <link rel="icon" type="image/x-icon" href="/icons/logo.ico"/>
       </head>
       <body className="min-h-full flex flex-col">
         <Analytics />
