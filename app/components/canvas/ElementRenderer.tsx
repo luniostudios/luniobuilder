@@ -173,6 +173,13 @@ export const CmsRecordProvider: React.FC<{ record: CmsRecordContextValue | null;
   return <CmsRecordContext.Provider value={contextValue}>{children}</CmsRecordContext.Provider>;
 };
 
+const getFormMessageState = (element: BuilderElement): 'success' | 'error' | null => {
+  if (element.props.formMessageState === 'success' || element.props.formMessageState === 'error') {
+    return element.props.formMessageState;
+  }
+  return element.type === 'heading' && element.props.type === 'success' ? 'success' : null;
+};
+
 const evaluateCondition = (element: BuilderElement, record: CmsRecordContextValue | null) => {
   const field = String(element.props.conditionField || '').trim();
   if (!field) return true;
@@ -648,14 +655,14 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
       pointerEvents: 'none',
     };
     if (layer.type === 'video') {
-      return <video key={`background-video-${index}`} aria-hidden="true" tabIndex={-1} 
-      autoPlay 
-      muted 
-      loop 
-      playsInline 
-      preload="metadata" 
-      src={layer.value} 
-      style={{ ...layerStyle, width: '100%', height: '100%', objectFit: 'cover' }} />
+      return <video key={`background-video-${index}`} aria-hidden="true" tabIndex={-1}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="metadata"
+        src={layer.value}
+        style={{ ...layerStyle, width: '100%', height: '100%', objectFit: 'cover' }} />
     }
     return <div key={`background-${layer.type}-${index}`} aria-hidden="true" style={{
       ...layerStyle,
@@ -833,10 +840,13 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
 
       form.reset();
       setFormStatus('success');
-      setFormMessage(String(element.props.successMessage || data?.message || 'Thanks! Your message was sent.'));
+      const successElement = element.children.find(child => getFormMessageState(child) === 'success');
+      const independentSuccessText = successElement?.props.formMessageState === 'success' ? successElement.props.text : undefined;
+      setFormMessage(String(independentSuccessText || element.props.successMessage || successElement?.props.text || data?.message || 'Thanks! Your message was sent.'));
     } catch (error) {
+      const errorElement = element.children.find(child => getFormMessageState(child) === 'error');
       setFormStatus('error');
-      setFormMessage(String(element.props.errorMessage || (error instanceof Error ? error.message : 'Unable to submit form.')));
+      setFormMessage(String(errorElement?.props.text || element.props.errorMessage || (error instanceof Error ? error.message : 'Unable to submit form.')));
     }
   };
 
@@ -1659,6 +1669,19 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
           </SliderContainer>
         );
       case 'form':
+        {
+          const isFormRuntime = isPreview || isPublishedSite;
+          const messageChildren = element.children.filter(child => {
+            const state = getFormMessageState(child);
+            return !state || !isFormRuntime || state === formStatus;
+          }).map(child => {
+            const state = getFormMessageState(child);
+            return state
+              ? { ...child, hidden: false, props: { ...child.props, ...(isFormRuntime && state === formStatus ? { text: formMessage } : {}) } }
+              : child;
+          });
+          const hasStatusElement = (formStatus === 'success' || formStatus === 'error')
+            && element.children.some(child => getFormMessageState(child) === formStatus);
         return (
           <form
             style={innerContainerStyle}
@@ -1667,8 +1690,8 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
             className={isPreview ? '' : 'cursor-pointer'}
             noValidate
           >
-            {renderChildren()}
-            {(formStatus === 'success' || formStatus === 'error') && (
+            {renderChildren(messageChildren)}
+            {(formStatus === 'success' || formStatus === 'error') && !hasStatusElement && (
               <div className={`mt-2 text-sm ${formStatus === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
                 {formMessage}
               </div>
@@ -1678,6 +1701,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
             )}
           </form>
         );
+        }
       default:
         return (
           <div style={innerContainerStyle} onClick={handleClick} className={isPreview ? '' : 'cursor-pointer'}>

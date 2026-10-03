@@ -1239,7 +1239,17 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
       </Section>
 
       {/* Typography */}
-      {element.type === 'heading' || element.type === 'paragraph' || element.type === 'button' || element.type === 'link' || element.type === 'listItem' || element.type === 'icon' ? (
+      {element.type === 'heading' || 
+      element.type === 'paragraph' || 
+      element.type === 'button' || 
+      element.type === 'link' || 
+      element.type === 'listItem' || 
+      element.type === 'icon' || 
+      element.type === 'input' || 
+      element.type === 'list'|| 
+      element.type === 'textarea' || 
+      element.type === 'select'|| 
+      element.type === 'option' ? (
         <Section title="Typography">
           <InputRow
             label="Font"
@@ -2375,31 +2385,6 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
             </label>
           </>}
         </div>
-      )}
-
-      {element.type === 'form' && (
-        <>
-          <div>
-            <label className="text-xs text-gray-500 block mb-1">Success message</label>
-            <input
-              type="text"
-              value={String(element.props.successMessage || '')}
-              onChange={event => update('successMessage', event.target.value)}
-              placeholder="Thanks! Your message was sent."
-              className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-gray-500 block mb-1">Error message</label>
-            <input
-              type="text"
-              value={String(element.props.errorMessage || '')}
-              onChange={event => update('errorMessage', event.target.value)}
-              placeholder="Unable to submit form."
-              className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
-        </>
       )}
 
       {element.type === 'heading' && (
