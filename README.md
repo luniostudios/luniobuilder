@@ -31,6 +31,8 @@ To run this project, you will need to add the following environment variables to
 
 `NEXT_PUBLIC_ROOT_DOMAIN` (optional, defaults to `luniobuilder.com`)
 
+`LUNIO_VERCEL_TOKEN`, `LUNIO_VERCEL_PROJECT_ID` (required to enable custom domains for LUNIO-hosted sites), and `LUNIO_VERCEL_TEAM_ID` (optional for Vercel team projects)
+
 `AI_CREDENTIALS_ENCRYPTION_KEY` (recommended; a stable secret used to encrypt project AI provider keys)
 
 ### Account AI provider keys
@@ -53,6 +55,10 @@ dashboard, and accepted projects then appear in their project list.
 ### Multi-tenant publishing
 
 Apply `supabase/migrations/20260825000000_add_site_slug.sql` to add the unique site subdomain column. Add a wildcard DNS record for `*.luniobuilder.com` pointing to the deployed application, and configure the same wildcard domain in the hosting provider. Users can then choose a subdomain in the editor's **Publish > Publish to LUNIO** menu; published sites are available at `https://projectname.luniobuilder.com`.
+
+### Custom domains
+
+Apply `supabase/migrations/20261003000001_add_project_domains.sql` and configure `LUNIO_VERCEL_TOKEN` and `LUNIO_VERCEL_PROJECT_ID` with a token and project ID for the Vercel project hosting LUNIO. Set `LUNIO_VERCEL_TEAM_ID` when that project belongs to a Vercel team. Project Settings then lets users add domains, see the DNS ownership challenge, verify them, and disconnect them. Users keep their domain at their registrar and make the requested DNS changes there.
 
 
 ## Run Locally

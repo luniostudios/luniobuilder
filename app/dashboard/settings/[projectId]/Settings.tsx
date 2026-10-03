@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { redirect, useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import ShopManager from './ShopManager';
+import CustomDomainManager from './CustomDomainManager';
 import { createDefaultSiteMetadata, normalizeSiteMetadata, SiteMetadata } from '../../../types/siteMetadata';
 
 interface ProjectRecord {
@@ -381,6 +382,7 @@ export default function ProjectSettingsPage() {
           </div>
         </div>
 
+        {projectId && <div className='mx-auto mt-6 max-w-3xl'><CustomDomainManager projectId={projectId} /></div>}
         {projectId && <ShopManager projectId={projectId} />}
       </div>
     </div>
