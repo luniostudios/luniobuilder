@@ -444,6 +444,7 @@ const getElementName = (type: ElementType): string => {
     icon: 'Icon',
     list: 'List',
     listItem: 'List Item',
+    lottie: 'Lottie',
     iframe: 'Embedded Content',
     calendar: 'Calendar',
     table: 'CMS Table',
