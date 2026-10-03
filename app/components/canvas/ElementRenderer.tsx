@@ -494,7 +494,15 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
 
   const pageInteraction = (page.interactions || []).find((interaction: PageInteraction) => interaction.trigger === 'load');
   const styles = getEffectiveStyles(element, breakpoint);
-  const cssStyles = stylesToCSS(styles);
+  const hasOrderedBackgroundLayers = Array.isArray(element.props.backgroundLayers);
+  const orderedBackgroundLayers = hasOrderedBackgroundLayers
+    ? element.props.backgroundLayers.filter((layer: any) => (
+      layer && ['image', 'gradient', 'video'].includes(layer.type) && typeof layer.value === 'string'
+    ))
+    : [];
+  const cssStyles = stylesToCSS(hasOrderedBackgroundLayers
+    ? { ...styles, backgroundGradient: '', backgroundImage: '' }
+    : styles);
   const rendererClassName = `lunio-${element.id}`;
 
   useEffect(() => {
@@ -542,7 +550,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
 
   const runtimeInteraction = activeInteraction || triggeredInteraction;
   const runtimeOpacity = opacityOverride || (runtimeInteraction && 'opacity' in runtimeInteraction ? runtimeInteraction.opacity : undefined);
-  const backgroundVideoUrl = typeof element.props.backgroundVideoUrl === 'string' ? element.props.backgroundVideoUrl.trim() : '';
+  const backgroundVideoUrl = !hasOrderedBackgroundLayers && typeof element.props.backgroundVideoUrl === 'string' ? element.props.backgroundVideoUrl.trim() : '';
   const backgroundVideo = backgroundVideoUrl ? (
     <video
       aria-hidden="true"
@@ -626,7 +634,28 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
   const backgroundVideoRootStyle: React.CSSProperties = backgroundVideoUrl ? {
     position: safeCssStyles.position && safeCssStyles.position !== 'static' ? safeCssStyles.position : 'relative',
     isolation: 'isolate',
+  } : hasOrderedBackgroundLayers && orderedBackgroundLayers.length > 0 ? {
+    position: safeCssStyles.position && safeCssStyles.position !== 'static' ? safeCssStyles.position : 'relative',
+    isolation: 'isolate',
   } : {};
+  const orderedBackgroundLayerNodes = orderedBackgroundLayers.map((layer: any, index: number) => {
+    const layerStyle: React.CSSProperties = {
+      position: 'absolute',
+      inset: 0,
+      zIndex: orderedBackgroundLayers.length - index,
+      pointerEvents: 'none',
+    };
+    if (layer.type === 'video') {
+      return <video key={`background-video-${index}`} aria-hidden="true" tabIndex={-1} autoPlay muted loop playsInline preload="metadata" src={layer.value} style={{ ...layerStyle, width: '100%', height: '100%', objectFit: 'cover' }} />;
+    }
+    return <div key={`background-${layer.type}-${index}`} aria-hidden="true" style={{
+      ...layerStyle,
+      backgroundImage: layer.value,
+      backgroundSize: safeCssStyles.backgroundSize || 'cover',
+      backgroundPosition: safeCssStyles.backgroundPosition || 'center',
+      backgroundRepeat: 'no-repeat',
+    }} />;
+  });
 
   const safeTextStyles: React.CSSProperties = {
     ...safeCssStyles,
@@ -1407,11 +1436,20 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        {backgroundVideo}
-        {dropIndicatorBefore && <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-500 z-50" />}
-        {content}
+        {hasOrderedBackgroundLayers ? <>
+          {orderedBackgroundLayerNodes}
+          <div style={{ position: 'relative', zIndex: orderedBackgroundLayers.length + 1 }}>
+            {dropIndicatorBefore && <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-500 z-50" />}
+            {content}
+            {dropIndicatorAfter && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 z-50" />}
+          </div>
+        </> : <>
+          {backgroundVideo}
+          {dropIndicatorBefore && <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-500 z-50" />}
+          {content}
+          {dropIndicatorAfter && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 z-50" />}
+        </>}
         {selectionTooltip}
-        {dropIndicatorAfter && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 z-50" />}
       </div>
     );
   }
@@ -1641,12 +1679,21 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {backgroundVideo}
-      {dropIndicatorBefore && <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-500 z-50" />}
-      {containerElement}
+      {hasOrderedBackgroundLayers ? <>
+        {orderedBackgroundLayerNodes}
+        <div style={{ position: 'relative', zIndex: orderedBackgroundLayers.length + 1 }}>
+          {dropIndicatorBefore && <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-500 z-50" />}
+          {containerElement}
+          {dropIndicatorAfter && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 z-50" />}
+        </div>
+      </> : <>
+        {backgroundVideo}
+        {dropIndicatorBefore && <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-500 z-50" />}
+        {containerElement}
+        {dropIndicatorAfter && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 z-50" />}
+      </>}
       {typeof element.props.customCss === 'string' && element.props.customCss.trim() && <style>{element.props.customCss}</style>}
       {selectionTooltip}
-      {dropIndicatorAfter && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 z-50" />}
     </div>
   );
 };

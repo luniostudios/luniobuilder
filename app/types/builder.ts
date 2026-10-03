@@ -94,6 +94,8 @@ export interface StyleProperties {
   backgroundColor?: string;
   backgroundImage?: string;
   backgroundGradient?: string;
+  backgroundVideo?: string;
+  backgroundVideoUrl?: string;
   backgroundSize?: string;
   backgroundPosition?: string;
   backgroundRepeat?: string;
@@ -156,6 +158,11 @@ export interface StyleProperties {
   animationPlayState?: string;
 }
 
+export interface ElementBackgroundLayer {
+  type: 'image' | 'gradient' | 'video';
+  value: string;
+}
+
 export interface ElementProps {
   text?: string;
   src?: string;
@@ -163,6 +170,7 @@ export interface ElementProps {
   href?: string;
   anchorId?: string;
   backgroundVideoUrl?: string;
+  backgroundLayers?: ElementBackgroundLayer[];
   autoPlay?: boolean;
   muted?: boolean;
   controls?: boolean;

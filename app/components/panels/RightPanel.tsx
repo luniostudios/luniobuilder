@@ -5,7 +5,7 @@ import Editor from '@monaco-editor/react';
 import { AlignCenter, AlignJustify, AlignLeft, AlignRight, ArrowDown, ArrowUp, ChevronDown, ChevronRight, CircleDot, Copy, Grid2x2, LayoutGrid, Link2, Maximize2, Move, Paintbrush, Plus, Redo2, RotateCcw, Save, SlidersHorizontal, Sparkles, Square, Trash2, Type, Unlink2, Upload } from 'lucide-react';
 import ColorPicker from 'react-best-gradient-color-picker';
 import { useBuilderStore } from '../../stores/builderStore';
-import { Breakpoint, ElementInteraction, InteractionKeyframe, PageInteraction, StyleProperties } from '../../types/builder';
+import { Breakpoint, ElementBackgroundLayer, ElementInteraction, InteractionKeyframe, PageInteraction, StyleProperties } from '../../types/builder';
 import { getEffectiveStyles, styleObjectToCssString } from '../../utils/builderUtils';
 import { GOOGLE_FONT_OPTIONS, loadGoogleFont } from '../../utils/googleFonts';
 import { Slider } from '@/components/ui/slider';
@@ -132,7 +132,7 @@ const InteractionsEditor: React.FC<{ element?: BuilderElement; page: any }> = ({
           <option value='toggle'>Toggle visibility</option><option value='show'>Show target</option><option value='hide'>Hide target</option>
         </select>}
         {(interaction.action || 'animate') === 'opacity' && <input value={interaction.opacityValue || '0'} onChange={event => updateElement(elementInteractions.map((item, itemIndex) => itemIndex === index ? { ...item, opacityValue: event.target.value } : item))} placeholder='Opacity, e.g. 0.5 or 50%' className='mt-2 w-full rounded border border-gray-700 bg-gray-800 px-2 py-1.5 text-xs text-white outline-none' />}
-          
+
       </div>)}
       <div className='mt-4 px-4 py-4 border-2 border-gray-800/50 rounded-lg border-dashed'>
         <h2 className='text-sm font-semibold text-gray-300'>ElementTriggers</h2>
@@ -934,19 +934,28 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
     return `url("${trimmed.replace(/"/g, '\\"')}")`;
   };
 
-  const backgroundLayers = [
-    ...(styles.backgroundGradient ? [styles.backgroundGradient] : []),
-    ...splitCssBackgroundLayers(styles.backgroundImage || ''),
-  ];
+  const backgroundLayers: ElementBackgroundLayer[] = Array.isArray(element.props.backgroundLayers)
+    ? element.props.backgroundLayers.filter((layer: unknown): layer is ElementBackgroundLayer => (
+      Boolean(layer) && typeof layer === 'object' &&
+      ['image', 'gradient', 'video'].includes(String((layer as ElementBackgroundLayer).type)) &&
+      typeof (layer as ElementBackgroundLayer).value === 'string'
+    ))
+    : [
+      ...(styles.backgroundGradient ? [{ type: 'gradient' as const, value: styles.backgroundGradient }] : []),
+      ...splitCssBackgroundLayers(styles.backgroundImage || '').map(value => ({ type: isCssGradient(value) ? 'gradient' as const : 'image' as const, value })),
+      ...(typeof element.props.backgroundVideoUrl === 'string' && element.props.backgroundVideoUrl.trim()
+        ? [{ type: 'video' as const, value: element.props.backgroundVideoUrl.trim() }]
+        : []),
+    ];
 
-  const writeBackgroundLayers = (layers: string[]) => {
-    update('backgroundGradient', '');
-    update('backgroundImage', layers.join(', '));
+  const writeBackgroundLayers = (layers: ElementBackgroundLayer[]) => {
+    updateElementProps(element.id, { backgroundLayers: layers, backgroundVideoUrl: undefined });
+    updateElementStyles(element.id, { backgroundGradient: '', backgroundImage: '' });
   };
 
   const updateBackgroundLayer = (index: number, value: string) => {
     const layers = [...backgroundLayers];
-    layers[index] = value;
+    layers[index] = { ...layers[index], value };
     writeBackgroundLayers(layers);
   };
 
@@ -965,12 +974,15 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
     setActiveBackgroundLayer(Math.max(0, Math.min(index, layers.length - 1)));
   };
 
-  const addBackgroundLayer = (kind: 'image' | 'gradient') => {
-    const layer = kind === 'gradient'
+  const addBackgroundLayer = (type: ElementBackgroundLayer['type']) => {
+    const value = type === 'gradient'
       ? 'linear-gradient(180deg, rgba(15, 23, 42, 0.35) 0%, rgba(15, 23, 42, 0) 100%)'
-      : 'none';
-    writeBackgroundLayers([layer, ...backgroundLayers]);
-    setActiveBackgroundLayer(0);
+      : '';
+    const nextLayers = type === 'video'
+      ? [...backgroundLayers, { type, value }]
+      : [{ type, value }, ...backgroundLayers];
+    writeBackgroundLayers(nextLayers);
+    setActiveBackgroundLayer(type === 'video' ? nextLayers.length - 1 : 0);
     setBackgroundImageTab('value');
   };
 
@@ -1317,48 +1329,47 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
           onChangeColor={(v) => update('backgroundColor', v)}
           onChangeGradient={(v) => update('backgroundGradient', v)}
         />
-        <div className="mb-3 rounded-md border border-gray-800 bg-[#101114] p-2.5">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <label htmlFor={`background-video-${element.id}`} className="text-[11px] font-medium text-gray-300">Background video</label>
-            {element.props.backgroundVideoUrl && <button type="button" onClick={() => updateElementProps(element.id, { backgroundVideoUrl: undefined })} title="Remove background video" aria-label="Remove background video" className="rounded p-1 text-gray-500 transition hover:bg-red-500/10 hover:text-red-300"><Trash2 size={13} /></button>}
-          </div>
-          <input
-            id={`background-video-${element.id}`}
-            type="url"
-            value={String(element.props.backgroundVideoUrl || '')}
-            onChange={event => updateElementProps(element.id, { backgroundVideoUrl: event.target.value })}
-            placeholder="https://example.com/video.mp4"
-            className="h-8 w-full rounded border border-gray-700 bg-gray-900 px-2 text-[10px] text-gray-200 outline-none focus:border-sky-400"
-          />
-          <p className="mt-1.5 text-[9px] leading-relaxed text-gray-500">Paste a direct MP4 or WebM URL. It plays muted and loops behind the content.</p>
-        </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-gray-300">Background layers</span>
             <span className="text-[10px] text-gray-500">Top layer renders first</span>
           </div>
           {backgroundLayers.map((layer, index) => {
-            const isGradient = isCssGradient(layer);
             return (
-              <div key={`${index}-${layer.slice(0, 20)}`} className="rounded-md border border-gray-800 bg-[#101114] p-2">
+              <div key={`${layer.type}-${index}-${layer.value.slice(0, 20)}`} className="rounded-md border border-gray-800 bg-[#101114] p-2">
                 <div className="mb-2 flex items-center justify-between gap-2">
-                  <span className="min-w-0 truncate text-[10px] font-medium text-gray-300">{isGradient ? 'Gradient overlay' : `Image layer ${index + 1}`}</span>
+                  <span className="min-w-0 truncate text-[10px] font-medium text-gray-300">{layer.type === 'video' ? 'Video layer' : layer.type === 'gradient' ? 'Gradient layer' : `Image layer ${index + 1}`}</span>
                   <div className="flex shrink-0 items-center gap-0.5">
                     <button type="button" onClick={() => moveBackgroundLayer(index, -1)} disabled={index === 0} title="Move layer forward" aria-label={`Move background layer ${index + 1} forward`} className="rounded p-1 text-gray-500 hover:bg-gray-800 hover:text-gray-200 disabled:opacity-30"><ArrowUp size={13} /></button>
                     <button type="button" onClick={() => moveBackgroundLayer(index, 1)} disabled={index === backgroundLayers.length - 1} title="Move layer backward" aria-label={`Move background layer ${index + 1} backward`} className="rounded p-1 text-gray-500 hover:bg-gray-800 hover:text-gray-200 disabled:opacity-30"><ArrowDown size={13} /></button>
                     <button type="button" onClick={() => deleteBackgroundLayer(index)} title="Remove background layer" aria-label={`Remove background layer ${index + 1}`} className="rounded p-1 text-gray-500 hover:bg-red-500/10 hover:text-red-300"><Trash2 size={13} /></button>
                   </div>
                 </div>
-                {isGradient ? (
+
+                {layer.type === 'video' ? (
+                  <>
+                    <label htmlFor={`background-video-${element.id}-${index}`} className="mb-1 block text-[9px] text-gray-500">Direct video URL</label>
+                    <input
+                      id={`background-video-${element.id}-${index}`}
+                      type="url"
+                      value={layer.value}
+                      onChange={event => updateBackgroundLayer(index, event.target.value)}
+                      placeholder="https://example.com/video.mp4"
+                      className="h-8 w-full rounded border border-gray-700 bg-gray-900 px-2 text-[10px] text-gray-200 outline-none focus:border-sky-400"
+                    />
+                    <p className="mt-1.5 text-[9px] leading-relaxed text-gray-500">Muted and looping. Move this layer to place overlays above it.</p>
+                  </>
+                ) : layer.type === 'gradient' ? (
                   <BackgroundFillInput
                     label="Gradient overlay"
                     colorValue=""
-                    gradientValue={layer}
-                    onChangeColor={() => {}}
+                    gradientValue={layer.value}
+                    onChangeColor={() => { }}
                     onChangeGradient={(v) => updateBackgroundLayer(index, v)}
                   />
                 ) : (
                   <>
+
                     <div className="mb-2 grid grid-cols-3 gap-1">
                       {([
                         ['value', 'URL'],
@@ -1373,16 +1384,17 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
                     ) : activeBackgroundLayer === index && backgroundImageTab === 'uploads' ? (
                       <UserImagePicker onPick={url => updateBackgroundLayer(index, toCssBackgroundImageValue(url))} />
                     ) : (
-                      <InputRow label="Image URL" value={extractUrlFromCssBackgroundImage(layer)} onChange={value => updateBackgroundLayer(index, value ? toCssBackgroundImageValue(value) : 'none')} placeholder="https://..." />
+                      <InputRow label="Image URL" value={extractUrlFromCssBackgroundImage(layer.value)} onChange={value => updateBackgroundLayer(index, value ? toCssBackgroundImageValue(value) : 'none')} placeholder="https://..." />
                     )}
                   </>
                 )}
               </div>
             );
           })}
-          <div className="grid grid-cols-2 gap-2 mb-2">
+          <div className="grid grid-cols-3 gap-2 mb-2">
             <button type="button" onClick={() => addBackgroundLayer('image')} className="flex items-center justify-center gap-1.5 rounded border border-gray-700 bg-gray-900 px-2 py-2 text-[10px] font-medium text-gray-300 hover:border-sky-400/40 hover:text-sky-200"><Plus size={12} />Image</button>
             <button type="button" onClick={() => addBackgroundLayer('gradient')} className="flex items-center justify-center gap-1.5 rounded border border-gray-700 bg-gray-900 px-2 py-2 text-[10px] font-medium text-gray-300 hover:border-sky-400/40 hover:text-sky-200"><Plus size={12} />Gradient</button>
+            <button type="button" onClick={() => addBackgroundLayer('video')} className="flex items-center justify-center gap-1.5 rounded border border-gray-700 bg-gray-900 px-2 py-2 text-[10px] font-medium text-gray-300 hover:border-sky-400/40 hover:text-sky-200"><Plus size={12} />Video</button>
           </div>
         </div>
         <InputRow
