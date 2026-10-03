@@ -8,11 +8,13 @@ import { canHaveChildren, getEffectiveStyles, stylesToCSS } from '../../utils/bu
 import { loadGoogleFont } from '../../utils/googleFonts';
 import * as LucideIcons from 'lucide-react';
 import { ArrowLeft, ArrowRight, ArrowUp, ComponentIcon, Link2, LoaderCircle, X } from 'lucide-react';
+import { LottiePlayer } from './LottiePlayer';
 
 interface ElementRendererProps {
   element: BuilderElement;
   isPreview?: boolean;
   isPublishedSite?: boolean;
+  renderAsPageLoader?: boolean;
 }
 
 interface NavbarMenuContextValue {
@@ -417,7 +419,7 @@ const CalendarElement: React.FC<{ element: BuilderElement; isPreview: boolean; o
   );
 };
 
-export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPreview = false, isPublishedSite = false }) => {
+export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPreview = false, isPublishedSite = false, renderAsPageLoader = false }) => {
   const {
     selectedElementId,
     hoveredElementId,
@@ -1229,6 +1231,25 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
           />
         );
 
+      case 'lottie':
+        return element.props.src ? (
+          <LottiePlayer
+            src={String(element.props.src)}
+            autoplay={renderAsPageLoader || element.props.autoplay !== false}
+            loop={renderAsPageLoader || element.props.loop !== false}
+            speed={Number(element.props.speed) || 1}
+            style={{ ...nestedContentStyles, display: 'block' }}
+            onClick={handleClick}
+          />
+        ) : (
+          <div
+            style={{ ...nestedContentStyles, display: 'grid', placeItems: 'center', border: '1px dashed #94a3b8', color: '#64748b', fontSize: '12px' }}
+            onClick={handleClick}
+          >
+            Add a Lottie JSON file
+          </div>
+        );
+
       case 'select':
         return (
           <select
@@ -1672,7 +1693,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
       id={typeof element.props.anchorId === 'string' ? element.props.anchorId : undefined}
       style={element.type === 'cmsMap'
         ? { width: '100%', minWidth: 0, ...interactionStyles, ...backgroundVideoRootStyle }
-        : { ...safeCssStyles, ...interactionStyles, ...sliderSlideStyles, ...backgroundVideoRootStyle, ...(isMenuTarget && navbarMenu?.isOpen && !backgroundVideoUrl ? { display: 'contents' } : {}) }}
+        : { ...safeCssStyles, ...interactionStyles, ...sliderSlideStyles, ...backgroundVideoRootStyle, ...(isMenuTarget && navbarMenu?.isOpen && !backgroundVideoUrl ? { display: 'contents' } : {}), ...(element.type === 'lottie' && element.props.useAsPageLoader === true && !renderAsPageLoader ? { display: 'none' } : {}) }}
       role={element.type === 'slide' && sliderSlideIndex >= 0 ? 'group' : undefined}
       aria-roledescription={element.type === 'slide' && sliderSlideIndex >= 0 ? 'slide' : undefined}
       aria-label={element.type === 'slide' && sliderSlideIndex >= 0 ? `${sliderSlideIndex + 1} of ${sliderRuntime?.slideIds.length || 0}` : undefined}

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { LayoutGrid as Layout, Type, Image, Images as ImagesIcon, MousePointer, Square, Columns2 as Columns, Grid2x2 as Grid, AlignLeft, Link, Star, Minus, Move, FileText, ChevronRight, ChevronDown, ChevronLeft, Eye, EyeOff, Lock, Unlock, Trash2, Copy, Plus, Layers, Package, Globe, Monitor, Play, Form, List, ListEnd, Laptop, CalendarDays, LayoutIcon, LayoutPanelTop, IdCard, TextInitialIcon, Code2, ChevronsDownUp, Table2, ListTree, Database, ExternalLink, Search, Blocks, PanelsTopLeft } from 'lucide-react';
+import { LayoutGrid as Layout, Type, Image, Images as ImagesIcon, MousePointer, Square, Columns2 as Columns, Grid2x2 as Grid, AlignLeft, Link, Star, Minus, Move, FileText, ChevronRight, ChevronDown, ChevronLeft, Eye, EyeOff, Lock, Unlock, Trash2, Copy, Plus, Layers, Package, Globe, Monitor, Play, Form, List, ListEnd, Laptop, CalendarDays, LayoutIcon, LayoutPanelTop, IdCard, TextInitialIcon, Code2, ChevronsDownUp, Table2, ListTree, Database, ExternalLink, Search, Blocks, PanelsTopLeft, Activity } from 'lucide-react';
 import { DndContext, DragEndEvent, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -33,6 +33,7 @@ const COMPONENT_ICONS: Record<string, React.ReactNode> = {
   input: <FileText size={25} />,
   textarea: <AlignLeft size={25} />,
   video: <Play size={25} />,
+  lottie: <Activity size={25} />,
   divider: <Minus size={25} />,
   spacer: <Move size={25} />,
   icon: <Star size={25} />,

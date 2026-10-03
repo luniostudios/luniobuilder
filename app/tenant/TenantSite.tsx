@@ -3,9 +3,24 @@
 import { JSX, useEffect, useState } from 'react';
 import { CmsRecordProvider, ElementRenderer } from '../components/canvas/ElementRenderer';
 import { useBuilderStore } from '../stores/builderStore';
-import type { Breakpoint, Page } from '../types/builder';
+import type { Breakpoint, BuilderElement, Page } from '../types/builder';
 import type { CmsRecord } from '../types/cms';
 import { Rocket } from 'lucide-react';
+
+const findPageLoader = (elements: BuilderElement[]): BuilderElement | null => {
+  for (const element of elements) {
+    if (element.type === 'lottie' && element.props.useAsPageLoader === true) return element;
+    const nested = findPageLoader(element.children);
+    if (nested) return nested;
+  }
+  return null;
+};
+
+const omitPageLoaders = (elements: BuilderElement[]): BuilderElement[] => elements
+  .filter(element => !(element.type === 'lottie' && element.props.useAsPageLoader === true))
+  .map(element => element.children.length > 0
+    ? { ...element, children: omitPageLoaders(element.children) }
+    : element);
 
 interface TenantSiteProps {
   projectId: string;
@@ -62,6 +77,8 @@ export default function TenantSite({ projectId, projectName, pages, currentPageI
 
   const page = storePages.find(candidate => candidate.id === storeCurrentPageId) || storePages[0];
   if (!page) return null;
+  const pageLoader = findPageLoader(page.elements);
+  const pageElements = omitPageLoaders(page.elements);
   const detailPage = storePages.find(candidate => candidate.cmsDetail?.enabled && candidate.slug !== '/');
   const detailRoutePrefix = detailPage?.slug;
   const detailSettings = detailPage?.cmsDetail
@@ -71,10 +88,11 @@ export default function TenantSite({ projectId, projectName, pages, currentPageI
   return (
     <main className="relative min-h-screen bg-white">
       <CmsRecordProvider record={cmsRecord} detailSettings={detailSettings}>
-        {page.elements.map(element => (
+        {pageElements.map(element => (
           <ElementRenderer key={element.id} element={element} isPreview isPublishedSite />
         ))}
       </CmsRecordProvider>
+      {pageLoader && <PageLoader key={`${page.id}-${pageLoader.id}`} pageId={page.id} element={pageLoader} />}
       {watermark}
     </main>
   );
@@ -122,5 +140,24 @@ function PagePasswordGate({ projectId, pageId }: { projectId: string; pageId: st
         </button>
       </form>
     </main>
+  );
+}
+
+function PageLoader({ pageId, element }: { pageId: string; element: BuilderElement }) {
+  const [visible, setVisible] = useState(true);
+  const duration = Math.min(10, Math.max(0.1, Number(element.props.pageLoaderDuration) || 1.5)) * 1000;
+
+  useEffect(() => {
+    setVisible(true);
+    const timer = window.setTimeout(() => setVisible(false), duration);
+    return () => window.clearTimeout(timer);
+  }, [duration, pageId]);
+
+  if (!visible) return null;
+
+  return (
+    <div role="status" aria-label="Loading page" className="fixed inset-0 z-2147483647 flex items-center justify-center" style={{ backgroundColor: String(element.props.pageLoaderBackgroundColor || '#ffffff') }}>
+      <ElementRenderer element={element} isPreview isPublishedSite renderAsPageLoader />
+    </div>
   );
 }

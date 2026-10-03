@@ -25,6 +25,7 @@ import { getInputElementDefaults } from './elements/input';
 import { getLinkElementDefaults } from './elements/link';
 import { getListElementDefaults } from './elements/list';
 import { getListItemElementDefaults } from './elements/listItem';
+import { getLottieElementDefaults } from './elements/lottie';
 import { getNavbarElementDefaults } from './elements/navbar';
 import { getParagraphElementDefaults } from './elements/paragraph';
 import { getSectionElementDefaults, renderSectionElement } from './elements/section';
@@ -116,6 +117,7 @@ export const getElementDefaults = (type: ElementType): ElementDefaults => {
   if (type === 'input') return getInputElementDefaults();
   if (type === 'textarea') return getTextareaElementDefaults();
   if (type === 'video') return getVideoElementDefaults();
+  if (type === 'lottie') return getLottieElementDefaults();
   if (type === 'divider') return getDividerElementDefaults();
   if (type === 'spacer') return getSpacerElementDefaults();
   if (type === 'icon') return getIconElementDefaults();
@@ -1128,7 +1130,7 @@ export const COMPONENT_CATEGORIES = {
   Layout: ['section', 'div', 'hero', 'slider', 'tabs', 'navbar', 'columns', 'grid', 'card', 'custom'],
   Typography: ['heading', 'paragraph', 'link', 'list', 'listItem'],
   CMS: ['cmsMap', 'table'],
-  Media: ['image', 'video', 'icon', 'iframe', 'calendar'],
+  Media: ['image', 'video', 'lottie', 'icon', 'iframe', 'calendar'],
   Forms: ['form', 'input', 'textarea', 'button', 'select'],
   Misc: ['divider', 'spacer'],
 } as const;
@@ -1160,6 +1162,7 @@ export const COMPONENT_LABELS: Record<ElementType, string> = {
   input: 'Input',
   textarea: 'Textarea',
   video: 'Video',
+  lottie: 'Lottie animation',
   divider: 'Divider',
   spacer: 'Spacer',
   icon: 'Icon',

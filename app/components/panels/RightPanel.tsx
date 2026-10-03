@@ -2121,12 +2121,30 @@ const CalendarEventEditor: React.FC<{ events: CalendarEvent[]; onChange: (events
 
 const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
   const { updateElementProps, updateElementName, projectId, getCurrentPage, addElement, selectElement, deleteElement } = useBuilderStore();
+  const [lottieUploading, setLottieUploading] = useState(false);
+  const [lottieUploadError, setLottieUploadError] = useState('');
 
   const update = (key: string, value: unknown) => {
     updateElementProps(element.id, { [key]: value });
   };
 
   const isImage = element.type === 'image';
+  const uploadLottie = async (file: File) => {
+    setLottieUploading(true);
+    setLottieUploadError('');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await fetch('/api/assets', { method: 'POST', body: formData });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || 'Upload failed');
+      update('src', data.asset.url);
+    } catch (error) {
+      setLottieUploadError(error instanceof Error ? error.message : 'Upload failed');
+    } finally {
+      setLottieUploading(false);
+    }
+  };
   const [imageSourceTab, setImageSourceTab] = useState<'url' | 'unsplash' | 'uploads'>('url');
   const effectiveImageTab = useMemo(() => (isImage ? imageSourceTab : 'url'), [isImage, imageSourceTab]);
   const [cmsCollections, setCmsCollections] = useState<Array<{ id: string; name: string; slug?: string; fields: string[] }>>([]);
@@ -2569,6 +2587,57 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
             onChange={e => update('loop', e.target.checked)}
             className="mt-2"
           />
+        </div>
+      )}
+
+      {element.type === 'lottie' && (
+        <div className="space-y-3 border-b border-gray-800 pb-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Lottie animation</p>
+          <label className="block text-xs text-gray-500">
+            Animation JSON URL
+            <input value={String(element.props.src || '')} onChange={event => update('src', event.target.value)} placeholder="https://.../animation.json" className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-xs text-gray-200" />
+          </label>
+          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-blue-300/40 px-3 py-2.5 text-xs text-blue-200 hover:bg-blue-300/10">
+            <Upload size={14} />
+            {lottieUploading ? 'Uploading...' : 'Upload Lottie JSON'}
+            <input type="file" accept=".json,application/json" className="sr-only" disabled={lottieUploading} onChange={event => { const file = event.target.files?.[0]; if (file) uploadLottie(file); event.target.value = ''; }} />
+          </label>
+          {lottieUploadError && <p role="alert" className="text-[11px] text-red-300">{lottieUploadError}</p>}
+          <label className="flex items-center justify-between gap-2 text-xs text-gray-300">
+            Autoplay
+            <input type="checkbox" checked={element.props.autoplay !== false} onChange={event => update('autoplay', event.target.checked)} />
+          </label>
+          <label className="flex items-center justify-between gap-2 text-xs text-gray-300">
+            Loop
+            <input type="checkbox" checked={element.props.loop !== false} onChange={event => update('loop', event.target.checked)} />
+          </label>
+          <label className="block text-xs text-gray-500">
+            Speed
+            <input type="number" min="0.1" max="4" step="0.1" value={Number(element.props.speed ?? 1)} onChange={event => update('speed', Number(event.target.value))} className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-xs text-gray-200" />
+          </label>
+          <div className="border-t border-gray-800 pt-3">
+            <label className="flex items-center justify-between gap-2 text-xs text-gray-300">
+              Use as page-load loader
+              <input type="checkbox" checked={element.props.useAsPageLoader === true} onChange={event => {
+                if (event.target.checked) {
+                  flattenElements(page.elements)
+                    .filter(item => item.type === 'lottie' && item.id !== element.id && item.props.useAsPageLoader === true)
+                    .forEach(item => updateElementProps(item.id, { useAsPageLoader: false }));
+                }
+                update('useAsPageLoader', event.target.checked);
+              }} />
+            </label>
+            {element.props.useAsPageLoader === true && <>
+              <label className="mt-3 block text-xs text-gray-500">
+                Loader background
+                <input type="color" value={String(element.props.pageLoaderBackgroundColor || '#ffffff')} onChange={event => update('pageLoaderBackgroundColor', event.target.value)} className="mt-1 h-9 w-full rounded border border-gray-700 bg-gray-800 p-1" />
+              </label>
+              <label className="mt-3 block text-xs text-gray-500">
+                Display duration (seconds)
+                <input type="number" min="0.1" max="10" step="0.1" value={Number(element.props.pageLoaderDuration ?? 1.5)} onChange={event => update('pageLoaderDuration', Number(event.target.value))} className="mt-1 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-xs text-gray-200" />
+              </label>
+            </>}
+          </div>
         </div>
       )}
 

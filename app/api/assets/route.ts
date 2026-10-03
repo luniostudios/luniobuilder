@@ -5,6 +5,7 @@ import { supabaseServer } from '../../lib/supabaseServer';
 const BUCKET = 'user-assets';
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'image/svg+xml', 'image/x-icon', 'image/vnd.microsoft.icon']);
+const JSON_TYPES = new Set(['application/json', 'text/json', 'application/octet-stream', '']);
 
 const getUser = async () => {
   const session = await auth();
@@ -50,20 +51,30 @@ export async function POST(request: Request) {
   const formData = await request.formData();
   const file = formData.get('file');
   if (!(file instanceof File)) {
-    return NextResponse.json({ error: 'An image file is required.' }, { status: 400 });
+    return NextResponse.json({ error: 'An image or Lottie JSON file is required.' }, { status: 400 });
   }
-  if (!IMAGE_TYPES.has(file.type)) {
-    return NextResponse.json({ error: 'Only image files are supported.' }, { status: 400 });
+  const isImage = IMAGE_TYPES.has(file.type);
+  const isLottie = file.name.toLowerCase().endsWith('.json') && JSON_TYPES.has(file.type);
+  if (!isImage && !isLottie) {
+    return NextResponse.json({ error: 'Upload an image or a Lottie .json file.' }, { status: 400 });
   }
   if (file.size > MAX_FILE_SIZE) {
-    return NextResponse.json({ error: 'Images must be 10 MB or smaller.' }, { status: 400 });
+    return NextResponse.json({ error: 'Files must be 10 MB or smaller.' }, { status: 400 });
+  }
+  if (isLottie) {
+    try {
+      const animation = JSON.parse(await file.text());
+      if (!animation || typeof animation !== 'object' || !Array.isArray(animation.layers)) throw new Error('Invalid Lottie animation');
+    } catch {
+      return NextResponse.json({ error: 'The JSON file is not a valid Lottie animation.' }, { status: 400 });
+    }
   }
 
   const extension = file.name.split('.').pop()?.toLowerCase() || 'bin';
   const path = `${getUserFolder(userId)}/${crypto.randomUUID()}.${extension}`;
   const { error } = await supabaseServer.storage.from(BUCKET).upload(path, file, {
     cacheControl: '31536000',
-    contentType: file.type,
+    contentType: isLottie ? 'application/json' : file.type,
     upsert: false,
   });
 

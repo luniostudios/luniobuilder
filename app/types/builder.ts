@@ -23,6 +23,7 @@ export type ElementType =
   | 'input'
   | 'textarea'
   | 'video'
+  | 'lottie'
   | 'divider'
   | 'spacer'
   | 'icon'
