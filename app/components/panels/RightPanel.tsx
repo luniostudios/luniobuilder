@@ -1317,6 +1317,21 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
           onChangeColor={(v) => update('backgroundColor', v)}
           onChangeGradient={(v) => update('backgroundGradient', v)}
         />
+        <div className="mb-3 rounded-md border border-gray-800 bg-[#101114] p-2.5">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <label htmlFor={`background-video-${element.id}`} className="text-[11px] font-medium text-gray-300">Background video</label>
+            {element.props.backgroundVideoUrl && <button type="button" onClick={() => updateElementProps(element.id, { backgroundVideoUrl: undefined })} title="Remove background video" aria-label="Remove background video" className="rounded p-1 text-gray-500 transition hover:bg-red-500/10 hover:text-red-300"><Trash2 size={13} /></button>}
+          </div>
+          <input
+            id={`background-video-${element.id}`}
+            type="url"
+            value={String(element.props.backgroundVideoUrl || '')}
+            onChange={event => updateElementProps(element.id, { backgroundVideoUrl: event.target.value })}
+            placeholder="https://example.com/video.mp4"
+            className="h-8 w-full rounded border border-gray-700 bg-gray-900 px-2 text-[10px] text-gray-200 outline-none focus:border-sky-400"
+          />
+          <p className="mt-1.5 text-[9px] leading-relaxed text-gray-500">Paste a direct MP4 or WebM URL. It plays muted and loops behind the content.</p>
+        </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-gray-300">Background layers</span>
@@ -2134,6 +2149,18 @@ const ContentEditor: React.FC<ContentEditorProps> = ({ element }) => {
           onChange={e => updateElementName(element.id, e.target.value)}
           className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
+      </div>
+      <div>
+        <label htmlFor={`anchor-id-${element.id}`} className="text-xs text-gray-500 block mb-1">Anchor ID</label>
+        <input
+          id={`anchor-id-${element.id}`}
+          type="text"
+          value={String(element.props.anchorId || '')}
+          onChange={event => update('anchorId', event.target.value.trim() || undefined)}
+          placeholder="section-features"
+          className="w-full bg-gray-800 text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        />
+        <p className="mt-1 text-[10px] text-gray-600">Link to this section with #section-features.</p>
       </div>
 
       {element.type === 'tabs' && (

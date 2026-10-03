@@ -542,6 +542,20 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
 
   const runtimeInteraction = activeInteraction || triggeredInteraction;
   const runtimeOpacity = opacityOverride || (runtimeInteraction && 'opacity' in runtimeInteraction ? runtimeInteraction.opacity : undefined);
+  const backgroundVideoUrl = typeof element.props.backgroundVideoUrl === 'string' ? element.props.backgroundVideoUrl.trim() : '';
+  const backgroundVideo = backgroundVideoUrl ? (
+    <video
+      aria-hidden="true"
+      tabIndex={-1}
+      autoPlay
+      muted
+      loop
+      playsInline
+      preload="metadata"
+      src={backgroundVideoUrl}
+      className="pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover"
+    />
+  ) : null;
   const initialKeyframe = !runtimeInteraction
     ? element.interactions?.filter(interaction => (interaction.action || 'animate') === 'animate').flatMap(interaction => interaction.customKeyframes || []).find(frame => frame.isInitialState)
     : undefined;
@@ -609,6 +623,10 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     maxWidth: '100%',
     minWidth: 0,
   };
+  const backgroundVideoRootStyle: React.CSSProperties = backgroundVideoUrl ? {
+    position: safeCssStyles.position && safeCssStyles.position !== 'static' ? safeCssStyles.position : 'relative',
+    isolation: 'isolate',
+  } : {};
 
   const safeTextStyles: React.CSSProperties = {
     ...safeCssStyles,
@@ -716,6 +734,11 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
   const handleButtonClick = (e: React.MouseEvent, href?: string) => {
     if (isPreview && href) {
       e.preventDefault();
+      if (href.startsWith('#')) {
+        const targetId = decodeURIComponent(href.slice(1));
+        document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
       // Check if href matches an internal page slug
       const targetPage = (pages as any[])?.find((p: any) => p.slug === href || p.slug === href.replace(/^\//, '') || `/${p.slug}` === href);
       if (targetPage) {
@@ -1373,7 +1396,8 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
     return (
       <div
         ref={ref}
-        style={{ ...safeCssStyles, ...interactionStyles }}
+        id={typeof element.props.anchorId === 'string' ? element.props.anchorId : undefined}
+        style={{ ...safeCssStyles, ...interactionStyles, ...backgroundVideoRootStyle }}
         className={`${rendererClassName} ${wrapperClasses}`}
         draggable={!isPreview && !element.locked && !isEditing}
         onDragStart={handleDragStart}
@@ -1383,6 +1407,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
+        {backgroundVideo}
         {dropIndicatorBefore && <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-500 z-50" />}
         {content}
         {selectionTooltip}
@@ -1598,9 +1623,10 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
   return (
     <div
       ref={ref}
+      id={typeof element.props.anchorId === 'string' ? element.props.anchorId : undefined}
       style={element.type === 'cmsMap'
-        ? { width: '100%', minWidth: 0, ...interactionStyles }
-        : { ...safeCssStyles, ...interactionStyles, ...sliderSlideStyles, ...(isMenuTarget && navbarMenu?.isOpen ? { display: 'contents' } : {}) }}
+        ? { width: '100%', minWidth: 0, ...interactionStyles, ...backgroundVideoRootStyle }
+        : { ...safeCssStyles, ...interactionStyles, ...sliderSlideStyles, ...backgroundVideoRootStyle, ...(isMenuTarget && navbarMenu?.isOpen && !backgroundVideoUrl ? { display: 'contents' } : {}) }}
       role={element.type === 'slide' && sliderSlideIndex >= 0 ? 'group' : undefined}
       aria-roledescription={element.type === 'slide' && sliderSlideIndex >= 0 ? 'slide' : undefined}
       aria-label={element.type === 'slide' && sliderSlideIndex >= 0 ? `${sliderSlideIndex + 1} of ${sliderRuntime?.slideIds.length || 0}` : undefined}
@@ -1615,6 +1641,7 @@ export const ElementRenderer: React.FC<ElementRendererProps> = ({ element, isPre
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
+      {backgroundVideo}
       {dropIndicatorBefore && <div className="absolute top-0 left-0 right-0 h-0.5 bg-blue-500 z-50" />}
       {containerElement}
       {typeof element.props.customCss === 'string' && element.props.customCss.trim() && <style>{element.props.customCss}</style>}

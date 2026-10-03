@@ -161,6 +161,8 @@ export interface ElementProps {
   src?: string;
   alt?: string;
   href?: string;
+  anchorId?: string;
+  backgroundVideoUrl?: string;
   autoPlay?: boolean;
   muted?: boolean;
   controls?: boolean;
