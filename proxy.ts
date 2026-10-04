@@ -35,7 +35,9 @@ export const proxy = auth(async (req) => {
   if (siteSlug && !isInternalPath) {
     const rewrittenUrl = req.nextUrl.clone();
     rewrittenUrl.pathname = `/tenant/${siteSlug}${req.nextUrl.pathname}`;
-    return NextResponse.rewrite(rewrittenUrl);
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set('x-lunio-tenant-site', siteSlug);
+    return NextResponse.rewrite(rewrittenUrl, { request: { headers: requestHeaders } });
   }
 
 })

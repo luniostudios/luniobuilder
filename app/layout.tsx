@@ -51,9 +51,11 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const requestHeaders = await headers();
-  const isTenantSite = Boolean(getSiteSlugFromHost(
-    requestHeaders.get('x-forwarded-host') || requestHeaders.get('host'),
-  ));
+  const isTenantSite = Boolean(
+    requestHeaders.get('x-lunio-tenant-site') || getSiteSlugFromHost(
+      requestHeaders.get('x-forwarded-host') || requestHeaders.get('host'),
+    ),
+  );
 
   return (
     <html lang="en" className={`${geistSans.variable} bg-[#111114]`} suppressHydrationWarning>
