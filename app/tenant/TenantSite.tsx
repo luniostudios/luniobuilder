@@ -28,10 +28,11 @@ interface TenantSiteProps {
   pages: Page[];
   currentPageId: string;
   isPageUnlocked: boolean;
+  ownerRole: string | null;
   cmsRecord?: Pick<CmsRecord, 'id' | 'data'> | null;
 }
 
-export default function TenantSite({ projectId, projectName, pages, currentPageId, isPageUnlocked, cmsRecord = null }: TenantSiteProps) {
+export default function TenantSite({ projectId, projectName, pages, currentPageId, isPageUnlocked, ownerRole, cmsRecord = null }: TenantSiteProps) {
   const loadProject = useBuilderStore(state => state.loadProject);
   const setPreviewMode = useBuilderStore(state => state.setPreviewMode);
   const setBreakpoint = useBuilderStore(state => state.setBreakpoint);
@@ -39,10 +40,12 @@ export default function TenantSite({ projectId, projectName, pages, currentPageI
   const storeCurrentPageId = useBuilderStore(state => state.currentPageId);
   const loadedProjectId = useBuilderStore(state => state.projectId);
 
+  const showWatermark = ownerRole?.toLowerCase() === 'free';
+
   const watermark = (
     <a href="https://www.luniobuilder.com"
-        target="_blank"
-        rel="noopener noreferrer" className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-4 text-sm text-slate-100 backdrop-blur-md">
+      target="_blank"
+      rel="noopener noreferrer" className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-4 text-sm text-slate-100 backdrop-blur-md">
       <span className="text-xs text-slate-400">Built with</span>
       <span>
         LUNIO<Rocket size={12} className='inline-block -mt-0.5' /> Builder
@@ -93,7 +96,7 @@ export default function TenantSite({ projectId, projectName, pages, currentPageI
         ))}
       </CmsRecordProvider>
       {pageLoader && <PageLoader key={`${page.id}-${pageLoader.id}`} pageId={page.id} element={pageLoader} />}
-      {watermark}
+      {showWatermark === true && watermark}
     </main>
   );
 }

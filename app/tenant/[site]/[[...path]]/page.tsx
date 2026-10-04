@@ -21,6 +21,7 @@ interface TenantRouteProps {
 
 interface TenantProject {
 	id: string;
+	user_id: string;
 	title: string;
 	site_slug: string;
 	status: string;
@@ -81,7 +82,7 @@ async function getTenantProject(site: string) {
 
 	const { data, error } = await supabaseServer
 		.from('projects')
-		.select('id, title, site_slug, status, content, favicon_url, socialOg, site_metadata')
+		.select('id, user_id, title, site_slug, status, content, favicon_url, socialOg, site_metadata')
 		.eq('site_slug', siteSlug)
 		.eq('status', 'published')
 		.maybeSingle();
@@ -153,6 +154,12 @@ export default async function TenantPage({ params }: TenantRouteProps) {
 	const page = findPage(pages, requestedSlug) || detail?.page;
 
 	if (!project || !page) notFound();
+	const { data: owner } = await supabaseServer
+		.schema('next_auth')
+		.from('users')
+		.select('role')
+		.eq('id', project.user_id)
+		.maybeSingle();
 	const accessCookie = (await cookies()).get(siteAccessCookieName(project.id, page.id));
 	const isPageUnlocked = !page.passwordProtected || accessCookie?.value === 'granted';
 	const publicPages = pages.map(({ password: _password, ...publicPage }) => publicPage);
@@ -164,6 +171,7 @@ export default async function TenantPage({ params }: TenantRouteProps) {
 			pages={publicPages}
 			currentPageId={page.id}
 			isPageUnlocked={isPageUnlocked}
+			ownerRole={owner?.role ?? null}
 			cmsRecord={detail?.record}
 		/>
 	);
