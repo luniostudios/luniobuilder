@@ -400,6 +400,11 @@ export default function Dashboard() {
         >
             <Icon size={18} className={activeTab === id ? 'text-white' : 'text-gray-400'} />
             <span>{label}</span>
+            {label === 'Analytics' && (
+                <span className="text-xs text-yellow-400 border border-yellow-400 bg-yellow-200/30 rounded-full px-2 py-0.5">
+                    coming soon
+                </span>
+            )}
         </button>
     );
 
@@ -416,7 +421,7 @@ export default function Dashboard() {
 
             {/* Sidebar */}
             <aside className={`
-        fixed lg:static inset-y-0 left-0 z-50 w-64 bg-[#101a1b] text-white border-r border-[#203033] flex flex-col justify-between transition-transform duration-300 ease-in-out
+        fixed lg:static inset-y-0 left-0 z-50 w-64 bg-[#0b0d10] text-white border-r border-[#203033] flex flex-col justify-between transition-transform duration-300 ease-in-out
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
                 <div>
@@ -446,15 +451,11 @@ export default function Dashboard() {
                     {/* Navigation */}
                     <nav className="space-y-1">
                         <NavItem icon={LayoutDashboard} label="Projects" id="projects" />
-                        <NavItem icon={BarChart3} label="Analytics" id="analytics" />
+                        <NavItem icon={BarChart3} label="Analytics" id="" />
                         <NavItem icon={Settings} label="Settings" id="settings" />
                         {userData && (userData.role?.toLowerCase() === 'admin' || userData.role?.toLowerCase() === 'owner') && (
                             <NavItem icon={Users} label="Users" id="users" />
                         )}
-                        <div className="px-4">
-
-                            <SignOut />
-                        </div>
                     </nav>
                 </div>
 

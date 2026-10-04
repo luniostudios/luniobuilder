@@ -8,10 +8,10 @@ export function SignOut() {
     <button
       type="button"
       onClick={() => signOut({ callbackUrl: '/' })}
-      className="mt-5 flex items-center text-red-400 outline-none transition-colors hover:text-red-300"
+      className=" flex justify-between items-center text-white/50 outline-none transition-colors hover:text-white"
     >
-      <LogOut size={16} className="mr-2" />
       Sign Out
+      <LogOut size={16} className="mr-2 text-red-300" />
     </button>
   );
 }
