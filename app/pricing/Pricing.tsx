@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Check, Sparkles, Building2, Rocket } from 'lucide-react';
+import { Check, Building2, Rocket } from 'lucide-react';
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 
@@ -154,9 +154,6 @@ export default function Pricing({ hasSession }: PricingTabsProps) {
                     transition={{ duration: 0.6 }}
                     className="text-center max-w-2xl mx-auto mb-12"
                 >
-                    <span className="text-sm font-semibold text-lime-400 uppercase tracking-widest">
-                        Pricing
-                    </span>
                     <h2 className="mt-4 font-display text-4xl sm:text-5xl font-bold tracking-tight text-balance">
                         Simple pricing that{' '}
                         <span className="gradient-text">scales with you</span>
@@ -181,7 +178,7 @@ export default function Pricing({ hasSession }: PricingTabsProps) {
                                     }`}
                             >
                                 Yearly
-                                <span className={`text-xs px-1.5 py-0.5 rounded ${isAnnual ? 'bg-ink-900/20 text-ink-900' : 'bg-lime-500/20 text-lime-400'}`}>
+                                <span className={`text-xs px-1.5 py-0.5 rounded ${isAnnual ? 'bg-ink-900/20 text-ink-900' : 'bg-lime-500/20 text-lime-600'}`}>
                                     -20%
                                 </span>
                             </button>

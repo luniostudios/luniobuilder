@@ -15,6 +15,9 @@ OUTPUT CONTRACT
 
 EDITOR FUNCTIONALITY
 - Every imported element must be meaningful on its own and placed in a clear parent-child hierarchy so users can select, drag, reorder, and edit it.
+- Use the editor's styling controls that are preserved by HTML import: flex and grid layout; responsive sizing; spacing; typography; colors; solid, gradient, and image backgrounds; borders; shadows; filters; transforms; overflow; and CSS transitions. Prefer a small, consistent set of design tokens expressed as concrete values rather than CSS variables.
+- Use data-lunio-style-widescreen, data-lunio-style-laptop, data-lunio-style-tablet, data-lunio-style-mobileLandscape, and data-lunio-style-mobile for breakpoint-specific style overrides. These overrides are imported into the editor's responsive controls; keep base styles usable without them.
+- Use animation-name, animation-duration, animation-timing-function, animation-delay, animation-iteration-count, animation-direction, animation-fill-mode, and animation-play-state for editor-supported CSS animation styling. Use the Interaction tab's triggers only when available after import; do not imply that arbitrary HTML or JavaScript creates editor interaction rules.
 - Use semantic structure with headings, paragraphs, lists, and buttons. Avoid decorative wrappers, empty containers, or meaningless divs.
 - Use only one top-level <main> per page. Do not use multiple <main> elements or nest them inside other sections.
 - Use <header> and <footer> only once per page, and place them outside of <main>. Do not nest <header> or <footer> inside other sections.
@@ -26,7 +29,7 @@ EDITOR FUNCTIONALITY
 - Use <img> only for requested images. Include a descriptive alt attribute, use object-fit: cover, and provide a useful aspect ratio or height. Avoid decorative images.
 - Use <form> only for visual forms. Include input and textarea children, labels through the input or textarea placeholder and accessible attributes, and one clearly styled button. Do not claim that a form sends data.
 - Use <input> type values such as text, email, tel, number, or date. Use placeholder text and name attributes where helpful. Use <textarea> for longer messages.
-- Use <button> for actions and <a> for navigation. Give every button and link useful visible text, not only an icon.
+- Use <button> for actions and <a> for navigation. Give every button and link useful visible text, not only an icon. Never put navigation destinations in onclick; use an anchor with a real href.
 - Use <ul> or <ol> for lists, and <li> for list items. Avoid using divs for lists or list items.
 - Use <h1> exactly once for the primary page title, then use <h2> and <h3> in logical order. Avoid skipping heading levels.
 - Use semantic sections with descriptive structure: navigation, hero, social proof, features, process, pricing, FAQ, contact, and footer only when relevant to the request.
@@ -69,6 +72,8 @@ DESIGN QUALITY
 - For responsive flex layouts, choose the direction intentionally: use display:flex with flex-direction:row on desktop, laptop, and widescreen when content benefits from side-by-side composition; use flex-direction:column on tablet, mobileLandscape, and mobile when content should stack. Keep children width:100% or use appropriate flex values so the layout remains usable without wrapping.
 - To preserve breakpoint-specific layout in the editor, add a data-lunio-style-{breakpoint} attribute to the element alongside its base style. Use breakpoint names widescreen, tablet, mobile, laptop, and mobileLandscape, with a semicolon-separated declaration string such as data-lunio-style-tablet="display:flex;flex-direction:column". Use the attribute only for overrides that differ from the base desktop style.
 - Use builder-supported interactions only: links for navigation, buttons for actions, forms for visual forms, CMS attributes for dynamic content, and no JavaScript event handlers. Do not claim unsupported checkout, authentication, inventory, order management, or form submission behavior.
+- Use the editor's icon marker data-lunio-icon only for a meaningful icon button, and keep visible text on actions so the control remains understandable. Use data-lunio-nav-menu and data-lunio-icon="Menu" only in the specified responsive navigation pattern.
+- Prefer editor-importable structures over custom HTML widgets. Do not use tags or attributes outside this contract as a substitute for editor components; unsupported nodes are discarded during import.
 - When a SELECTED ELEMENT TO EDIT block is provided, return a replacement in the same semantic category whenever practical: heading stays a heading, paragraph stays a paragraph, button stays a button, link stays a link, image stays an image, and a container stays a container with editable children. Do not wrap a simple text or control edit in a full page section.
 - Do not use placeholder text like Lorem ipsum, fake testimonials with impossible claims, or meaningless button labels. Write concise, realistic copy that fits the layout.
 

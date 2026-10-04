@@ -2,13 +2,15 @@
 
 import { FormEvent, KeyboardEvent, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowUp, ImagePlus, LoaderCircle, Sparkles, Trash, WandSparkles } from 'lucide-react';
+import { ArrowUp, ChevronDown, ImagePlus, LoaderCircle, Trash, WandSparkles } from 'lucide-react';
 import { useAIGeneration } from '../functions/useAIGeneration';
 import { htmlToBuilderPages } from '../../utils/htmlToBuilder';
 import { generateId } from '../../utils/builderUtils';
 import { Page } from '../../types/builder';
 import type { AIProvider } from '../../types/ai';
 import { persistGeneratedCms } from '../../utils/generatedCms';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { IconAi } from '@tabler/icons-react';
 
 const promptSuggestions = [
   'A calm portfolio for an architectural studio',
@@ -129,21 +131,18 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
   };
 
   return (
-    <main className='relative flex min-h-[calc(100vh-76px)] flex-1 items-center justify-center overflow-hidden px-5 py-16 text-white sm:px-8'>
-      <div className='pointer-events-none absolute left-1/2 top-16 h-80 w-[min(80vw,720px)] -translate-x-1/2 rounded-full bg-[#49d7c0]/10 blur-[110px]' />
-      <div className='pointer-events-none absolute bottom-0 left-0 h-72 w-72 rounded-full bg-[#4268ff]/10 blur-[100px]' />
-
+    <main className='relative flex min-h-[calc(100vh-20px)] flex-1 items-center justify-center overflow-hidden px-5 py-16 text-white sm:px-8'>
       <div className='relative z-10 w-full max-w-5xl'>
         <div className='mb-10 flex flex-col items-center text-center'>
-          <h1 className='max-w-4xl text-4xl font-semibold leading-[0.98] tracking-[-0.04em] sm:text-8xl'>
+          <h1 className='max-w-4xl text-4xl font-semibold leading-[0.98] bg-linear-to-r from-[#8e9eab] to-[#eef2f3] bg-clip-text text-transparent tracking-[-0.04em] sm:text-8xl'>
             Tell us what to build.
-            <span className='block text-white/35'>We&apos;ll make it real.</span>
           </h1>
+          <span className='block max-w-4xl text-4xl font-semibold leading-[0.98] text-white/35 sm:text-8xl'>We&apos;ll make it real.</span>
           <p className='mt-6 max-w-xl text-base leading-7 text-white/55 sm:text-lg'>Describe your website, a feeling, or a business. LUNIO Builder turns your words into an editable website you can shape in the visual editor.</p>
         </div>
 
         <form onSubmit={createWebsite} className='mx-auto max-w-3xl'>
-          <div className='rounded-[26px] border border-white/15 bg-[#171a20]/90 p-3 shadow-[0_24px_100px_rgba(0,0,0,0.35)] backdrop-blur-xl'>
+          <div className='rounded-sm border border-dashed border-white/15 p-3 shadow-[0_24px_100px_rgba(0,0,0,0.35)] backdrop-blur-xl'>
             <textarea
               value={prompt}
               onChange={event => { setPrompt(event.target.value); clearError(); }}
@@ -167,25 +166,37 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
             )}
             <div className='flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-2 pt-3 sm:px-3'>
               <div className='flex items-center gap-2'>
-                <label className='inline-flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm text-white/45 transition hover:bg-white/6 hover:text-white'>
+                <label className='inline-flex cursor-pointer items-center gap-2 rounded-sm px-3 py-2 text-sm text-white/45 transition hover:bg-white/6 hover:text-white'>
                   <ImagePlus size={17} />
                   <h1 className='flex text-sm font-medium max-md:hidden'>Add reference</h1>
                   <input type='file' accept='image/*' multiple className='sr-only' onChange={event => { selectImages(event.target.files); event.currentTarget.value = ''; }} />
                 </label>
-                <select value={provider} onChange={event => setProvider(event.target.value as AIProvider)} disabled={loading} aria-label='AI provider' className='rounded-xl border border-white/10 bg-[#20252d] px-3 py-2 text-sm text-white/70 outline-none max-md:w-20 focus:border-[#b8f36b]'>
-                  <option value='gemini-3.6-flash'>Gemini 3.6 Flash</option>
-                  <option value='gemini-pro'>Gemini Pro</option>
-                  <option value='openai'>GPT-6 Astra</option>
-                  <option value='openai'>GPT-6.1 Sol</option>
-                  <option value='openai'>GPT-6 Luna</option>
-                  <option value='claude'>Claude 5</option>
-                  <option value='claude'>Claude 4.6 Sonnet</option>
-                  <option value='claude'>Claude 4.6 Opus</option>
-                  <option value='groq'>Groq</option>
-                  <option value='vercel'>Vercel</option>
-                </select>
+                <DropdownMenu modal={false}>
+                  <DropdownMenuTrigger className='inline-flex cursor-pointer items-center gap-2 rounded-sm px-3 py-2 text-sm text-white/45 border border-white/10 outline-none '>
+                    <IconAi size={27} stroke={2} />
+                    <h1 className='flex text-sm font-medium max-md:hidden'>{provider}</h1>
+                    <ChevronDown size={17} />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className='bg-[#111215] w-full border border-white/20 mt-2 rounded-md p-2'>
+                    <DropdownMenuLabel className='text-xs text-white mb-1'>Select AI model</DropdownMenuLabel>
+                    <DropdownMenuItem className='text-sm text-white/80 flex flex-row gap-3 align-items-middle' onClick={() => setProvider('gemini-3.6-flash')}>Gemini 3.6 Flash <span className='text-[10px] text-white/50 border border-white rounded-2xl px-2'>FREE</span></DropdownMenuItem>
+                    <DropdownMenuItem className='text-sm text-white/80' onClick={() => setProvider('gemini-pro')}>Gemini Pro</DropdownMenuItem>
+                    <DropdownMenuItem className='text-sm text-white/80' onClick={() => setProvider('openai')}>GPT-6 Astra</DropdownMenuItem>
+                    <DropdownMenuItem className='text-sm text-white/80' onClick={() => setProvider('openai')}>GPT-6.1 Sol</DropdownMenuItem>
+                    <DropdownMenuItem className='text-sm text-white/80' onClick={() => setProvider('openai')}>GPT-6 Luna</DropdownMenuItem>
+                    <DropdownMenuItem className='text-sm text-white/80' onClick={() => setProvider('claude')}>Claude Fable 5</DropdownMenuItem>
+                    <DropdownMenuItem className='text-sm text-white/80' onClick={() => setProvider('claude')}>Claude 4.6 Sonnet</DropdownMenuItem>
+                    <DropdownMenuItem className='text-sm text-white/80' onClick={() => setProvider('claude')}>Claude 4.6 Opus</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
-              <button type='submit' disabled={loading || (!prompt.trim() && imageReferences.length === 0)} className='inline-flex items-center gap-2 rounded-xl bg-[#b8f36b] px-4 py-2.5 text-sm font-semibold text-[#10150c] transition hover:bg-[#d0ff91] disabled:cursor-not-allowed disabled:opacity-35'>
+              <div className='flex items-center gap-2'>
+                {loading && <span className='text-sm text-white/50'>Generating...</span>}
+                {error && <span className='text-sm text-rose-300'>{error}</span>}
+              </div>
+              <div className='flex items-center gap-2'>
+              </div>
+              <button type='submit' disabled={loading || (!prompt.trim() && imageReferences.length === 0)} className='inline-flex items-center gap-2 rounded-sm bg-[#b8f36b] px-4 py-2.5 text-sm font-semibold text-[#10150c] transition hover:bg-[#d0ff91] disabled:cursor-not-allowed disabled:opacity-35'>
                 {loading ? <LoaderCircle size={17} className='animate-spin' /> : <ArrowUp size={17} />}
                 {loading ? `Generating ${elapsedSeconds}s` : 'Generate site'}
               </button>

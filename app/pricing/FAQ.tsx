@@ -1,11 +1,11 @@
 "use client"
 
-import { ChevronDown, ChevronUp, HelpCircle } from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import React, { useState } from 'react'
 
 const FAQ = () => {
 
-  const [openFaqIndex, setOpenFaqIndex] = useState(0);
+    const [openFaqIndex, setOpenFaqIndex] = useState(0);
 
     const faqs = [
         {
@@ -40,47 +40,51 @@ const FAQ = () => {
 
     return (
         <div id="faq" className="bg-white py-20 px-4 sm:px-6 lg:px-8 border-t border-slate-200">
-            <div className="max-w-3xl mx-auto">
-                <div className="text-center mb-12">
+            <div className="max-w-6xl mx-auto">
+                <div className="text-center mb-20">
                     <h2 className="text-3xl font-bold text-slate-900 flex items-center justify-center gap-2 max-md:text-2xl">
-                        <HelpCircle className="h-8 w-8 text-green-600" />
                         Frequently Asked Questions
                     </h2>
                     <p className="mt-4 text-lg text-slate-600 max-md:text-base">
                         Got questions? We\'ve got answers. Here are some of our most commonly asked questions about our pricing plans and features. Further questions? Just reach out to our support team!
                     </p>
                 </div>
-
-                <div className="space-y-4">
-                    {faqs.map((faq, index) => (
-                        <div
-                            key={index}
-                            className="border border-slate-200 rounded-2xl overflow-hidden transition-all duration-200 hover:border-green-200"
-                        >
-                            <button
-                                className="flex justify-between items-center w-full p-6 text-left bg-white focus:outline-none"
-                                onClick={() => setOpenFaqIndex(openFaqIndex === index ? -1 : index)}
-                            >
-                                <span className="font-semibold text-slate-900">{faq.question}</span>
-                                {openFaqIndex === index ? (
-                                    <ChevronUp className="h-5 w-5 text-green-600 shrink-0" />
-                                ) : (
-                                    <ChevronDown className="h-5 w-5 text-slate-400 shrink-0" />
-                                )}
-                            </button>
-
-                            {/* Expandable Content */}
+                <div className="flex flex-row gap-15 mx-auto">
+                    <div className="flex-1">
+                        <img className="border-2 border-black/40" src="https://plus.unsplash.com/premium_photo-1678000616480-d4a041e6eba1?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="FAQ image" />
+                    </div>
+                    <div className="flex-1 space-y-4">
+                        {faqs.map((faq, index) => (
                             <div
-                                className={`px-6 overflow-hidden transition-all duration-300 ease-in-out ${openFaqIndex === index ? 'max-h-48 pb-6 opacity-100' : 'max-h-0 opacity-0'
-                                    }`}
+                                key={index}
+                                className="border border-slate-200 rounded-sm overflow-hidden transition-all duration-200 hover:border-[#b8f36b]"
                             >
-                                <p className="text-slate-600 leading-relaxed">
-                                    {faq.answer}
-                                </p>
+                                <button
+                                    className="flex justify-between items-center w-full p-6 text-left bg-white focus:outline-none"
+                                    onClick={() => setOpenFaqIndex(openFaqIndex === index ? -1 : index)}
+                                >
+                                    <span className="font-semibold text-slate-900">{faq.question}</span>
+                                    {openFaqIndex === index ? (
+                                        <ChevronUp className="h-5 w-5 text-[#b8f36b] shrink-0" />
+                                    ) : (
+                                        <ChevronDown className="h-5 w-5 text-slate-400 shrink-0" />
+                                    )}
+                                </button>
+
+                                {/* Expandable Content */}
+                                <div
+                                    className={`px-6 overflow-hidden transition-all duration-300 ease-in-out ${openFaqIndex === index ? 'max-h-48 pb-6 opacity-100' : 'max-h-0 opacity-0'
+                                        }`}
+                                >
+                                    <p className="text-slate-600 leading-relaxed">
+                                        {faq.answer}
+                                    </p>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
+
             </div>
         </div>
     )

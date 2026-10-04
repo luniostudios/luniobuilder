@@ -31,6 +31,33 @@ const getGeminiApiUrl = (model: 'gemini-3.6-flash' | 'gemini-pro') =>
 const VERCEL_AI_API_KEY = process.env.VERCEL_AI_API_KEY;
 
 type ProviderCredential = { provider: AIProvider; apiKey: string; isPlatform: boolean };
+type ProviderResponseData = {
+    error?: { message?: string };
+    message?: string;
+    choices?: Array<{ message?: { content?: string } }>;
+    content?: Array<{ text?: string }>;
+    output?: Array<{ content?: string }>;
+    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+};
+
+const readProviderJson = async (response: Response, provider: string): Promise<ProviderResponseData> => {
+    const responseText = await response.text();
+    let data: ProviderResponseData;
+
+    try {
+        data = responseText ? JSON.parse(responseText) as ProviderResponseData : {};
+    } catch {
+        const isHtml = response.headers.get('content-type')?.includes('text/html') || /^\s*<!doctype html|^\s*<html/i.test(responseText);
+        const responseKind = isHtml ? 'an HTML error page' : 'an invalid response';
+        throw new Error(`${provider} returned ${responseKind} (HTTP ${response.status})`);
+    }
+
+    if (!response.ok) {
+        throw new Error(data?.error?.message || data?.message || `${provider} request failed (HTTP ${response.status})`);
+    }
+
+    return data;
+};
 
 const getAccountCredentials = async (userId: string) => {
     const { data: credentials } = await supabaseServer
@@ -52,8 +79,7 @@ const getTextFromProvider = async (provider: AIProvider, apiKey: string, systemP
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
             body: JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'user', content: systemPrompt }], temperature: 0.2 }),
         });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data?.error?.message || 'OpenAI generation failed');
+        const data = await readProviderJson(response, 'OpenAI');
         return data?.choices?.[0]?.message?.content || '';
     }
 
@@ -63,8 +89,7 @@ const getTextFromProvider = async (provider: AIProvider, apiKey: string, systemP
             headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
             body: JSON.stringify({ model: 'claude-3-5-sonnet-latest', max_tokens: 8192, system: 'Return only the requested HTML.', messages: [{ role: 'user', content: systemPrompt }] }),
         });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data?.error?.message || 'Claude generation failed');
+        const data = await readProviderJson(response, 'Claude');
         return data?.content?.[0]?.text || '';
     }
 
@@ -74,8 +99,7 @@ const getTextFromProvider = async (provider: AIProvider, apiKey: string, systemP
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
             body: JSON.stringify({ model: 'openai/gpt-oss-20b', messages: [{ role: 'user', content: systemPrompt }] }),
         });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data?.error?.message || 'Groq generation failed');
+        const data = await readProviderJson(response, 'Groq');
         return data?.choices?.[0]?.message?.content || '';
     }
 
@@ -85,8 +109,7 @@ const getTextFromProvider = async (provider: AIProvider, apiKey: string, systemP
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${VERCEL_AI_API_KEY}` },
             body: JSON.stringify({ model: 'gpt-4o-mini', input: systemPrompt, temperature: 0.2 }),
         });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data?.error?.message || 'Vercel AI generation failed');
+        const data = await readProviderJson(response, 'Vercel AI');
         return data?.output?.[0]?.content || '';
     }
 
@@ -97,8 +120,7 @@ const getTextFromProvider = async (provider: AIProvider, apiKey: string, systemP
             headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
             body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: systemPrompt }] }], generationConfig: { temperature: 0.2, top_p: 0.95, max_output_tokens: 8192 } }),
         });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data?.error?.message || 'Gemini generation failed');
+        const data = await readProviderJson(response, 'Gemini');
         return data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
     }
 
@@ -115,7 +137,15 @@ export async function POST(req: NextRequest): Promise<NextResponse<GenerateRespo
             );
         }
 
-        const body: GenerateRequest = await req.json();
+        let body: GenerateRequest;
+        try {
+            body = await req.json();
+        } catch {
+            return NextResponse.json(
+                { html: '', success: false, error: 'The request body must be valid JSON.' },
+                { status: 400 }
+            );
+        }
         const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : '';
         const { imageData, imageMimeType, imageReferences: requestedImageReferences, provider, context } = body;
         const imageReferences = requestedImageReferences?.length
@@ -245,11 +275,10 @@ export async function POST(req: NextRequest): Promise<NextResponse<GenerateRespo
                             generationConfig: { temperature: 0, top_p: 0.95, max_output_tokens: 8192 },
                         }),
                     });
-                    if (!response.ok) throw new Error(`Gemini image request failed (${response.status})`);
-                    const data = await response.json();
+                    const data = await readProviderJson(response, 'Gemini image generation');
                     generatedContent = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
                 } else {
-                    generatedContent = await getTextFromProvider(candidate.provider, candidate.apiKey, systemPrompt);
+                    generatedContent = (await getTextFromProvider(candidate.provider, candidate.apiKey, systemPrompt)) || '';
                 }
                 if (generatedContent.trim()) {
                     usedPlatformCredential = candidate.isPlatform;

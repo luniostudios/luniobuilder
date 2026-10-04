@@ -35,7 +35,17 @@ export const useAIGeneration = () => {
           body: JSON.stringify(options),
         });
 
-        const data: GenerationResult = await response.json();
+        const responseText = await response.text();
+        let data: GenerationResult;
+        try {
+          data = JSON.parse(responseText) as GenerationResult;
+        } catch {
+          const isHtml = response.headers.get('content-type')?.includes('text/html') || /^\s*<!doctype html|^\s*<html/i.test(responseText);
+          const errorMessage = isHtml
+            ? `The generation endpoint returned an HTML page (HTTP ${response.status}). The API route may be unavailable or a server/proxy error occurred.`
+            : `The generation endpoint returned an invalid response (HTTP ${response.status}).`;
+          throw new Error(errorMessage);
+        }
 
         if (!response.ok || !data.success) {
           const errorMessage = data.error || 'Failed to generate content';
