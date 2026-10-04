@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { LayoutGrid as Layout, Type, Image, Images as ImagesIcon, MousePointer, Square, Columns2 as Columns, Grid2x2 as Grid, AlignLeft, Link, Star, Minus, Move, FileText, ChevronRight, ChevronDown, ChevronLeft, Eye, EyeOff, Lock, Unlock, Trash2, Copy, Plus, Layers, Package, Globe, Monitor, Play, Form, List, ListEnd, Laptop, CalendarDays, LayoutIcon, LayoutPanelTop, IdCard, TextInitialIcon, Code2, ChevronsDownUp, Table2, ListTree, Database, ExternalLink, Search, Blocks, PanelsTopLeft, Activity } from 'lucide-react';
+import { LayoutGrid as Layout, Type, Image, Images as ImagesIcon, MousePointer, Square, Columns2 as Columns, Grid2x2 as Grid, AlignLeft, Link, Star, Minus, Move, FileText, ChevronRight, ChevronDown, ChevronLeft, Eye, EyeOff, Lock, Unlock, Trash2, Copy, Plus, Layers, Package, Globe, Monitor, Play, Form, List, ListEnd, Laptop, CalendarDays, LayoutIcon, LayoutPanelTop, IdCard, TextInitialIcon, Code2, ChevronsDownUp, Table2, ListTree, Database, ExternalLink, Search, Blocks, PanelsTopLeft, Activity, Plug } from 'lucide-react';
 import { DndContext, DragEndEvent, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -12,7 +12,16 @@ import { COMPONENT_CATEGORIES, COMPONENT_LABELS, canHaveChildren, createDefaultE
 import type { CmsCollection, CmsRecord } from '../../types/cms';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogDescription, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { IconTabs, IconSection, IconBoxPadding, IconCode } from '@tabler/icons-react';
+import { IconTabs, IconSection, IconBoxPadding, IconCode, IconBounceRight } from '@tabler/icons-react';
+
+const APP_CATALOG = [
+  { id: 'stripe', name: 'Stripe', description: 'Payments + subscriptions', status: 'connected' },
+  { id: 'slack', name: 'Slack', description: 'Team updates & alerts', status: 'available' },
+  { id: 'notion', name: 'Notion', description: 'CMS and docs sync', status: 'available' },
+  { id: 'mailchimp', name: 'Mailchimp', description: 'Email marketing flows', status: 'soon' },
+  { id: 'shopify', name: 'Shopify', description: 'Storefront integrations', status: 'available' },
+  { id: 'zapier', name: 'Zapier', description: 'Automation workflows', status: 'soon' },
+] as const;
 
 const COMPONENT_ICONS: Record<string, React.ReactNode> = {
   section: <IconSection size={25} />,
@@ -33,7 +42,7 @@ const COMPONENT_ICONS: Record<string, React.ReactNode> = {
   input: <FileText size={25} />,
   textarea: <AlignLeft size={25} />,
   video: <Play size={25} />,
-  lottie: <Activity size={25} />,
+  lottie: <IconBounceRight size={25} stroke={2} />,
   divider: <Minus size={25} />,
   spacer: <Move size={25} />,
   icon: <Star size={25} />,
@@ -57,6 +66,7 @@ export const LeftPanel: React.FC = () => {
     { id: 'pages' as const, label: 'Pages', icon: <Globe size={17} /> },
     { id: 'library' as const, label: 'Components', icon: <Blocks size={17} /> },
     { id: 'cms' as const, label: 'Data Sources', icon: <Database size={17} /> },
+    { id: 'apps' as const, label: 'Apps', icon: <Plug size={17} /> },
     { id: 'assets' as const, label: 'Assets', icon: <ImagesIcon size={17} /> },
   ];
 
@@ -106,6 +116,7 @@ export const LeftPanel: React.FC = () => {
           {leftPanelTab === 'layers' && <LayersTab />}
           {leftPanelTab === 'pages' && <PagesTab />}
           {leftPanelTab === 'cms' && <CmsTab />}
+          {leftPanelTab === 'apps' && <AppsTab />}
           {leftPanelTab === 'assets' && <AssetsTab />}
         </div>
       </div>
@@ -118,6 +129,68 @@ interface UploadedAsset {
   name: string;
   url: string;
 }
+
+const AppsTab: React.FC = () => {
+  const connectedApps = APP_CATALOG.filter(app => app.status === 'connected');
+  const availableApps = APP_CATALOG.filter(app => app.status !== 'connected');
+
+  return (
+    <div className="flex h-full min-h-0 flex-col bg-[#111114] text-gray-200">
+      <div className="flex items-center justify-between border-b border-gray-800 px-3 py-3">
+        <span className="text-xs font-semibold uppercase tracking-wider text-gray-300">Apps</span>
+        <span className="text-[10px] text-gray-500">{connectedApps.length} live</span>
+      </div>
+
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3">
+        <div className="rounded-lg border border-gray-800 bg-gray-900/70 p-2.5">
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-500">Connected</p>
+          <div className="space-y-2">
+            {connectedApps.length === 0 ? (
+              <p className="text-xs text-gray-500">No apps connected yet.</p>
+            ) : (
+              connectedApps.map(app => (
+                <div key={app.id} className="flex items-center gap-2.5 rounded-md border border-gray-800 bg-[#15181d] px-2.5 py-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-emerald-500/15 text-[11px] font-semibold text-emerald-300">
+                    {app.name.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs font-medium text-gray-100">{app.name}</p>
+                    <p className="truncate text-[10px] text-gray-500">{app.description}</p>
+                  </div>
+                  <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-300">Live</span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-gray-800 bg-gray-900/70 p-2.5">
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-500">Available</p>
+          <div className="space-y-2">
+            {availableApps.map(app => (
+              <button
+                key={app.id}
+                type="button"
+                className="flex w-full items-center gap-2.5 rounded-md border border-gray-800 bg-[#15181d] px-2.5 py-2 text-left transition hover:border-blue-500/50 hover:bg-gray-800"
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-blue-500/10 text-[11px] font-semibold text-blue-300">
+                  {app.name.slice(0, 2).toUpperCase()}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-medium text-gray-100">{app.name}</p>
+                  <p className="truncate text-[10px] text-gray-500">{app.description}</p>
+                </div>
+                <span className="rounded-full bg-gray-800 px-2 py-0.5 text-[10px] font-medium text-gray-400 capitalize">
+                  {app.status}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const AssetsTab: React.FC = () => {
   const [assets, setAssets] = useState<UploadedAsset[]>([]);

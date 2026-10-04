@@ -175,8 +175,12 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
                 <select value={provider} onChange={event => setProvider(event.target.value as AIProvider)} disabled={loading} aria-label='AI provider' className='rounded-xl border border-white/10 bg-[#20252d] px-3 py-2 text-sm text-white/70 outline-none max-md:w-20 focus:border-[#b8f36b]'>
                   <option value='gemini-3.6-flash'>Gemini 3.6 Flash</option>
                   <option value='gemini-pro'>Gemini Pro</option>
-                  <option value='openai'>OpenAI</option>
-                  <option value='claude'>Claude</option>
+                  <option value='openai'>GPT-6 Astra</option>
+                  <option value='openai'>GPT-6.1 Sol</option>
+                  <option value='openai'>GPT-6 Luna</option>
+                  <option value='claude'>Claude 5</option>
+                  <option value='claude'>Claude 4.6 Sonnet</option>
+                  <option value='claude'>Claude 4.6 Opus</option>
                   <option value='groq'>Groq</option>
                   <option value='vercel'>Vercel</option>
                 </select>
