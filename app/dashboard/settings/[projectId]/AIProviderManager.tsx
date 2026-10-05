@@ -9,10 +9,12 @@ type Credential = { provider: AIProvider; apiKey: string; updatedAt?: string };
 const providerLabels: Record<AIProvider, string> = {
   'gemini-3.6-flash': 'Gemini 3.6 Flash',
   'gemini-pro': 'Gemini Pro',
-  openai: 'OpenAI',
-  claude: 'Anthropic Claude',
-  groq: 'Groq',
-  vercel: 'Vercel',
+  'openai-gpt-6-astra': 'OpenAI GPT-6 Astra',
+  'openai-gpt-6.1-sol': 'OpenAI GPT-6.1 Sol',
+  'openai-gpt-6-luna': 'OpenAI GPT-6 Luna',
+  'claude-fable': 'Claude Fable',
+  'claude-4.6-sonnet': 'Claude 4.6 Sonnet',
+  'claude-4.6-opus': 'Claude 4.6 Opus',
 };
 
 export default function AIProviderManager() {

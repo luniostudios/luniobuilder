@@ -9,8 +9,7 @@ import { generateId } from '../../utils/builderUtils';
 import { Page } from '../../types/builder';
 import type { AIProvider } from '../../types/ai';
 import { persistGeneratedCms } from '../../utils/generatedCms';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { IconAi } from '@tabler/icons-react';
+import { AIModels } from './dropdowns/AIModels';
 
 const promptSuggestions = [
   'A calm portfolio for an architectural studio',
@@ -31,10 +30,10 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
   const router = useRouter();
   const { generate, loading, error, clearError } = useAIGeneration();
   const [prompt, setPrompt] = useState('');
+  const [provider, setProvider] = useState<AIProvider>('gemini-3.6-flash');
   const [imageReferences, setImageReferences] = useState<ImageReference[]>([]);
   const [status, setStatus] = useState('');
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [provider, setProvider] = useState<AIProvider>('gemini-3.6-flash');
 
   useEffect(() => {
     if (!loading) {
@@ -171,24 +170,7 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
                   <h1 className='flex text-sm font-medium max-md:hidden'>Add reference</h1>
                   <input type='file' accept='image/*' multiple className='sr-only' onChange={event => { selectImages(event.target.files); event.currentTarget.value = ''; }} />
                 </label>
-                <DropdownMenu modal={false}>
-                  <DropdownMenuTrigger className='inline-flex cursor-pointer items-center gap-2 rounded-sm px-3 py-2 text-sm text-white/45 border border-white/10 outline-none '>
-                    <IconAi size={27} stroke={2} />
-                    <h1 className='flex text-sm font-medium max-md:hidden'>{provider}</h1>
-                    <ChevronDown size={17} />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className='bg-[#111215] w-full border border-white/20 mt-2 rounded-md p-2'>
-                    <DropdownMenuLabel className='text-xs text-white mb-1'>Select AI model</DropdownMenuLabel>
-                    <DropdownMenuItem className='text-sm text-white/80 flex flex-row gap-3 align-items-middle' onClick={() => setProvider('gemini-3.6-flash')}>Gemini 3.6 Flash <span className='text-[10px] text-white/50 border border-white rounded-2xl px-2'>FREE</span></DropdownMenuItem>
-                    <DropdownMenuItem className='text-sm text-white/80' onClick={() => setProvider('gemini-pro')}>Gemini Pro</DropdownMenuItem>
-                    <DropdownMenuItem className='text-sm text-white/80' onClick={() => setProvider('openai')}>GPT-6 Astra</DropdownMenuItem>
-                    <DropdownMenuItem className='text-sm text-white/80' onClick={() => setProvider('openai')}>GPT-6.1 Sol</DropdownMenuItem>
-                    <DropdownMenuItem className='text-sm text-white/80' onClick={() => setProvider('openai')}>GPT-6 Luna</DropdownMenuItem>
-                    <DropdownMenuItem className='text-sm text-white/80' onClick={() => setProvider('claude')}>Claude Fable 5</DropdownMenuItem>
-                    <DropdownMenuItem className='text-sm text-white/80' onClick={() => setProvider('claude')}>Claude 4.6 Sonnet</DropdownMenuItem>
-                    <DropdownMenuItem className='text-sm text-white/80' onClick={() => setProvider('claude')}>Claude 4.6 Opus</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <AIModels provider={provider} onProviderChange={setProvider} />
               </div>
               <div className='flex items-center gap-2'>
                 {loading && <span className='text-sm text-white/50'>Generating...</span>}
@@ -225,3 +207,4 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
     </main>
   );
 }
+
