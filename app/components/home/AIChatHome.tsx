@@ -131,7 +131,7 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
   };
 
   return (
-    <main className='relative flex min-h-[calc(100vh-20px)] flex-1 items-center justify-center overflow-hidden px-5 py-16 text-white sm:px-8'>
+    <main className='relative flex flex-1 items-center justify-center overflow-hidden px-5 py-30 text-white sm:px-8'>
       <div className='relative z-10 w-full max-w-5xl'>
         <div className='mb-10 flex flex-col items-center text-center'>
           <h1 className='max-w-4xl text-4xl font-semibold leading-[0.98] bg-linear-to-r from-[#8e9eab] to-[#eef2f3] bg-clip-text text-transparent tracking-[-0.04em] sm:text-8xl'>

@@ -49,7 +49,7 @@ const FAQ = () => {
                         Got questions? We\'ve got answers. Here are some of our most commonly asked questions about our pricing plans and features. Further questions? Just reach out to our support team!
                     </p>
                 </div>
-                <div className="flex flex-row gap-15 mx-auto">
+                <div className="flex flex-row gap-15 mx-auto max-md:flex-col max-md:gap-10">
                     <div className="flex-1">
                         <img className="border-2 border-black/40" src="https://plus.unsplash.com/premium_photo-1678000616480-d4a041e6eba1?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="FAQ image" />
                     </div>
@@ -73,7 +73,7 @@ const FAQ = () => {
 
                                 {/* Expandable Content */}
                                 <div
-                                    className={`px-6 overflow-hidden transition-all duration-300 ease-in-out ${openFaqIndex === index ? 'max-h-48 pb-6 opacity-100' : 'max-h-0 opacity-0'
+                                    className={`px-6 overflow-hidden transition-all duration-300 ease-in-out ${openFaqIndex === index ? 'max-h-full pb-6 opacity-100' : 'max-h-0 opacity-0'
                                         }`}
                                 >
                                     <p className="text-slate-600 leading-relaxed">
