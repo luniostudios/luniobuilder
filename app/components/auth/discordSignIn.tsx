@@ -21,7 +21,7 @@ export default function SignIn() {
         <button
             onClick={handleSignIn}
             disabled={isLoading}
-            className="flex flex-row text-white border justify-center border-white/20 rounded-full px-3 py-3 items-center gap-2 hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex flex-row text-white border justify-center text-md border-white/20 rounded-lg px-3 py-3 items-center gap-2 hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
             <img width="24" height="24" src="https://img.icons8.com/fluency/48/discord-logo.png" alt="discord-logo" />
             {isLoading ? "Signing In..." : "Sign In with Discord"}

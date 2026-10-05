@@ -21,7 +21,7 @@ export default function SignIn() {
         <button
             onClick={handleSignIn}
             disabled={isLoading}
-            className="flex flex-row text-white border justify-center border-white/20 rounded-full px-3 py-3 items-center gap-2 hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex flex-row text-white border justify-center text-md border-white/20 rounded-lg px-3 py-3 items-center gap-2 hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" height="24" width="24">
                 <g id="logo-github">

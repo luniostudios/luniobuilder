@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { auth } from '@/app/auth/auth'
 import UserAvatar from '../auth/UserAvatar'
-import { Menu, Rocket, User } from 'lucide-react'
+import { BarChart, LayoutDashboard, Menu, Rocket, Settings, User } from 'lucide-react'
 import {
     Popover,
     PopoverContent,
@@ -35,7 +35,7 @@ const Header = async () => {
                     <ul className='flex gap-6 items-center justify-center'>
                         <li><Link href="/#faq" className='text-gray-400 hover:text-gray-300 transition-colors'>FAQ</Link></li>
                         <li><Link href="/pricing" className='text-gray-400 hover:text-gray-300 transition-colors'>Pricing</Link></li>
-                        <li><Link href="/documentation" className='text-gray-400 hover:text-gray-300 transition-colors'>Templates</Link></li>
+                        <li className='items-align-middle'><Link href="/" className='flex flex-row gap-2 text-gray-400 hover:text-gray-300 transition-colors'><span className="text-gray-400 line-through">Templates</span><span className="text-xs no-underline text-yellow-400 border border-yellow-400 bg-yellow-200/30 rounded-full px-2 py-0.5">coming soon</span></Link></li>
                         <li><Link href="/#services" className='text-gray-400 hover:text-gray-300 transition-colors'>Services</Link></li>
                         <li><Link href="/documentation" className='text-gray-400 hover:text-gray-300 transition-colors'>Documentation</Link></li>
                         {!session && (
@@ -65,7 +65,7 @@ const Header = async () => {
                             <ul className='flex flex-col gap-4 mt-4'>
                                 <li><Link href="/#faq" className='text-gray-400 hover:text-gray-300 transition-colors'>FAQ</Link></li>
                                 <li><Link href="/pricing" className='text-gray-400 hover:text-gray-300 transition-colors'>Pricing</Link></li>
-                                <li><Link href="/documentation" className='text-gray-400 hover:text-gray-300 transition-colors'>Templates</Link></li>
+                                <li className='items-align-middle'><Link href="/" className='flex flex-row gap-2 text-gray-400 hover:text-gray-300 transition-colors'><span className="text-gray-400 line-through">Templates</span><span className="text-xs no-underline text-yellow-400 border border-yellow-400 bg-yellow-200/30 rounded-full px-2 py-0.5">coming soon</span></Link></li>
                                 <li><Link href="/#services" className='text-gray-400 hover:text-gray-300 transition-colors'>Services</Link></li>
                                 <li><Link href="/documentation" className='text-gray-400 hover:text-gray-300 transition-colors'>Documentation</Link></li>
                                 {!session && (
@@ -73,16 +73,19 @@ const Header = async () => {
                                 )}
                                 {session && (
                                     <div className='flex flex-col gap-4'>
-                                        <Link href="/dashboard" className='text-gray-400 hover:text-gray-300 transition-colors'>
-                                            Dashboard
+                                        <Link href="/dashboard?tab=projects" className="flex felx-row mt-3 text-gray-400 hover:text-gray-300 transition-colors">
+                                            <LayoutDashboard size={16} className="inline-block mr-2" />
+                                            My Projects
                                         </Link>
-                                        <Link href="/dashboard/settings" className='text-gray-400 hover:text-gray-300 transition-colors'>
-                                            Settings
+                                        <Link href="" className="mt-3 flex flex-row items-center gap-4 text-gray-400 hover:text-gray-300 transition-colors">
+                                            <BarChart size={16} className="inline-block mr-2" />
+                                            Analytics <span className="text-xs text-yellow-400 border border-yellow-400 bg-yellow-200/30 rounded-full px-2 py-0.5">coming soon</span>
                                         </Link>
-                                        <Link href="/dashboard/analytics" className='text-gray-400 hover:text-gray-300 transition-colors'>
-                                            Analytics
+                                        <Link href="/dashboard?tab=settings" className="mt-3 text-gray-400 hover:text-gray-300 transition-colors">
+                                            <Settings size={16} className="inline-block mr-2" />
+                                            Account Settings
                                         </Link>
-                                        <hr className='my-2 border-white/20' />
+                                        <hr className="border-white/20 my-2" />
                                         <SignOut />
                                     </div>
                                 )}

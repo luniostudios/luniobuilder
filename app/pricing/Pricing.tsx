@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Check, Building2, Rocket } from 'lucide-react';
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
+import { IconSquareRoundedCheck } from '@tabler/icons-react';
 
 interface PricingTabsProps {
     hasSession: boolean;
@@ -144,7 +145,7 @@ export default function Pricing({ hasSession }: PricingTabsProps) {
     };
 
     return (
-        <section id="pricing" className="relative py-24 sm:py-32">
+        <section id="pricing" className="relative py-24 sm:py-32 bg-white text-black">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-150 h-100 bg-brand-500/10 rounded-full blur-[150px]" />
             <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
                 <motion.div
@@ -194,14 +195,14 @@ export default function Pricing({ hasSession }: PricingTabsProps) {
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true, margin: '-50px' }}
                             transition={{ duration: 0.5, delay: i * 0.1 }}
-                            className={`relative rounded-3xl p-6 lg:p-8 ${plan.highlight
-                                ? 'border border-[#6dd5ed]/50 shadow-lg shadow-[#6dd5ed]/20'
+                            className={`relative rounded-xs p-6 lg:p-8 ${plan.highlight
+                                ? 'pricing-pro-card border'
                                 : 'border border-gray-500/20'
                                 }`}
                         >
                             {plan.highlight && (
-                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-lime-400 text-black text-xs font-medium flex items-center gap-1">
-                                    <Rocket className="w-3 h-3" />
+                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-foreground text-gray-700 text-xs font-medium flex items-center gap-1">
+                                    🔥
                                     Most Popular
                                 </div>
                             )}
@@ -230,7 +231,7 @@ export default function Pricing({ hasSession }: PricingTabsProps) {
                             {plan.name === 'Pro' && (
                                 <button
                                     onClick={userData?.role === 'PRO' || userData?.role === 'ADMIN' || userData?.role === 'OWNER' ? () => window.location.href = '/dashboard' : handleSubscribe}
-                                    className={`w-full py-4 px-6 rounded-xl font-bold text-lg transition-colors mb-8 bg-lime-400 text-black'
+                                    className={`w-full py-4 px-6 rounded-md font-bold text-lg transition-colors mb-8 bg-foreground text-black'
                                         }`}
                                 >
                                     {!hasSession && userData?.role === 'PRO' || userData?.role === 'ADMIN' || userData?.role === 'OWNER' ? 'Go to Dashboard' : `${plan.cta}`}
@@ -239,7 +240,7 @@ export default function Pricing({ hasSession }: PricingTabsProps) {
                             {plan.name == 'Starter' && (
                                 <Link
                                     href='/dashboard'
-                                    className={`w-full py-4 px-6 rounded-xl font-bold text-lg transition-colors mb-8 btn-ghost w-full'
+                                    className={`w-full py-4 px-6 rounded-md font-bold text-lg transition-colors mb-8 btn-ghost w-full'
                                         }`}
                                 >
                                     {!hasSession ? 'Go to Dashboard' : `${plan.cta}`}
@@ -248,7 +249,7 @@ export default function Pricing({ hasSession }: PricingTabsProps) {
                             {plan.name == 'Business' && (
                                 <button
                                     onClick={userData?.role === 'BUSINESS' || userData?.role === 'ADMIN' || userData?.role === 'OWNER' ? () => window.location.href = '/dashboard' : handleSubscribe}
-                                    className={`w-full py-4 px-6 rounded-xl font-bold text-lg transition-colors mb-8 btn-ghost w-full'
+                                    className={`w-full py-4 px-6 rounded-md font-bold text-lg transition-colors mb-8 btn-ghost w-full'
                                         }`}
                                 >
                                     {!hasSession && userData?.role === 'BUSINESS' || userData?.role === 'ADMIN' || userData?.role === 'OWNER' ? 'Go to Dashboard' : `${plan.cta}`}
@@ -260,7 +261,7 @@ export default function Pricing({ hasSession }: PricingTabsProps) {
                                     <li key={j} className="flex items-start gap-3 text-sm">
                                         <div className={`mt-0.5 w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${plan.highlight ? 'bg-brand-500/20' : 'bg-white/5'
                                             }`}>
-                                            <Check className="w-3 h-3 text-brand-300" strokeWidth={3} />
+                                            <IconSquareRoundedCheck stroke={2} />
                                         </div>
                                         <span className="text-ink-200">{f}</span>
                                     </li>

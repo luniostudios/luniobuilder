@@ -91,8 +91,8 @@ body {
 :root {
   --font-sans: "Roboto", sans-serif;
   --font-heading: "var(--font-sans)";
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --background: #0b0d10;
+  --foreground: #b8f36b;
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
@@ -244,6 +244,50 @@ body {
 
   100% {
     transform: rotate(360deg);
+  }
+}
+
+@property --pricing-border-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.pricing-pro-card {
+  isolation: isolate;
+}
+
+.pricing-pro-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  padding: 1.5px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--pricing-border-angle),
+    transparent 0deg 245deg,
+    #77b958 275deg,
+    #a8e063 305deg,
+    #719c5e 335deg,
+    transparent 360deg
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: pricing-border-loop 5s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes pricing-border-loop {
+  to {
+    --pricing-border-angle: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pricing-pro-card::before {
+    animation: none;
   }
 }
 
@@ -406,7 +450,6 @@ body {
     justify-content: center;
     gap: 0.5rem;
     padding: 0.875rem 1.75rem;
-    border-radius: 14px;
     font-weight: 600;
     font-size: 0.95rem;
     color: white;

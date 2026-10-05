@@ -148,7 +148,7 @@ const TOPICS: DocumentationTopic[] = [
         ],
         images: [
           {
-            src: '/documentation/lay.png', 
+            src: '/documentation/lay.png',
             alt: 'Right panel showing layout styling options',
             caption: 'Adjusting layout properties for better design'
           }
@@ -160,7 +160,7 @@ const TOPICS: DocumentationTopic[] = [
           'Customize the size and dimensions of your elements using the styling options in the right panel. You can set width and height properties, adjust spacing, and create a visually balanced design.',
         ],
         images: [
-          { 
+          {
             src: '/documentation/size.png',
             alt: 'Right panel showing size and dimension options',
             caption: 'Customizing size and dimensions for your elements'
@@ -334,21 +334,21 @@ export default function DocumentationPage() {
   }, [searchQuery]);
 
   return (
-    <div className="min-h-screen bg-gray-50 scroll-smooth">
+    <div className="min-h-screen bg-gray-50 text-black scroll-smooth">
       {/* Header */}
       <header className="sticky top-0 z-40 w-full border-b bg-white/95 backdrop-blur supports-backdrop-filter:bg-white/60">
         <div className="container flex h-16 items-center px-4">
           <div className="flex items-center space-x-4">
             <div className='flex'>
-                <Link href={"/"}>
-                    <div className="flex items-center text-black gap-2 cursor-pointer font-bold uppercase text-lg">
-                        <div className='flex flex-row text-2xl align-middle items-center'>
-                            <h1>LUNI</h1>
-                            <Rocket width={20} className="text-bold" />
-                        </div>
-                        <h1 className='flex flex-row text-2xl align-middle items-center'>BUILDER</h1>
-                    </div>
-                </Link>
+              <Link href={"/"}>
+                <div className="flex items-center text-black gap-2 cursor-pointer font-bold uppercase text-lg">
+                  <div className='flex flex-row text-2xl align-middle items-center'>
+                    <h1>LUNI</h1>
+                    <Rocket width={20} className="text-bold text-[#b8f36b]" />
+                  </div>
+                  <h1 className='flex flex-row text-2xl align-middle items-center'>BUILDER</h1>
+                </div>
+              </Link>
             </div>
           </div>
 
@@ -378,9 +378,8 @@ export default function DocumentationPage() {
 
       <div className="container flex-1 items-start md:grid md:grid-cols-[220px_minmax(0,1fr)] md:gap-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-10">
         {/* Sidebar */}
-        <aside className={`fixed top-16 z-30 -ml-2 h-[calc(100vh-4rem)] w-full shrink-0 overflow-y-auto border-r bg-white md:sticky md:block ${
-          sidebarOpen ? 'block' : 'hidden md:block'
-        }`}>
+        <aside className={`fixed top-16 z-30 -ml-2 h-[calc(100vh-4rem)] w-full shrink-0 overflow-y-auto border-r bg-white md:sticky md:block ${sidebarOpen ? 'block' : 'hidden md:block'
+          }`}>
           <div className="py-6">
             <div className="mb-4 md:hidden">
               <div className="relative">
@@ -406,14 +405,13 @@ export default function DocumentationPage() {
                       setSelectedTopicId(topic.id);
                       setSidebarOpen(false);
                     }}
-                    className={`w-full py-4 px-4 text-left transition-all duration-200 hover:bg-accent ${
-                      active
+                    className={`w-full py-4 px-4 text-left transition-all duration-200 hover:bg-accent ${active
                         ? 'bg-primary/10 text-primary'
-                        : 'border-transparent text-muted-foreground hover:text-foreground'
-                    }`}
+                        : 'border-transparent text-muted-foreground hover:text-black/80'
+                      }`}
                   >
                     <div className="flex items-center gap-3">
-                      <span className={`mt-0.5 ${active ? 'text-primary' : 'text-muted-foreground'}`}>
+                      <span className={`mt-0.5 ${active ? 'text-primary' : 'text-black/50'}`}>
                         {topic.icon}
                       </span>
                       <div className="flex-1 space-y-1">
@@ -431,10 +429,10 @@ export default function DocumentationPage() {
         <main className="relative py-6 lg:gap-10 lg:py-8 xl:grid xl:grid-cols-[1fr_300px]">
           <div className="mx-auto w-full min-w-0 max-w-3xl max-md:px-5">
             {/* Breadcrumbs */}
-            <div className="mb-6 flex items-center space-x-1 text-sm text-muted-foreground">
+            <div className="mb-6 flex items-center space-x-1 text-sm text-black/50">
               <span>Documentation</span>
               <span>/</span>
-              <span className="font-medium text-foreground">{selectedTopic.title}</span>
+              <span className="font-medium text-black">{selectedTopic.title}</span>
             </div>
 
             {/* Content */}
