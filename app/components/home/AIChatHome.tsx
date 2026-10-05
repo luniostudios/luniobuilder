@@ -163,9 +163,9 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
                 ))}
               </div>
             )}
-            <div className='flex flex-wrap items-center justify-between gap-3 border-t border-white/10 px-2 pt-3 sm:px-3'>
+            <div className='flex flex-wrap items-center justify-between border-t border-white/10 px-2 pt-3 sm:px-3'>
               <div className='flex items-center gap-2'>
-                <label className='inline-flex cursor-pointer items-center gap-2 rounded-sm px-3 py-2 text-sm text-white/45 transition hover:bg-white/6 hover:text-white'>
+                <label className='inline-flex cursor-pointer items-center gap-2 rounded-sm px-3 py-3 text-sm text-white/45 transition hover:bg-white/6 hover:text-white'>
                   <ImagePlus size={17} />
                   <h1 className='flex text-sm font-medium max-md:hidden'>Add reference</h1>
                   <input type='file' accept='image/*' multiple className='sr-only' onChange={event => { selectImages(event.target.files); event.currentTarget.value = ''; }} />

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/app/auth/auth';
 import { supabaseServer } from '@/app/lib/supabaseServer';
 import { getRootDomain } from '@/app/lib/tenant';
+import { canUseCustomDomainsForRole } from '@/app/lib/projectLimits';
 
 export const runtime = 'nodejs';
 
@@ -41,17 +42,21 @@ async function authorizeProject(projectId: string, canManage: boolean) {
   if (!project) return { error: NextResponse.json({ error: 'Project not found.' }, { status: 404 }) };
 
   const role = String(user?.role || '').toLowerCase();
-  if (role === 'admin' || role === 'owner' || project.user_id === userId) return { userId };
+  if (role !== 'admin' && role !== 'owner' && project.user_id !== userId) {
+    const { data: membership } = await supabaseServer
+      .from('project_members')
+      .select('role')
+      .eq('project_id', projectId)
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (!membership) return { error: NextResponse.json({ error: 'Project not found.' }, { status: 404 }) };
+    if (canManage && membership.role === 'viewer') {
+      return { error: NextResponse.json({ error: 'This project is read-only for you.' }, { status: 403 }) };
+    }
+  }
 
-  const { data: membership } = await supabaseServer
-    .from('project_members')
-    .select('role')
-    .eq('project_id', projectId)
-    .eq('user_id', userId)
-    .maybeSingle();
-  if (!membership) return { error: NextResponse.json({ error: 'Project not found.' }, { status: 404 }) };
-  if (canManage && membership.role === 'viewer') {
-    return { error: NextResponse.json({ error: 'This project is read-only for you.' }, { status: 403 }) };
+  if (!canUseCustomDomainsForRole(role)) {
+    return { error: NextResponse.json({ error: 'Custom domains are available on the Pro plan and above.' }, { status: 403 }) };
   }
 
   return { userId };

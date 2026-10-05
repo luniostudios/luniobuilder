@@ -72,3 +72,7 @@ export const getCmsRecordLimitForRole = (role?: string) => {
 export const canUseShopForRole = (role?: string) => {
   return ['pro', 'premium', 'team', 'business', 'admin', 'owner'].includes(String(role || 'free').toLowerCase());
 };
+
+export const canUseCustomDomainsForRole = (role?: string) => {
+  return ['pro', 'premium', 'team', 'business', 'admin', 'owner'].includes(String(role || 'free').toLowerCase());
+};

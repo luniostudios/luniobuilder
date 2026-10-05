@@ -19,6 +19,7 @@ interface ProjectDomain {
 export default function CustomDomainManager({ projectId }: { projectId: string }) {
   const [domains, setDomains] = useState<ProjectDomain[]>([]);
   const [domainInput, setDomainInput] = useState('');
+  const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const [configured, setConfigured] = useState(true);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -32,7 +33,13 @@ export default function CustomDomainManager({ projectId }: { projectId: string }
     try {
       const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}/domains`, { cache: 'no-store' });
       const data = await response.json();
+      if (response.status === 403) {
+        setHasAccess(false);
+        setDomains([]);
+        return;
+      }
       if (!response.ok) throw new Error(data?.error || 'Unable to load custom domains.');
+      setHasAccess(true);
       setDomains(data.domains || []);
       setConfigured(Boolean(data.configured));
     } catch (loadError) {
@@ -80,7 +87,9 @@ export default function CustomDomainManager({ projectId }: { projectId: string }
       {error && <p role='alert' className='mt-4 rounded-lg border border-red-800 bg-red-950/30 p-3 text-sm text-red-200'>{error}</p>}
       {message && <p role='status' className='mt-4 rounded-lg border border-emerald-800 bg-emerald-950/30 p-3 text-sm text-emerald-200'>{message}</p>}
 
-      {!configured ? (
+      {hasAccess === false ? (
+        <p className='mt-5 text-sm text-gray-300'>Custom domains are available on the Pro plan and above. <a href='/pricing' className='font-semibold text-emerald-300 underline underline-offset-4 hover:text-emerald-200'>View plans</a></p>
+      ) : !configured ? (
         <p className='mt-5 text-sm text-amber-200'>Custom domain connections are not configured for this LUNIO deployment.</p>
       ) : (
         <>
