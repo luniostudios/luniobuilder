@@ -73,7 +73,7 @@ const getAccountCredentials = async (userId: string) => {
 };
 
 const getTextFromProvider = async (provider: AIProvider, apiKey: string, systemPrompt: string) => {
-    if (provider === 'openai') {
+    if (provider === 'openai-gpt-6-astra' || provider === 'openai-gpt-6.1-sol' || provider === 'openai-gpt-6-luna') {
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
@@ -83,34 +83,14 @@ const getTextFromProvider = async (provider: AIProvider, apiKey: string, systemP
         return data?.choices?.[0]?.message?.content || '';
     }
 
-    if (provider === 'claude') {
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
+    if (provider === 'claude-fable' || provider === 'claude-4.6-sonnet' || provider === 'claude-4.6-opus') {
+        const response = await fetch('https://api.anthropic.com/v1/complete', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-            body: JSON.stringify({ model: 'claude-3-5-sonnet-latest', max_tokens: 8192, system: 'Return only the requested HTML.', messages: [{ role: 'user', content: systemPrompt }] }),
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+            body: JSON.stringify({ model: provider, prompt: systemPrompt, max_tokens_to_sample: 8192, temperature: 0.2 }),
         });
-        const data = await readProviderJson(response, 'Claude');
-        return data?.content?.[0]?.text || '';
-    }
-
-    if (provider === 'groq') {
-        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-            body: JSON.stringify({ model: 'openai/gpt-oss-20b', messages: [{ role: 'user', content: systemPrompt }] }),
-        });
-        const data = await readProviderJson(response, 'Groq');
+        const data = await readProviderJson(response, 'Anthropic');
         return data?.choices?.[0]?.message?.content || '';
-    }
-
-    if (provider === 'vercel') {
-        const response = await fetch('https://api.vercel.com/v2/ai/generate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${VERCEL_AI_API_KEY}` },
-            body: JSON.stringify({ model: 'gpt-4o-mini', input: systemPrompt, temperature: 0.2 }),
-        });
-        const data = await readProviderJson(response, 'Vercel AI');
-        return data?.output?.[0]?.content || '';
     }
 
     if (provider === 'gemini-3.6-flash' || provider === 'gemini-pro') {
