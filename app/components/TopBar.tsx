@@ -891,7 +891,7 @@ ${exportMetaTags}
 
   return (
     <>
-      <header className="h-12 bg-[#0d1117] border-b border-gray-800 flex justify-between items-center px-4 gap-3 z-50 shrink-0">
+      <header className="h-12 bg-background border-b border-gray-800 flex justify-between items-center px-4 gap-3 z-50 shrink-0">
         <div className='flex flex-row items-center gap-3'>
           {/* Logo */}
           <div className="flex items-center gap-2 mr-2">

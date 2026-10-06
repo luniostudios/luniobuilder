@@ -29,8 +29,10 @@ const getGeminiApiUrl = (model: 'gemini-3.6-flash' | 'gemini-pro') =>
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
 const VERCEL_AI_API_KEY = process.env.VERCEL_AI_API_KEY;
+const OPENROUTE_API_KEY = process.env.OPENROUTE_API_KEY;
 
-type ProviderCredential = { provider: AIProvider; apiKey: string; isPlatform: boolean };
+type GenerationProvider = AIProvider | 'openrouter';
+type ProviderCredential = { provider: GenerationProvider; apiKey: string; isPlatform: boolean };
 type ProviderResponseData = {
     error?: { message?: string };
     message?: string;
@@ -72,7 +74,17 @@ const getAccountCredentials = async (userId: string) => {
     })).filter(credential => Boolean(credential.apiKey));
 };
 
-const getTextFromProvider = async (provider: AIProvider, apiKey: string, systemPrompt: string) => {
+const getTextFromProvider = async (provider: GenerationProvider, apiKey: string, systemPrompt: string) => {
+    if (provider === 'openrouter') {
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+            body: JSON.stringify({ model: 'openai/gpt-4o-mini', messages: [{ role: 'user', content: systemPrompt }], temperature: 0.2 }),
+        });
+        const data = await readProviderJson(response, 'OpenRouter');
+        return data?.choices?.[0]?.message?.content || '';
+    }
+
     if (provider === 'openai-gpt-6-astra' || provider === 'openai-gpt-6.1-sol' || provider === 'openai-gpt-6-luna') {
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
@@ -83,11 +95,11 @@ const getTextFromProvider = async (provider: AIProvider, apiKey: string, systemP
         return data?.choices?.[0]?.message?.content || '';
     }
 
-    if (provider === 'claude-fable' || provider === 'claude-4.6-sonnet' || provider === 'claude-4.6-opus') {
-        const response = await fetch('https://api.anthropic.com/v1/complete', {
+    if (provider === 'claude-fable' || provider === 'claude-4.6-sonnet' || provider === 'claude-4.6-opus' || provider === 'claude-4.5-haiku') {
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-            body: JSON.stringify({ model: provider, prompt: systemPrompt, max_tokens_to_sample: 8192, temperature: 0.2 }),
+            body: JSON.stringify({ model: provider, max_tokens: 8192, temperature: 0.2, messages: [{ role: 'user', content: systemPrompt }] }),
         });
         const data = await readProviderJson(response, 'Anthropic');
         return data?.choices?.[0]?.message?.content || '';
@@ -218,20 +230,21 @@ export async function POST(req: NextRequest): Promise<NextResponse<GenerateRespo
 
         systemPrompt += `\n\nFINAL GENERATION RULE: Complete the implementation before optimizing decoration. Do not return a plan, explanation, TODO, placeholder, or feature description. Return the finished builder-compatible HTML only.`;
 
-        const platformCredential: ProviderCredential | null = GEMINI_API_KEY
-            ? { provider: 'gemini-3.6-flash', apiKey: GEMINI_API_KEY, isPlatform: true }
-            : null;
+        const platformCredentials: ProviderCredential[] = [
+            ...(GEMINI_API_KEY ? [{ provider: 'gemini-3.6-flash' as const, apiKey: GEMINI_API_KEY, isPlatform: true }] : []),
+            ...(OPENROUTE_API_KEY ? [{ provider: 'openrouter' as const, apiKey: OPENROUTE_API_KEY, isPlatform: true }] : []),
+        ];
         const credentialsByPreference = provider
             ? [...accountCredentials.filter(credential => credential.provider === provider), ...accountCredentials.filter(credential => credential.provider !== provider)]
             : accountCredentials;
-        const candidates = [...credentialsByPreference, ...(platformCredential ? [platformCredential] : [])]
+        const candidates = [...credentialsByPreference, ...platformCredentials]
             .filter(candidate => !hasImage || candidate.provider === 'gemini-3.6-flash' || candidate.provider === 'gemini-pro')
             .filter(candidate => !candidate.isPlatform || aiDailyLimit === null || currentCount < aiDailyLimit)
             .filter((candidate, index, all) => all.findIndex(item => item.provider === candidate.provider) === index);
 
         if (candidates.length === 0) {
             return NextResponse.json(
-                { html: '', success: false, error: 'Add an AI provider API key in Profile Settings or configure GEMINI_API_KEY.' },
+                { html: '', success: false, error: 'Add an AI provider API key in Profile Settings or configure GEMINI_API_KEY or OPENROUTE_API_KEY.' },
                 { status: 500 }
             );
         }

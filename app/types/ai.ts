@@ -6,4 +6,10 @@ export type AIProvider =
 'openai-gpt-6-luna' | 
 'claude-fable' | 
 'claude-4.6-sonnet' | 
-'claude-4.6-opus'
+'claude-4.6-opus' |
+'claude-4.5-haiku';
+
+export interface ImageReference {
+  file: File;
+  preview: string;
+}

@@ -378,7 +378,7 @@ export default function Dashboard() {
     };
 
     if (status === 'loading') {
-        return <div className='min-h-screen bg-[#0d1117] text-white flex items-center justify-center'>Loading projects...</div>;
+        return <div className='min-h-screen bg-background text-white flex items-center justify-center'>Loading projects...</div>;
     }
 
     if (!session) {
@@ -390,6 +390,8 @@ export default function Dashboard() {
         router.push(`/dashboard?tab=${encodeURIComponent(id)}`);
     };
 
+    const labelAnalytics = 'Analytics';
+
     const NavItem = ({ icon: Icon, label, id }: NavItemProps) => (
         <button
             onClick={() => selectTab(id)}
@@ -399,8 +401,9 @@ export default function Dashboard() {
                 }`}
         >
             <Icon size={18} className={activeTab === id ? 'text-white' : 'text-gray-400'} />
-            <span>{label}</span>
-            {label === 'Analytics' && (
+            {label === labelAnalytics ? <span className='line-through'>{label}</span>
+            : <span>{label}</span>}
+            {label === labelAnalytics && (
                 <span className="text-xs text-yellow-400 border border-yellow-400 bg-yellow-200/30 rounded-full px-2 py-0.5">
                     coming soon
                 </span>
@@ -451,7 +454,7 @@ export default function Dashboard() {
                     {/* Navigation */}
                     <nav className="space-y-1">
                         <NavItem icon={LayoutDashboard} label="Projects" id="projects" />
-                        <NavItem icon={BarChart3} label="Analytics" id="" />
+                        <NavItem icon={BarChart3} label={labelAnalytics} id="" />
                         <NavItem icon={Settings} label="Settings" id="settings" />
                         {userData && (userData.role?.toLowerCase() === 'admin' || userData.role?.toLowerCase() === 'owner') && (
                             <NavItem icon={Users} label="Users" id="users" />
@@ -748,7 +751,7 @@ export default function Dashboard() {
                                                                 <DialogDescription>Are you sure you want to delete this project? This action cannot be undone.</DialogDescription>
                                                             </DialogHeader>
                                                             <DialogFooter>
-                                                                <Button type='button' variant='outline' onClick={() => setDeleteModal({ isOpen: false, projectId: null })}>Cancel</Button>
+                                                                <Button type='button' onClick={() => setDeleteModal({ isOpen: false, projectId: null })}>Cancel</Button>
                                                                 <Button
                                                                     type='button'
                                                                     variant='destructive'

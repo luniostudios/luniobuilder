@@ -20,9 +20,10 @@ export const getProviderLabel = (provider: AIProvider) => {
     switch (provider) {
         case 'gemini-3.6-flash': return 'Gemini 3.6 Flash';
         case 'gemini-pro': return 'Gemini 3.1 Pro';
-        case 'claude-fable': return 'Claude Fable 5';
-        case 'claude-4.6-sonnet': return 'Claude 4.6 Sonnet';
-        case 'claude-4.6-opus': return 'Claude 4.6 Opus';
+        case 'claude-fable': return 'Claude Fable 5.1';
+        case 'claude-4.6-opus': return 'Claude Opus 5.5';
+        case 'claude-4.6-sonnet': return 'Claude Sonnet 5.5';
+        case 'claude-4.5-haiku': return 'Claude Haiku 4.5';
         case 'openai-gpt-6-astra': return 'OpenAI GPT-6 Astra';
         case 'openai-gpt-6.1-sol': return 'OpenAI GPT-6.1 Sol';
         case 'openai-gpt-6-luna': return 'OpenAI GPT-6 Luna'
@@ -53,7 +54,7 @@ export const AIModels = ({ provider, onProviderChange }: AIModelsProps) => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className='bg-[#111215] w-full border border-white/20 mt-2 rounded-md p-2'>
                     <DropdownMenuLabel className='text-xs text-white mb-1'>Select AI model</DropdownMenuLabel>
-                    {['gemini-3.6-flash', 'gemini-pro', 'openai-gpt-6-astra', 'openai-gpt-6.1-sol', 'openai-gpt-6-luna', 'claude-fable', 'claude-4.6-sonnet', 'claude-4.6-opus'].map((provider) => (
+                    {['gemini-3.6-flash', 'gemini-pro', 'openai-gpt-6-astra', 'openai-gpt-6.1-sol', 'openai-gpt-6-luna', 'claude-fable', 'claude-4.6-sonnet', 'claude-4.6-opus', 'claude-4.5-haiku'].map((provider) => (
                         <DropdownMenuItem key={provider} className='text-sm text-white/80 flex flex-row justify-between gap-5 align-items-middle' onClick={() => onProviderChange(provider as AIProvider)}>
                             {getProviderLabel(provider as AIProvider)}
                             <span className='text-[10px] text-white/50 border border-white rounded-2xl px-2'>{provider === 'gemini-3.6-flash' ? 'FREE' : 'API'}</span>

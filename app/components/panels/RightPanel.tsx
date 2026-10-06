@@ -33,7 +33,7 @@ export const RightPanel: React.FC = () => {
   const page = getCurrentPage();
 
   return (
-    <div className="w-70 bg-[#111114] max-md:hidden border-l border-gray-800 flex flex-col h-full">
+    <div className="w-70 bg-background max-md:hidden border-l border-gray-800 flex flex-col h-full">
       {element ? (
         <>
           {/* Tabs */}
@@ -230,7 +230,7 @@ const CustomTimelineEditor: React.FC<{ frames: InteractionKeyframe[]; allowIniti
     setSelectedFrameIndex(Math.max(0, activeIndex - 1));
   };
 
-  return <div className='mt-3 overflow-hidden rounded-md border border-gray-700/80 bg-[#15171b]'>
+  return <div className='mt-3 overflow-hidden rounded-md border border-gray-700/80 bg-background/30'>
     <div className='flex items-center justify-between border-b border-gray-800 px-2.5 py-2'>
       <div>
         <p className='text-xs font-semibold uppercase tracking-wider text-gray-300'>Timeline</p>
@@ -398,51 +398,6 @@ interface GradientInputProps {
   defaultValue: string;
 }
 
-const GradientInput: React.FC<GradientInputProps> = ({ label, value, onChange, placeholder, defaultValue }) => {
-  const [open, setOpen] = useState(false);
-  const safeValue = value || defaultValue;
-
-  return (
-    <div className="mb-3">
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <span className="text-xs text-gray-500">{label}</span>
-        <button type="button" aria-label={`Reset ${label.toLowerCase()}`} title="Reset" className="text-gray-500 transition hover:text-gray-200" onClick={() => onChange('')}><Redo2 size={13} /></button>
-      </div>
-      <div className="flex items-center gap-2">
-        <input
-          type="text"
-          value={value || ''}
-          onChange={e => onChange(e.target.value)}
-          placeholder={placeholder}
-          className="flex-1 bg-gray-800 text-gray-200 text-xs rounded-md px-2 py-1.5 border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 min-w-0"
-        />
-        <button
-          type="button"
-          aria-label={`${label} gradient picker`}
-          aria-expanded={open}
-          className="h-9 min-w-18 rounded-md border border-gray-700 transition hover:border-gray-500"
-          style={{
-            backgroundImage: safeValue,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-          onClick={() => setOpen(prev => !prev)}
-        />
-      </div>
-      {open && (
-        <div className="absolute z-10 bottom-2 right-65 mt-3 rounded-xl border border-gray-700 overflow-hidden">
-          <ColorPicker
-            value={safeValue}
-            onChange={onChange}
-            hideColorTypeBtns={true}
-            hidePresets={true}
-          />
-        </div>
-      )}
-    </div>
-  );
-};
-
 const isCssGradient = (val: string) => /(linear-gradient|radial-gradient|conic-gradient)\(/i.test(val.trim());
 
 const splitCssBackgroundLayers = (value: string) => {
@@ -595,7 +550,7 @@ const SpacingInput: React.FC<SpacingInputProps> = ({ label, values, onChange }) 
   };
 
   return (
-    <div className="mb-3 rounded-lg border border-gray-800 bg-[#14161a] p-2.5">
+    <div className="mb-3 rounded-lg border border-gray-800 bg-background p-2.5">
       <div className="mb-2 flex items-center justify-between">
         <span className="text-[11px] font-medium text-gray-300">{label}</span>
       </div>

@@ -173,10 +173,6 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
                 <AIModels provider={provider} onProviderChange={setProvider} />
               </div>
               <div className='flex items-center gap-2'>
-                {loading && <span className='text-sm text-white/50'>Generating...</span>}
-                {error && <span className='text-sm text-rose-300'>{error}</span>}
-              </div>
-              <div className='flex items-center gap-2'>
               </div>
               <button type='submit' disabled={loading || (!prompt.trim() && imageReferences.length === 0)} className='inline-flex items-center gap-2 rounded-sm bg-[#b8f36b] px-4 py-2.5 text-sm font-semibold text-[#10150c] transition hover:bg-[#d0ff91] disabled:cursor-not-allowed disabled:opacity-35'>
                 {loading ? <LoaderCircle size={17} className='animate-spin' /> : <ArrowUp size={17} />}

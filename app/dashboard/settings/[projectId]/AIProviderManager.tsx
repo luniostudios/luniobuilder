@@ -12,9 +12,10 @@ const providerLabels: Record<AIProvider, string> = {
   'openai-gpt-6-astra': 'OpenAI GPT-6 Astra',
   'openai-gpt-6.1-sol': 'OpenAI GPT-6.1 Sol',
   'openai-gpt-6-luna': 'OpenAI GPT-6 Luna',
-  'claude-fable': 'Claude Fable',
-  'claude-4.6-sonnet': 'Claude 4.6 Sonnet',
-  'claude-4.6-opus': 'Claude 4.6 Opus',
+  'claude-fable': 'Claude Fable 5.1',
+  'claude-4.6-sonnet': 'Claude Sonnet 5.5',
+  'claude-4.6-opus': 'Claude Opus 5.5',
+  'claude-4.5-haiku': 'Claude Haiku 4.5',
 };
 
 export default function AIProviderManager() {

@@ -65,7 +65,7 @@ const Header = async () => {
                             <ul className='flex flex-col gap-4 mt-4'>
                                 <li><Link href="/#faq" className='text-gray-400 hover:text-gray-300 transition-colors'>FAQ</Link></li>
                                 <li><Link href="/pricing" className='text-gray-400 hover:text-gray-300 transition-colors'>Pricing</Link></li>
-                                <li className='items-align-middle'><Link href="/" className='flex flex-row gap-2 text-gray-400 hover:text-gray-300 transition-colors'><span className="text-gray-400 line-through">Templates</span><span className="text-xs no-underline text-yellow-400 border border-yellow-400 bg-yellow-200/30 rounded-full px-2 py-0.5">coming soon</span></Link></li>
+                                <li className='items-align-middle'><Link href="/" className='flex flex-row gap-2 text-gray-400 hover:text-gray-300 transition-colors'><span className="text-gray-400 line-through">Templates</span><span className=" text-xs no-underline text-yellow-400 border border-yellow-400 bg-yellow-200/30 rounded-full px-2 py-0.5">coming soon</span></Link></li>
                                 <li><Link href="/#services" className='text-gray-400 hover:text-gray-300 transition-colors'>Services</Link></li>
                                 <li><Link href="/documentation" className='text-gray-400 hover:text-gray-300 transition-colors'>Documentation</Link></li>
                                 {!session && (
@@ -77,9 +77,8 @@ const Header = async () => {
                                             <LayoutDashboard size={16} className="inline-block mr-2" />
                                             My Projects
                                         </Link>
-                                        <Link href="" className="mt-3 flex flex-row items-center gap-4 text-gray-400 hover:text-gray-300 transition-colors">
-                                            <BarChart size={16} className="inline-block mr-2" />
-                                            Analytics <span className="text-xs text-yellow-400 border border-yellow-400 bg-yellow-200/30 rounded-full px-2 py-0.5">coming soon</span>
+                                        <Link href="" className="mt-3 flex flex-row items-center gap-2 text-gray-400 hover:text-gray-300 transition-colors">
+                                            <span className="text-gray-400 line-through"><BarChart size={16} className="inline-block mr-2" />Analytics</span><span className="text-xs text-yellow-400 border border-yellow-400 bg-yellow-200/30 rounded-full px-2 py-0.5">coming soon</span>
                                         </Link>
                                         <Link href="/dashboard?tab=settings" className="mt-3 text-gray-400 hover:text-gray-300 transition-colors">
                                             <Settings size={16} className="inline-block mr-2" />

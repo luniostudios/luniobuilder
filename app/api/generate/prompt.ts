@@ -12,6 +12,17 @@ OUTPUT CONTRACT
 - Do not use JavaScript, event handler attributes such as onclick or onsubmit, CSS classes, external stylesheets, inline SVG, CSS variables, or external UI frameworks.
 - Put all styling in valid inline style attributes using standard kebab-case CSS properties. Keep every style value browser-safe and self-contained.
 - Use only inline styles that are supported by the editor. Unsupported styles may be discarded during import.
+- Use only the editor's supported data attributes for editable content, responsive overrides, CMS bindings, shop checkout, filtering, pagination, and conditional display. Unsupported attributes may be discarded during import.
+- Use only the editor's supported data-lunio-* attributes for responsive overrides, CMS bindings, shop checkout, filtering, pagination, and conditional display. Unsupported attributes may be discarded during import.
+- Use only the editor's supported data-cms-* attributes for CMS bindings, filtering, pagination, and conditional display. Unsupported attributes may be discarded during import.
+- Use only the editor's supported data-shop-* attributes for shop checkout. Unsupported attributes may be discarded during import.
+- Use only the editor's supported data-lunio-nav-menu and data-lunio-icon attributes for responsive navigation. Unsupported attributes may be discarded during import.
+- Use only the editor's supported data-lunio-page and data-lunio-slug attributes for page wrappers. Unsupported attributes may be discarded during import.
+- Use only the editor's supported data-lunio-style-{breakpoint} attributes for responsive style overrides. Unsupported attributes may be discarded during import.
+- Use only the editor's supported data-lunio-cms-map, data-cms-collection, data-cms-field, data-cms-href-field, data-cms-condition-field, data-cms-condition-operator, data-cms-condition-value, data-cms-filter-field, data-cms-filter-placeholder, data-cms-pagination, and data-cms-page-size attributes for CMS maps. Unsupported attributes may be discarded during import.
+- Use only the editor's supported data-lunio-shop-checkout, data-shop-name-field, data-shop-price-field, data-shop-image-field attributes for shop checkout. Unsupported attributes may be discarded during import.
+- Use only the editor's supported data-lunio-animation-name, data-lunio-animation-duration, data-lunio-animation-timing-function, data-lunio-animation-delay, data-lunio-animation-iteration-count, data-lunio-animation-direction, data-lunio-animation-fill-mode, and data-lunio-animation-play-state attributes for animation. Unsupported attributes may be discarded during import.
+- Use only the editor's supported data-lunio-style-widescreen, data-lunio-style-laptop, data-lunio-style-tablet, data-lunio-style-mobileLandscape, and data-lunio-style-mobile attributes for responsive style overrides. Unsupported attributes may be discarded during import.
 
 EDITOR FUNCTIONALITY
 - Every imported element must be meaningful on its own and placed in a clear parent-child hierarchy so users can select, drag, reorder, and edit it.
@@ -101,4 +112,10 @@ FINAL SELF-CHECK BEFORE RESPONDING
 3. Links, buttons, forms, media, and navigation use the editor-compatible attributes described above.
 4. CMS maps use real field bindings and, when requested, valid shop, filter, pagination, and conditional attributes from this contract.
 5. The response contains only raw HTML.
+6. The response contains no markdown, code fences, explanations, comments, JSON, or surrounding text.
+7. The response is a complete page fragment or multiple page wrappers with working internal links, not a scaffold or placeholder.
+8. The response implements every explicit and implied requirement from the user's request, including content, hierarchy, interactions, and responsive behavior.
+9. The response is valid HTML, parseable, and free of duplicate ids, unclosed tags, invalid nesting, and unbroken text blocks.
+10. The response is a finished product, not a scaffold, and does not contain placeholder text, Lorem ipsum, or meaningless labels.
+11. The response is a complete, polished, and usable website fragment that can be imported into the LUNIO Builder editor without further modification.
 `;
