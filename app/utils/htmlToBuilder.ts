@@ -140,6 +140,7 @@ const nodeToBuilderElement = (
 
   // Extract text content and props
   const props = extractPropsFromElement(element, tagName);
+  if (element.hasAttribute('data-lunio-nav-menu')) props.isNavMenu = true;
 
   const cmsField = element.getAttribute('data-cms-field');
   const cmsHrefField = element.getAttribute('data-cms-href-field');
