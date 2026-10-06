@@ -1106,7 +1106,7 @@ const StyleEditor: React.FC<StyleEditorProps> = ({ element, breakpoint }) => {
               label="Columns"
               value={styles.gridTemplateColumns || ''}
               onChange={v => update('gridTemplateColumns', v)}
-              placeholder="repeat(3, 1fr)"
+              placeholder="auto auto auto"
             />
             <InputRow
               label="Rows"

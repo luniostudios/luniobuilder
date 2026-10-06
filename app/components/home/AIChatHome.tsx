@@ -10,6 +10,7 @@ import { Page } from '../../types/builder';
 import type { AIProvider } from '../../types/ai';
 import { persistGeneratedCms } from '../../utils/generatedCms';
 import { AIModels } from './dropdowns/AIModels';
+import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '../../../components/ui/drawer';
 
 const promptSuggestions = [
   'A calm portfolio for an architectural studio',
@@ -26,6 +27,52 @@ interface ImageReference {
   preview: string;
 }
 
+type GenerationStatus = 'pending' | 'active' | 'done' | 'error';
+
+interface GenerationStep {
+  id: number;
+  label: string;
+  detail: string;
+  status: GenerationStatus;
+}
+
+const buildGenerationSteps = (promptText: string): GenerationStep[] => {
+  const summary = promptText.trim() || 'Reference images included';
+
+  return [
+    {
+      id: 1,
+      label: 'Prompt received',
+      detail: summary.length > 90 ? `${summary.slice(0, 87)}…` : summary,
+      status: 'done',
+    },
+    {
+      id: 2,
+      label: 'Planning layout',
+      detail: 'Mapping sections, tone, and structure',
+      status: 'active',
+    },
+    {
+      id: 3,
+      label: 'Generating website',
+      detail: 'Creating the first website draft',
+      status: 'pending',
+    },
+    {
+      id: 4,
+      label: 'Reviewing output',
+      detail: 'Checking the generated pages and metadata',
+      status: 'pending',
+    },
+    {
+      id: 5,
+      label: 'Opening editor',
+      detail: 'Preparing the editable canvas',
+      status: 'pending',
+    },
+  ];
+};
+
 export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
   const router = useRouter();
   const { generate, loading, error, clearError } = useAIGeneration();
@@ -34,6 +81,12 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
   const [imageReferences, setImageReferences] = useState<ImageReference[]>([]);
   const [status, setStatus] = useState('');
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [generationSteps, setGenerationSteps] = useState<GenerationStep[]>(() => buildGenerationSteps(''));
+  const [generationDrawerOpen, setGenerationDrawerOpen] = useState(false);
+
+  const updateGenerationStep = (stepId: number, status: GenerationStatus, detail?: string) => {
+    setGenerationSteps(current => current.map(step => (step.id === stepId ? { ...step, status, ...(detail ? { detail } : {}) } : step)));
+  };
 
   useEffect(() => {
     if (!loading) {
@@ -74,7 +127,12 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
       return;
     }
 
+    const promptSummary = prompt.trim() || 'Reference images included';
+    setGenerationSteps(buildGenerationSteps(promptSummary));
+    setGenerationDrawerOpen(true);
     setStatus('Designing your first draft...');
+    updateGenerationStep(2, 'active', 'Mapping sections, tone, and structure');
+
     const imageReferencesData = await Promise.all(imageReferences.map(async ({ file }) => ({
       data: await new Promise<string>(resolve => {
         const reader = new FileReader();
@@ -84,12 +142,16 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
       mimeType: file.type,
     })));
 
+    updateGenerationStep(3, 'active', 'Creating the first website draft');
     const result = await generate({ provider, prompt: prompt.trim(), imageReferences: imageReferencesData });
     if (!result.success || !result.html) {
+      updateGenerationStep(3, 'error', 'The generation request failed.');
       setStatus('');
       return;
     }
 
+    updateGenerationStep(3, 'done', 'Website draft generated successfully');
+    updateGenerationStep(4, 'active', 'Checking the generated pages and metadata');
     setStatus('Opening your website in the editor...');
     const generatedPages = htmlToBuilderPages(result.html);
     const pages: Page[] = generatedPages.map(generatedPage => ({
@@ -115,9 +177,12 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
     });
     const data = await response.json().catch(() => null);
     if (!response.ok || !data?.id) {
+      updateGenerationStep(4, 'error', 'The project could not be created.');
       setStatus('');
       return;
     }
+    updateGenerationStep(4, 'done', 'Generated pages saved successfully');
+    updateGenerationStep(5, 'active', 'Preparing the editable canvas');
     if (result.html.includes('data-lunio-cms-map')) await persistGeneratedCms(data.id, result.html);
     router.push(`/editor?projectId=${encodeURIComponent(data.id)}`);
   };
@@ -130,7 +195,74 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
   };
 
   return (
-    <main className='relative flex flex-1 items-center justify-center overflow-hidden px-5 py-40 text-white sm:px-8'>
+    <>
+      <Drawer open={generationDrawerOpen} onOpenChange={setGenerationDrawerOpen} direction='left'>
+        <DrawerContent className='inset-y-0 left-0 z-50 mt-0 flex h-full w-90 max-w-[92vw] flex-col border-r border-white/10 bg-background text-white shadow-[0_0_40px_rgba(0,0,0,0.35)] backdrop-blur-xl'>
+          <DrawerHeader className='border-b border-white/10 bg-white/2 p-4'>
+            <div className='flex items-start justify-between gap-3'>
+              <div>
+                <DrawerTitle className='text-base font-semibold text-white'>Generation flow</DrawerTitle>
+                <DrawerDescription className='mt-1 text-xs text-white/55'>Live steps for your website build.</DrawerDescription>
+              </div>
+              <button
+                type='button'
+                onClick={() => setGenerationDrawerOpen(false)}
+                className='rounded-full border border-white/10 bg-white/4 px-2 py-1 text-[10px] font-medium uppercase tracking-[0.16em] text-white/60 transition hover:border-white/20 hover:text-white'
+              >
+                Close
+              </button>
+            </div>
+          </DrawerHeader>
+
+          <div className='flex-1 overflow-y-auto p-4'>
+            <div className='mb-4 rounded-xl border border-white/10 bg-white/2 p-3'>
+              <p className='text-[10px] font-medium uppercase tracking-[0.2em] text-white/40'>Current brief</p>
+              <p className='mt-2 text-sm leading-6 text-white/80'>
+                {prompt.trim() || 'Reference images are being used as inspiration.'}
+              </p>
+            </div>
+
+            <div className='space-y-3'>
+              {generationSteps.map(step => {
+                const isDone = step.status === 'done';
+                const isActive = step.status === 'active';
+                const isError = step.status === 'error';
+
+                return (
+                  <div key={step.id} className='flex gap-3 rounded-xl border border-white/10 bg-white/2 p-3'>
+                    <div className='flex flex-col items-center'>
+                      <div className={`mt-1 flex h-5 w-5 items-center justify-center rounded-full border text-[10px] ${
+                        isError ? 'border-rose-400/60 bg-rose-500/15 text-rose-200' :
+                        isDone ? 'border-[#b8f36b]/60 bg-[#b8f36b]/15 text-[#d8ff9d]' :
+                        isActive ? 'border-sky-400/60 bg-sky-500/15 text-sky-200' : 'border-white/15 bg-white/5 text-white/40'
+                      }`}>
+                        {isError ? '!' : isDone ? '✓' : isActive ? '•' : step.id}
+                      </div>
+                      {step.id !== generationSteps[generationSteps.length - 1].id && <div className='mt-2 h-full w-px bg-white/10' />}
+                    </div>
+
+                    <div className='min-w-0 flex-1'>
+                      <div className='flex items-center justify-between gap-2'>
+                        <span className='text-sm font-medium text-white/90'>{step.label}</span>
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] ${
+                          isError ? 'bg-rose-500/10 text-rose-200' :
+                          isDone ? 'bg-[#b8f36b]/10 text-[#d8ff9d]' :
+                          isActive ? 'bg-sky-500/10 text-sky-200' : 'bg-white/5 text-white/45'
+                        }`}>
+                          {isError ? 'error' : isDone ? 'done' : isActive ? 'live' : 'queued'}
+                        </span>
+                      </div>
+                      <p className='mt-1 text-xs leading-5 text-white/55'>{step.detail}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      <main className='relative flex flex-1 items-center justify-center overflow-hidden px-5 py-40 text-white sm:px-8'>
       <div className='relative z-10 w-full max-w-5xl'>
         <div className='mb-10 flex flex-col items-center text-center'>
           <h1 className='max-w-4xl text-4xl font-semibold leading-[0.98] bg-linear-to-r from-[#8e9eab] to-[#eef2f3] bg-clip-text text-transparent tracking-[-0.04em] sm:text-8xl'>
@@ -201,6 +333,7 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
         </div>
       </div>
     </main>
+    </>
   );
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Check, Building2, Rocket } from 'lucide-react';
 import { signIn } from 'next-auth/react';
@@ -79,21 +79,32 @@ export default function Pricing({ hasSession }: PricingTabsProps) {
 
     const [userData, setUserData] = useState<UserData | null>(null);
 
-    const fetchUserData = async () => {
+    useEffect(() => {
+        let active = true;
 
-        const response = await fetch(new URL('/api/users', window.location.origin));
-        if (!response.ok) {
-            return;
-        }
+        const fetchUserData = async () => {
+            try {
+                const response = await fetch(new URL('/api/users', window.location.origin));
+                if (!response.ok || !active) {
+                    return;
+                }
 
-        const data = await response.json();
-        setUserData(data);
-    }
+                const data = await response.json();
+                if (active) {
+                    setUserData(data);
+                }
+            } catch (error) {
+                console.error('Failed to fetch user data', error);
+            }
+        };
 
-    useMemo(() => {
         if (!hasSession) {
-            fetchUserData();
+            void fetchUserData();
         }
+
+        return () => {
+            active = false;
+        };
     }, [hasSession]);
 
     const handleSubscribe = async () => {

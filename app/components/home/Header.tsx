@@ -35,7 +35,7 @@ const Header = async () => {
                     <ul className='flex gap-6 items-center justify-center'>
                         <li><Link href="/#faq" className='text-gray-400 hover:text-gray-300 transition-colors'>FAQ</Link></li>
                         <li><Link href="/pricing" className='text-gray-400 hover:text-gray-300 transition-colors'>Pricing</Link></li>
-                        <li className='items-align-middle'><Link href="/" className='flex flex-row gap-2 text-gray-400 hover:text-gray-300 transition-colors'><span className="text-gray-400 line-through">Templates</span><span className="text-xs no-underline text-yellow-400 border border-yellow-400 bg-yellow-200/30 rounded-full px-2 py-0.5">coming soon</span></Link></li>
+                        <li className='items-align-middle'><Link href="/#templates" className='flex flex-row gap-2 text-gray-400 hover:text-gray-300 transition-colors'>Templates</Link></li>
                         <li><Link href="/#services" className='text-gray-400 hover:text-gray-300 transition-colors'>Services</Link></li>
                         <li><Link href="/documentation" className='text-gray-400 hover:text-gray-300 transition-colors'>Documentation</Link></li>
                         {!session && (
@@ -65,7 +65,7 @@ const Header = async () => {
                             <ul className='flex flex-col gap-4 mt-4'>
                                 <li><Link href="/#faq" className='text-gray-400 hover:text-gray-300 transition-colors'>FAQ</Link></li>
                                 <li><Link href="/pricing" className='text-gray-400 hover:text-gray-300 transition-colors'>Pricing</Link></li>
-                                <li className='items-align-middle'><Link href="/" className='flex flex-row gap-2 text-gray-400 hover:text-gray-300 transition-colors'><span className="text-gray-400 line-through">Templates</span><span className=" text-xs no-underline text-yellow-400 border border-yellow-400 bg-yellow-200/30 rounded-full px-2 py-0.5">coming soon</span></Link></li>
+                                <li className='items-align-middle'><Link href="/#templates" className='flex flex-row gap-2 text-gray-400 hover:text-gray-300 transition-colors'>Templates</Link></li>
                                 <li><Link href="/#services" className='text-gray-400 hover:text-gray-300 transition-colors'>Services</Link></li>
                                 <li><Link href="/documentation" className='text-gray-400 hover:text-gray-300 transition-colors'>Documentation</Link></li>
                                 {!session && (

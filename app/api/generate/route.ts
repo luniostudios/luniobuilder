@@ -5,6 +5,7 @@ import { decryptApiKey } from '../../lib/aiCredentials';
 import { getAIDailyLimitForRole, getProjectLimitForRole } from '../../lib/projectLimits';
 import type { AIProvider } from '../../types/ai';
 import { baseSystemPrompt } from './prompt';
+import { OpenRouter } from "@openrouter/sdk";
 
 const UNSPLASH_ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY;
 
@@ -76,10 +77,22 @@ const getAccountCredentials = async (userId: string) => {
 
 const getTextFromProvider = async (provider: GenerationProvider, apiKey: string, systemPrompt: string) => {
     if (provider === 'openrouter') {
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-            body: JSON.stringify({ model: 'openai/gpt-4o-mini', messages: [{ role: 'user', content: systemPrompt }], temperature: 0.2 }),
+        let response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${OPENROUTE_API_KEY || apiKey}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                "model": "openai/gpt-4o-mini",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": systemPrompt
+                    }
+                ],
+                "reasoning": { "enabled": true }
+            })
         });
         const data = await readProviderJson(response, 'OpenRouter');
         return data?.choices?.[0]?.message?.content || '';
