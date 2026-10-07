@@ -25,10 +25,12 @@ export const Canvas: React.FC = () => {
 
   const [showWatermark, setShowWatermark] = useState(true);
   const canvasRef = useRef<HTMLDivElement>(null);
+  const previewViewportRef = useRef<HTMLDivElement>(null);
   const page = getCurrentPage();
 
   useEffect(() => {
-    if (!isPreviewMode) return;
+    const viewport = previewViewportRef.current;
+    if (!isPreviewMode || !viewport) return;
     const getBreakpoint = (width: number) => {
       if (width <= 479) return 'mobile' as const;
       if (width <= 767) return 'mobileLandscape' as const;
@@ -37,10 +39,11 @@ export const Canvas: React.FC = () => {
       if (width >= 1920) return 'widescreen' as const;
       return 'desktop' as const;
     };
-    const updateBreakpoint = () => setBreakpoint('desktop');
+    const updateBreakpoint = () => setBreakpoint(getBreakpoint(viewport.clientWidth));
     updateBreakpoint();
-    window.addEventListener('resize', updateBreakpoint);
-    return () => window.removeEventListener('resize', updateBreakpoint);
+    const observer = new ResizeObserver(updateBreakpoint);
+    observer.observe(viewport);
+    return () => observer.disconnect();
   }, [isPreviewMode, setBreakpoint]);
 
   useEffect(() => {
@@ -64,15 +67,6 @@ export const Canvas: React.FC = () => {
 
   const breakpointWidth = {
     widescreen: '1920px',
-    desktop: `1280px`,
-    laptop: `1024px`,
-    tablet: `991px`,
-    mobileLandscape: `767px`,
-    mobile: `479px`,
-  }[breakpoint];
-
-  const prevbreakpointWidth = {
-    widescreen: '100%',
     desktop: `1280px`,
     laptop: `1024px`,
     tablet: `991px`,
@@ -136,10 +130,12 @@ export const Canvas: React.FC = () => {
 
   if (isPreviewMode) {
     return (
-      <div className="flex-1 overflow-auto bg-gray-300">
+      <div ref={previewViewportRef} className="min-w-0 flex-1 overflow-auto bg-gray-300">
         <div
           style={{
-            width: prevbreakpointWidth,
+            width: '100%',
+            maxWidth: breakpointWidth,
+            minWidth: 0,
             minHeight: '100%',
             margin: '0 auto',
             transition: 'width 0.3s ease',

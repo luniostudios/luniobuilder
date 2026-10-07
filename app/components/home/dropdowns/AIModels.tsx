@@ -96,16 +96,16 @@ export const AIModels = ({ provider, onProviderChange }: AIModelsProps) => {
                         className='my-1 w-full rounded-sm border border-white/15 bg-background px-2.5 py-2 text-sm text-white outline-none placeholder:text-white/40'
                     />
                     {['gemini-3.6-flash', 'gemini-pro', 'openai-gpt-6-astra', 'openai-gpt-6.1-sol', 'openai-gpt-6-luna', 'claude-fable', 'claude-4.6-sonnet', 'claude-4.6-opus', 'claude-4.5-haiku'].map((modelProvider) => (
-                        <DropdownMenuItem key={modelProvider} className='text-sm text-white/80 flex flex-row justify-between gap-5' onClick={() => onProviderChange(modelProvider as AIProvider)}>
+                        <DropdownMenuItem key={modelProvider} className='text-sm max-md:text-xs text-white/80 flex flex-row justify-between gap-5 max-md:gap-2' onClick={() => onProviderChange(modelProvider as AIProvider)}>
                             {getProviderLabel(modelProvider as AIProvider)}
-                            <span className='text-[10px] text-white/50 border border-white/30 rounded-2xl px-2'>{modelProvider.includes('gemini-3.6-flash') ? 'FREE' : 'API'}</span>
+                            <span className='text-[10px] text-white/50 border border-white/30 rounded-2xl px-2'>{modelProvider.includes('gemini-3.6-flash') ? 'FREE USE' : 'API KEY'}</span>
                         </DropdownMenuItem>
                     ))}
                     <DropdownMenuLabel className='mt-2 border-t border-white/10 pt-2 text-xs text-white/60'>Other models {models.length > 0 ? `(${models.length})` : ''}</DropdownMenuLabel>
                     {loading && <p className='px-2 py-3 text-xs text-white/60'>Loading current models...</p>}
                     {!loading && catalogError && <p className='px-2 py-3 text-xs text-red-300'>{catalogError}</p>}
                     {!loading && !catalogError && visibleModels.map(model => (
-                        <DropdownMenuItem key={model.id} className='flex justify-between gap-4 text-sm text-white/80' onClick={() => onProviderChange(`openrouter:${model.id}`)}>
+                        <DropdownMenuItem key={model.id} className='flex justify-between gap-4 max-md:gap-2 text-sm max-md:text-xs text-white/80' onClick={() => onProviderChange(`openrouter:${model.id}`)}>
                             <span className='min-w-0 truncate'>{model.name}</span>
                             <div className='flex gap-1'>
                             <span className='text-[10px] text-white/50 border border-white/30 rounded-2xl px-2'>PRO</span>
