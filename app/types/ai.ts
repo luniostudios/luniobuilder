@@ -7,7 +7,9 @@ export type AIProvider =
 'claude-fable' | 
 'claude-4.6-sonnet' | 
 'claude-4.6-opus' |
-'claude-4.5-haiku';
+'claude-4.5-haiku' |
+'openrouter' |
+`openrouter:${string}`;
 
 export interface ImageReference {
   file: File;

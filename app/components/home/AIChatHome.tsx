@@ -197,11 +197,11 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
   return (
     <>
       <Drawer open={generationDrawerOpen} onOpenChange={setGenerationDrawerOpen} direction='left'>
-        <DrawerContent className='inset-y-0 left-0 z-50 mt-0 flex h-full w-90 max-w-[92vw] flex-col border-r border-white/10 bg-background text-white shadow-[0_0_40px_rgba(0,0,0,0.35)] backdrop-blur-xl'>
+        <DrawerContent className='inset-y-0 left-0 z-500 mt-0 flex h-full w-90 max-w-[92vw] flex-col border-r border-white/10 bg-background text-white shadow-[0_0_40px_rgba(0,0,0,0.35)] backdrop-blur-xl'>
           <DrawerHeader className='border-b border-white/10 bg-white/2 p-4'>
             <div className='flex items-start justify-between gap-3'>
               <div>
-                <DrawerTitle className='text-base font-semibold text-white'>Generation flow</DrawerTitle>
+                <DrawerTitle className='text-base font-semibold text-white'>Generation workflow</DrawerTitle>
                 <DrawerDescription className='mt-1 text-xs text-white/55'>Live steps for your website build.</DrawerDescription>
               </div>
               <button
@@ -215,8 +215,8 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
           </DrawerHeader>
 
           <div className='flex-1 overflow-y-auto p-4'>
-            <div className='mb-4 rounded-xl border border-white/10 bg-white/2 p-3'>
-              <p className='text-[10px] font-medium uppercase tracking-[0.2em] text-white/40'>Current brief</p>
+            <div className='mb-4 rounded-xs border border-white/10 bg-white/2 p-3'>
+              <p className='text-[10px] font-medium uppercase tracking-[0.2em] text-white/40'>Prompt</p>
               <p className='mt-2 text-sm leading-6 text-white/80'>
                 {prompt.trim() || 'Reference images are being used as inspiration.'}
               </p>
@@ -229,14 +229,14 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
                 const isError = step.status === 'error';
 
                 return (
-                  <div key={step.id} className='flex gap-3 rounded-xl border border-white/10 bg-white/2 p-3'>
-                    <div className='flex flex-col items-center'>
-                      <div className={`mt-1 flex h-5 w-5 items-center justify-center rounded-full border text-[10px] ${
+                  <div key={step.id} className='flex gap-3 rounded-xs border border-white/10 bg-white/2 p-3'>
+                    <div className='flex flex-col items-center align-items-middle'>
+                      <div className={`mt-1 flex h-5 w-5 items-center align-middle px-2 py-2 justify-center rounded-full border text-[10px] ${
                         isError ? 'border-rose-400/60 bg-rose-500/15 text-rose-200' :
                         isDone ? 'border-[#b8f36b]/60 bg-[#b8f36b]/15 text-[#d8ff9d]' :
                         isActive ? 'border-sky-400/60 bg-sky-500/15 text-sky-200' : 'border-white/15 bg-white/5 text-white/40'
                       }`}>
-                        {isError ? '!' : isDone ? '✓' : isActive ? '•' : step.id}
+                        {isError ? '!' : isDone ? '✓' : isActive ? <div className='animate-spin'>↻</div> : step.id}
                       </div>
                       {step.id !== generationSteps[generationSteps.length - 1].id && <div className='mt-2 h-full w-px bg-white/10' />}
                     </div>
@@ -244,7 +244,7 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
                     <div className='min-w-0 flex-1'>
                       <div className='flex items-center justify-between gap-2'>
                         <span className='text-sm font-medium text-white/90'>{step.label}</span>
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] ${
+                        <span className={`rounded-sm px-2 py-1 text-[10px] uppercase tracking-[0.14em] ${
                           isError ? 'bg-rose-500/10 text-rose-200' :
                           isDone ? 'bg-[#b8f36b]/10 text-[#d8ff9d]' :
                           isActive ? 'bg-sky-500/10 text-sky-200' : 'bg-white/5 text-white/45'
@@ -253,6 +253,7 @@ export default function AIChatHome({ isAuthenticated }: AIChatHomeProps) {
                         </span>
                       </div>
                       <p className='mt-1 text-xs leading-5 text-white/55'>{step.detail}</p>
+                      {isActive && <p className='mt-1 text-xs leading-5 text-white/55'>Elapsed time: {elapsedSeconds}s</p>}
                     </div>
                   </div>
                 );

@@ -6,8 +6,8 @@ import type { AIProvider } from '../../../types/ai';
 
 type Credential = { provider: AIProvider; apiKey: string; updatedAt?: string };
 
-const providerLabels: Record<AIProvider, string> = {
-  'gemini-3.6-flash': 'Gemini 3.6 Flash',
+const providerLabels: Record<string, string> = {
+  'gemini-3.6-flash': 'Select Model',
   'gemini-pro': 'Gemini Pro',
   'openai-gpt-6-astra': 'OpenAI GPT-6 Astra',
   'openai-gpt-6.1-sol': 'OpenAI GPT-6.1 Sol',
@@ -16,6 +16,7 @@ const providerLabels: Record<AIProvider, string> = {
   'claude-4.6-sonnet': 'Claude Sonnet 5.5',
   'claude-4.6-opus': 'Claude Opus 5.5',
   'claude-4.5-haiku': 'Claude Haiku 4.5',
+  openrouter: 'OpenRouter',
 };
 
 export default function AIProviderManager() {
@@ -65,7 +66,7 @@ export default function AIProviderManager() {
         <div className='rounded-xl bg-gray-500/10 p-2 text-black'><KeyRound size={18} /></div>
         <div>
           <h2 className='text-xl font-semibold'>AI provider keys</h2>
-          <p className='mt-1 text-sm text-gray-400'>Use your own Gemini, OpenAI, or Claude key across your account. Keys are encrypted before storage and never returned in full.</p>
+          <p className='mt-1 text-sm text-gray-400'>Use your own Gemini, OpenAI, Claude, or OpenRouter key across your account. Keys are encrypted before storage and never returned in full.</p>
         </div>
       </div>
       {error && <p className='mt-4 rounded-lg border border-red-800 bg-red-950/30 p-3 text-sm text-red-200'>{error}</p>}

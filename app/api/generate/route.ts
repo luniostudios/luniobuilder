@@ -26,12 +26,8 @@ interface GenerateResponse {
 }
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const getGeminiApiUrl = (provider: 'gemini-3.6-flash' | 'gemini-pro') =>
-    `https://generativelanguage.googleapis.com/v1beta/models/${provider === 'gemini-pro' ? 'gemini-3.1-pro-preview' : 'gemini-3.6-flash'}:generateContent`;
 
-const OPENROUTE_API_KEY = process.env.OPENROUTE_API_KEY;
-
-type GenerationProvider = AIProvider | 'openrouter';
+type GenerationProvider = AIProvider | 'openrouter' | 'gemini' | 'openai' | 'claude';
 type ProviderCredential = { provider: GenerationProvider; apiKey: string; isPlatform: boolean };
 type ProviderResponseData = {
     error?: { message?: string };
@@ -126,16 +122,17 @@ const getTextFromProvider = async (
     systemPrompt: string,
     userPrompt: string,
     imageReferences: GenerationImageReference[] = [],
+    openRouterModel?: string,
 ) => {
     if (provider === 'openrouter') {
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: "POST",
             headers: {
-                "Authorization": `Bearer ${OPENROUTE_API_KEY || apiKey}`,
+                "Authorization": `Bearer ${apiKey}`,
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                model: process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini',
+                model: openRouterModel || process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini',
                 "messages": [
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: getOpenAiUserContent(userPrompt, imageReferences) },
@@ -187,7 +184,13 @@ const getTextFromProvider = async (
             headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
             body: JSON.stringify({
                 systemInstruction: { parts: [{ text: systemPrompt }] },
-                contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+                contents: [{
+                    role: 'user',
+                    parts: [
+                        { text: userPrompt },
+                        ...imageReferences.map(reference => ({ inlineData: { mimeType: reference.mimeType, data: reference.data } })),
+                    ],
+                }],
                 generationConfig: {
                     temperature: 0.3,
                     topP: 0.95,
@@ -261,6 +264,11 @@ export async function POST(req: NextRequest): Promise<NextResponse<GenerateRespo
         }
         const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : '';
         const { imageData, imageMimeType, imageReferences: requestedImageReferences, provider, context } = body;
+        const selectedProvider = provider || 'gemini-3.6-flash';
+        const openRouterModel = provider?.startsWith('openrouter:') ? provider.slice('openrouter:'.length) : undefined;
+        if (openRouterModel && !/^[a-z0-9_.-]+\/[a-z0-9_.:-]+$/i.test(openRouterModel)) {
+            return NextResponse.json({ html: '', success: false, error: 'Choose a valid OpenRouter model.' }, { status: 400 });
+        }
         const suppliedImageReferences: unknown[] = Array.isArray(requestedImageReferences) ? requestedImageReferences : [];
         const rawImageReferences: unknown[] = suppliedImageReferences.length
             ? suppliedImageReferences
@@ -347,13 +355,6 @@ export async function POST(req: NextRequest): Promise<NextResponse<GenerateRespo
         }
 
         const aiDailyLimit = getAIDailyLimitForRole(role);
-        if (accountCredentials.length === 0 && aiDailyLimit !== null && aiDailyLimit !== undefined && currentCount >= aiDailyLimit) {
-            return NextResponse.json(
-                { html: '', success: false, error: `Your ${role} plan is limited to ${aiDailyLimit} AI-generated websites per day when using LUNIO's AI key.` },
-                { status: 403 }
-            );
-        }
-
         let systemPrompt = baseSystemPrompt;
         const hasImage = imageReferences.length > 0;
         const userPromptParts: string[] = [];
@@ -370,21 +371,34 @@ export async function POST(req: NextRequest): Promise<NextResponse<GenerateRespo
 
         systemPrompt += `\n\nFINAL GENERATION RULE: Finish the requested implementation before adding optional decoration. Do not return a plan, explanation, TODO, placeholder, or feature description. Return only the finished builder-compatible HTML fragment.`;
 
-        const platformCredentials: ProviderCredential[] = [
-            ...(GEMINI_API_KEY ? [{ provider: 'gemini-3.6-flash' as const, apiKey: GEMINI_API_KEY, isPlatform: true }] : []),
-            ...(OPENROUTE_API_KEY ? [{ provider: 'openrouter' as const, apiKey: OPENROUTE_API_KEY, isPlatform: true }] : []),
-        ];
-        const credentialsByPreference = provider
-            ? [...accountCredentials.filter(credential => credential.provider === provider), ...accountCredentials.filter(credential => credential.provider !== provider)]
-            : accountCredentials;
-        const candidates = [...credentialsByPreference, ...platformCredentials]
-            .filter(candidate => !candidate.isPlatform || aiDailyLimit === null || currentCount < aiDailyLimit)
-            .filter((candidate, index, all) => all.findIndex(item => item.provider === candidate.provider) === index);
+        const credentialFamily = openRouterModel
+            ? 'openrouter'
+            : selectedProvider.startsWith('gemini-')
+                ? 'gemini'
+                : selectedProvider.startsWith('openai-')
+                    ? 'openai'
+                    : 'claude';
+        const accountCredential = accountCredentials.find(credential => credential.provider === credentialFamily);
+        const candidates: ProviderCredential[] = accountCredential
+            ? [{ ...accountCredential, provider: openRouterModel ? 'openrouter' : selectedProvider }]
+            : [];
+        if (selectedProvider === 'gemini-3.6-flash' && GEMINI_API_KEY) {
+            candidates.push({ provider: 'gemini-3.6-flash', apiKey: GEMINI_API_KEY, isPlatform: true });
+        }
+
+        if (selectedProvider === 'gemini-3.6-flash' && !accountCredential && aiDailyLimit !== null && aiDailyLimit !== undefined && currentCount >= aiDailyLimit) {
+            return NextResponse.json(
+                { html: '', success: false, error: `Your ${role} plan is limited to ${aiDailyLimit} AI-generated websites per day when using LUNIO's Gemini 3.6 Flash key.` },
+                { status: 403 }
+            );
+        }
 
         if (candidates.length === 0) {
             return NextResponse.json(
-                { html: '', success: false, error: 'Add an AI provider API key in Profile Settings or configure GEMINI_API_KEY or OPENROUTE_API_KEY.' },
-                { status: 500 }
+                { html: '', success: false, error: selectedProvider === 'gemini-3.6-flash'
+                    ? 'Gemini 3.6 Flash is temporarily unavailable. Add your own Gemini API key in Settings.'
+                    : 'This model requires your own provider API key. Add it in Settings to continue.' },
+                { status: 403 }
             );
         }
 
@@ -393,32 +407,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<GenerateRespo
         const providerErrors: string[] = [];
         for (const candidate of candidates) {
             try {
-                if (hasImage) {
-                    const response = await fetch(getGeminiApiUrl(candidate.provider as 'gemini-3.6-flash' | 'gemini-pro'), {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': candidate.apiKey },
-                        body: JSON.stringify({
-                            systemInstruction: { parts: [{ text: systemPrompt }] },
-                            contents: [{
-                                role: 'user',
-                                parts: [
-                                    { text: userPrompt },
-                                    ...imageReferences.map(reference => ({ inlineData: { mimeType: reference.mimeType, data: reference.data } })),
-                                ]
-                            }],
-                            generationConfig: {
-                                temperature: 0.3,
-                                topP: 0.95,
-                                maxOutputTokens: MAX_GENERATION_OUTPUT_TOKENS,
-                                thinkingConfig: { thinkingLevel: 'HIGH' },
-                            },
-                        }),
-                    });
-                    const data = await readProviderJson(response, 'Gemini image generation');
-                    generatedContent = getResponseText(data);
-                } else {
-                    generatedContent = (await getTextFromProvider(candidate.provider, candidate.apiKey, systemPrompt, userPrompt, imageReferences)) || '';
-                }
+                generatedContent = (await getTextFromProvider(candidate.provider, candidate.apiKey, systemPrompt, userPrompt, imageReferences, openRouterModel)) || '';
                 if (generatedContent.trim()) {
                     generatedContent = normalizeAndValidateHtml(generatedContent);
                     usedPlatformCredential = candidate.isPlatform;
